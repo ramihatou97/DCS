@@ -3,7 +3,9 @@
 # Discharge Summary Generator - Server Manager
 # Ensures clean start/stop of Vite dev server
 
-PROJECT_DIR="/Users/ramihatoum/Desktop/app/DCS"
+# Use script location as project directory
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+PROJECT_DIR="${SCRIPT_DIR}"
 PORT=5173
 
 # Colors for output

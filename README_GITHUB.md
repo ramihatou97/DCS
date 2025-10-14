@@ -38,7 +38,7 @@ The **Discharge Summary Generator** is an intelligent medical documentation tool
 
 ```bash
 # Clone repository
-git clone https://github.com/YOUR_USERNAME/DCS.git
+git clone https://github.com/ramihatou97/DCS.git
 cd DCS
 
 # Install frontend dependencies

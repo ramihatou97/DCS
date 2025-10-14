@@ -5,7 +5,9 @@
 
 set -e
 
-PROJECT_DIR="/Users/ramihatoum/Desktop/app/DCS"
+# Use script location as project directory
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+PROJECT_DIR="${SCRIPT_DIR}"
 
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo "  Discharge Summary Generator - Dual Server Startup"
