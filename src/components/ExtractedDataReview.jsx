@@ -8,7 +8,7 @@
 import React, { useState } from 'react';
 import {
   Check, X, AlertTriangle, Edit2, Save, ChevronDown, ChevronUp,
-  Info, Calendar, User, FileText, Activity, Pill, MapPin
+  Info, Calendar, User, FileText, Activity, Pill, MapPin, Clock
 } from 'lucide-react';
 import { trackCorrection } from '../services/ml/correctionTracker.js';
 
@@ -20,6 +20,7 @@ const ExtractedDataReview = ({ extractedData, validation, onDataCorrected, onPro
     dates: true,
     pathology: true,
     presentingSymptoms: false,
+    hospitalCourse: true,
     procedures: false,
     complications: false,
     anticoagulation: true,
@@ -358,6 +359,48 @@ const ExtractedDataReview = ({ extractedData, validation, onDataCorrected, onPro
               <div className="text-sm">
                 <span className="font-medium">Severity: </span>
                 {editedData.presentingSymptoms.severity}
+              </div>
+            )}
+          </DataSection>
+        )}
+
+        {/* Hospital Course Timeline */}
+        {editedData.hospitalCourse && editedData.hospitalCourse.timeline?.length > 0 && (
+          <DataSection
+            title="Hospital Course Timeline"
+            icon={<Clock className="w-5 h-5" />}
+            expanded={expandedSections.hospitalCourse}
+            onToggle={() => toggleSection('hospitalCourse')}
+            badge={getConfidenceBadge('hospitalCourse')}
+          >
+            <div className="text-sm space-y-3">
+              {editedData.hospitalCourse.timeline.map((event, idx) => (
+                <div key={idx} className="border-l-2 border-blue-500 dark:border-blue-400 pl-4 pb-2">
+                  <div className="flex items-start gap-2">
+                    <span className="font-semibold text-blue-600 dark:text-blue-400 min-w-[80px]">
+                      {event.date || `Event ${idx + 1}`}
+                    </span>
+                    <div className="flex-1">
+                      <span className="inline-block px-2 py-0.5 text-xs rounded bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 mr-2">
+                        {event.type}
+                      </span>
+                      <span className="text-gray-700 dark:text-gray-300">{event.description}</span>
+                      {event.details && (
+                        <div className="text-gray-600 dark:text-gray-400 text-xs mt-1 italic">
+                          {event.details}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+            {editedData.hospitalCourse.summary && (
+              <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+                <div className="text-sm">
+                  <span className="font-medium">Summary: </span>
+                  <span className="text-gray-700 dark:text-gray-300">{editedData.hospitalCourse.summary}</span>
+                </div>
               </div>
             )}
           </DataSection>

@@ -33,6 +33,18 @@ import { extractDischargeDestination } from '../utils/dischargeDestinations.js';
 import { isLLMAvailable, extractWithLLM } from './llmService.js';
 import { deduplicateNotes } from './deduplication.js';
 import enhancedMLService from './ml/enhancedML.js';
+import {
+  extractPhysicalExam,
+  extractNeurologicalExam,
+  extractSignificantEvents,
+  extractICUStay,
+  extractPreOpDeficits,
+  extractPostOpDeficits,
+  extractConsultations,
+  extractLabs,
+  extractVitals,
+  buildHospitalCourseTimeline
+} from './comprehensiveExtraction.js';
 
 /**
  * Extract all medical entities from clinical notes
@@ -140,6 +152,7 @@ export const extractMedicalEntities = async (notes, options = {}) => {
     try {
       console.log('Attempting LLM extraction...');
       const llmResult = await extractWithLLM(noteArray);
+      console.log('LLM extraction raw result:', llmResult);
 
       // Also run pattern extraction for comparison/merging
       console.log('Running pattern extraction for data enrichment...');
@@ -173,7 +186,9 @@ export const extractMedicalEntities = async (notes, options = {}) => {
         }
       };
     } catch (error) {
-      console.warn('LLM extraction failed, falling back to patterns:', error.message);
+      console.error('LLM extraction failed, falling back to patterns:', error.message);
+      console.error('Full error:', error);
+      console.error('Error stack:', error.stack);
       // Fall through to pattern-based extraction
     }
   }
@@ -297,6 +312,83 @@ const extractWithPatterns = async (combinedText, noteArray, pathologyTypes, opti
     const oncology = extractOncology(combinedText, pathologyTypes);
     extracted.oncology = oncology.data;
     confidence.oncology = oncology.confidence;
+  }
+
+  // ===== COMPREHENSIVE CLINICAL EXTRACTIONS =====
+
+  // Physical exam
+  if (targets.includes('physicalExam')) {
+    const physExam = extractPhysicalExam(combinedText);
+    extracted.physicalExam = physExam.data;
+    confidence.physicalExam = physExam.confidence;
+  }
+
+  // Neurological exam
+  if (targets.includes('neurologicalExam')) {
+    const neuroExam = extractNeurologicalExam(combinedText);
+    extracted.neurologicalExam = neuroExam.data;
+    confidence.neurologicalExam = neuroExam.confidence;
+  }
+
+  // Significant clinical events (seizures, hemorrhages, strokes, infections)
+  if (targets.includes('significantEvents')) {
+    const sigEvents = extractSignificantEvents(combinedText);
+    extracted.significantEvents = sigEvents.data;
+    confidence.significantEvents = sigEvents.confidence;
+  }
+
+  // ICU stay details
+  if (targets.includes('icuStay')) {
+    const icu = extractICUStay(combinedText);
+    extracted.icuStay = icu.data;
+    confidence.icuStay = icu.confidence;
+  }
+
+  // Pre-operative deficits/status
+  if (targets.includes('preOpDeficits')) {
+    const preOp = extractPreOpDeficits(combinedText);
+    extracted.preOpDeficits = preOp.data;
+    confidence.preOpDeficits = preOp.confidence;
+  }
+
+  // Post-operative deficits/status
+  if (targets.includes('postOpDeficits')) {
+    const postOp = extractPostOpDeficits(combinedText);
+    extracted.postOpDeficits = postOp.data;
+    confidence.postOpDeficits = postOp.confidence;
+  }
+
+  // Consultant recommendations
+  if (targets.includes('consultations')) {
+    const consults = extractConsultations(combinedText);
+    extracted.consultations = consults.data;
+    confidence.consultations = consults.confidence;
+  }
+
+  // Laboratory values
+  if (targets.includes('labs')) {
+    const labs = extractLabs(combinedText);
+    extracted.labs = labs.data;
+    confidence.labs = labs.confidence;
+  }
+
+  // Vital signs
+  if (targets.includes('vitals')) {
+    const vitals = extractVitals(combinedText);
+    extracted.vitals = vitals.data;
+    confidence.vitals = vitals.confidence;
+  }
+
+  // ===== BUILD CHRONOLOGICAL HOSPITAL COURSE =====
+  if (targets.includes('hospitalCourse')) {
+    const hospitalCourse = buildHospitalCourseTimeline(
+      combinedText,
+      noteArray,
+      extracted,
+      pathologyTypes
+    );
+    extracted.hospitalCourse = hospitalCourse.data;
+    confidence.hospitalCourse = hospitalCourse.confidence;
   }
 
   // Apply learned patterns if provided

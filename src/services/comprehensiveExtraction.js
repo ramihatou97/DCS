@@ -725,6 +725,164 @@ export const extractVitals = (text) => {
   return { data, confidence };
 };
 
+/**
+ * Build chronological hospital course timeline
+ * This is the KEY function for comprehensive discharge summaries
+ */
+export const buildHospitalCourseTimeline = (text, noteArray, extractedData, pathologyTypes) => {
+  const data = {
+    timeline: [],
+    summary: null,
+    admissionSummary: null,
+    icuCourse: null,
+    floorCourse: null,
+    dischargeSummary: null
+  };
+
+  let confidence = CONFIDENCE.MEDIUM;
+
+  // Extract chronological events with dates
+  const events = [];
+
+  // 1. Admission event
+  if (extractedData.dates?.admissionDate) {
+    events.push({
+      date: extractedData.dates.admissionDate,
+      type: 'admission',
+      description: `Admitted with ${extractedData.pathology?.primaryDiagnosis || 'acute condition'}`,
+      details: extractedData.presentingSymptoms?.symptoms?.join(', ') || null
+    });
+  }
+
+  // 2. Procedures with dates
+  if (extractedData.procedures?.procedures) {
+    for (const proc of extractedData.procedures.procedures) {
+      // Try to extract date from procedure name or surrounding text
+      const procMatch = text.match(new RegExp(`${proc}[\\s\\S]{0,100}?(\\d{1,2}\\/\\d{1,2}\\/\\d{2,4}|POD\\s*#?\\s*\\d+|HD\\s*#?\\s*\\d+|[A-Z][a-z]+\\s+\\d{1,2})`, 'i'));
+      const date = procMatch ? procMatch[1] : extractedData.dates?.surgeryDates?.[0] || null;
+
+      events.push({
+        date,
+        type: 'procedure',
+        description: proc,
+        details: null
+      });
+    }
+  }
+
+  // 3. Complications with dates
+  if (extractedData.complications?.complications) {
+    for (const comp of extractedData.complications.complications) {
+      // Try to find date near complication mention
+      const compMatch = text.match(new RegExp(`${comp}[\\s\\S]{0,100}?(\\d{1,2}\\/\\d{1,2}\\/\\d{2,4}|POD\\s*#?\\s*\\d+|HD\\s*#?\\s*\\d+)`, 'i'));
+      const date = compMatch ? compMatch[1] : null;
+
+      events.push({
+        date,
+        type: 'complication',
+        description: comp,
+        details: null
+      });
+    }
+  }
+
+  // 4. Significant events
+  if (extractedData.significantEvents?.events) {
+    for (const event of extractedData.significantEvents.events) {
+      events.push({
+        date: event.date,
+        type: event.type,
+        description: event.description,
+        details: null
+      });
+    }
+  }
+
+  // 5. Imaging studies
+  if (extractedData.imaging?.findings) {
+    for (const finding of extractedData.imaging.findings) {
+      // Try to extract date
+      const imgMatch = text.match(new RegExp(`(?:CT|MRI|CTA|MRA)[\\s\\S]{0,100}?${finding.substring(0, 30)}[\\s\\S]{0,50}?(\\d{1,2}\\/\\d{1,2}\\/\\d{2,4}|POD\\s*#?\\s*\\d+)`, 'i'));
+      const date = imgMatch ? imgMatch[1] : null;
+
+      events.push({
+        date,
+        type: 'imaging',
+        description: finding,
+        details: null
+      });
+    }
+  }
+
+  // 6. Discharge event
+  if (extractedData.dates?.dischargeDate) {
+    events.push({
+      date: extractedData.dates.dischargeDate,
+      type: 'discharge',
+      description: `Discharged to ${extractedData.dischargeDestination?.destination || 'home'}`,
+      details: `Functional status: KPS ${extractedData.functionalScores?.kps || 'not recorded'}, mRS ${extractedData.functionalScores?.mRS !== null ? extractedData.functionalScores.mRS : 'not recorded'}`
+    });
+  }
+
+  // Sort events chronologically
+  events.sort((a, b) => {
+    if (!a.date) return 1;
+    if (!b.date) return -1;
+
+    // Handle POD/HD format
+    const aIsPOD = /POD|HD/i.test(a.date);
+    const bIsPOD = /POD|HD/i.test(b.date);
+
+    if (aIsPOD && bIsPOD) {
+      const aNum = parseInt(a.date.match(/\d+/)?.[0] || '0');
+      const bNum = parseInt(b.date.match(/\d+/)?.[0] || '0');
+      return aNum - bNum;
+    }
+
+    // Convert dates for comparison
+    return new Date(a.date) - new Date(b.date);
+  });
+
+  data.timeline = events;
+
+  // Build narrative summaries for each phase
+
+  // Admission summary
+  const admissionText = text.match(/(?:ADMISSION|HPI|HISTORY\s+OF\s+PRESENT\s+ILLNESS)[:\s]+([\s\S]{100,1000}?)(?:\n\n|\n[A-Z]{4,})/i);
+  if (admissionText) {
+    data.admissionSummary = cleanText(admissionText[1]);
+    confidence = CONFIDENCE.HIGH;
+  }
+
+  // ICU course
+  if (extractedData.icuStay?.admitted) {
+    const icuEvents = events.filter(e =>
+      e.type === 'procedure' || e.type === 'complication' || e.type === 'significant_event'
+    );
+    data.icuCourse = {
+      admitted: true,
+      duration: extractedData.icuStay.duration,
+      ventilated: extractedData.icuStay.ventilator,
+      events: icuEvents.slice(0, 5) // First 5 ICU events
+    };
+  }
+
+  // Hospital course summary (full narrative)
+  const hospitalCourseText = text.match(/(?:HOSPITAL\s+COURSE)[:\s]+([\s\S]{200,3000}?)(?:\n\n[A-Z]{4,}|DISCHARGE)/i);
+  if (hospitalCourseText) {
+    data.summary = cleanText(hospitalCourseText[1]);
+    confidence = CONFIDENCE.CRITICAL;
+  }
+
+  // Discharge summary
+  const dischargeText = text.match(/(?:DISCHARGE\s+CONDITION|DISCHARGE\s+STATUS)[:\s]+([\s\S]{50,500}?)(?:\n\n|\n[A-Z]{4,})/i);
+  if (dischargeText) {
+    data.dischargeSummary = cleanText(dischargeText[1]);
+  }
+
+  return { data, confidence };
+};
+
 export default {
   extractPhysicalExam,
   extractNeurologicalExam,
@@ -734,5 +892,6 @@ export default {
   extractPostOpDeficits,
   extractConsultations,
   extractLabs,
-  extractVitals
+  extractVitals,
+  buildHospitalCourseTimeline
 };
