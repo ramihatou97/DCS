@@ -1,0 +1,52 @@
+MIT License
+
+Copyright (c) 2025 Dr. Rami Hatoum
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+---
+
+## MEDICAL DISCLAIMER
+
+This software is provided for educational and research purposes only. It is 
+NOT FDA-approved and should NOT be used for clinical decision-making without 
+proper validation and regulatory approval.
+
+Always verify AI-generated content against original clinical notes. The 
+accuracy of AI-generated summaries should be validated by qualified healthcare 
+professionals before use in clinical practice.
+
+The authors and contributors assume no liability for any errors, omissions, or 
+damages arising from the use of this software in clinical settings.
+
+## HIPAA COMPLIANCE NOTICE
+
+This software, as provided, is NOT HIPAA-compliant. Patient data is sent to 
+third-party LLM providers (Anthropic, OpenAI, Google). 
+
+DO NOT use with real patient data without:
+1. Signing Business Associate Agreements (BAA) with LLM providers
+2. Implementing proper encryption (in-transit and at-rest)
+3. Adding audit logging
+4. Implementing user authentication and authorization
+5. Conducting security risk assessment
+6. Implementing on-premises LLM alternatives
+
+Users are solely responsible for ensuring compliance with HIPAA, GDPR, and 
+other applicable data protection regulations.

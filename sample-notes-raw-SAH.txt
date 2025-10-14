@@ -1,0 +1,90 @@
+ED NOTE - 10/10/24 0847
+62M brought by EMS. C/O sudden severe HA starting ~0800 this AM at breakfast. "Worst headache of my life." +N/V, +photophobia, +neck stiffness. Wife reports brief LOC ~2 min. No trauma. Pt on ASA 81 daily for cardiac.
+
+NEURO EXAM:
+A&Ox3, GCS 14 (E4V4M6). Pupils equal 3mm reactive. Mild nuchal rigidity. CN II-XII intact. Motor 5/5 all extremities. 
+
+IMAGING:
+STAT CT head - diffuse SAH basal cisterns + sylvian fissures bilat. Consulted neurosurg.
+CTA - 7mm AComm aneurysm
+
+IMPRESSION: aSAH, likely AComm rupture
+DISPOSITION: Admit NICU, H&H looks like grade 3
+
+
+NICU ADMISSION NOTE - 10/10/24 1430 - Dr. Johnson
+62yo M w/ aSAH from ruptured AComm aneurysm. Hunt-Hess 3, Fisher 3.
+Admit to NICU. NPO. Strict bed rest. Neuro checks q1h.
+HOLD aspirin. Start nimodipine 60mg q4h when able to take PO.
+Plan angio/coiling when stable.
+
+
+PROGRESS NOTE - 10/11/24 AM
+POD#0. Pt stable overnight. Developed worsening HA + confusion this AM. 
+Repeat CT: acute hydrocephalus. 
+ICP elevated, concern for obstructive hydrocephalus.
+PLAN: EVD placement today
+
+PROCEDURE NOTE - 10/11/24 1315
+EVD placed R frontal approach. Opening pressure 25 cm H2O. Draining clear CSF. 
+Post-procedure: Pt more alert. HA improved. Neuro stable.
+
+
+PROCEDURE NOTE - 10/12/24
+Cerebral angiogram + coiling AComm aneurysm
+Attending: Dr. Smith
+7mm AComm aneurysm coiled. Complete occlusion achieved. No complications.
+Groin site intact. Distal pulses 2+.
+
+
+PROGRESS NOTE - 10/15/24 
+POD#3 post-coiling. Pt developed new confusion + mild R arm weakness this AM.
+TCD: elevated velocities bilat MCAs, L>R, peak 180 cm/s → VASOSPASM
+Started induced HTN (MAP goal 90-100). Continue nimodipine 60 q4h.
+Neuro improving by afternoon. R arm strength back to baseline.
+
+
+PROGRESS NOTE - 10/16/24
+Vasospasm improving. TCDs better (MCA velocities 120s). Pt much more alert.
+Continue induced HTN x 24h then reassess.
+
+
+PROGRESS NOTE - 10/17/24
+Doing well. Alert, following commands. No focal deficits.
+Wean EVD trial started. Tolerating well.
+
+
+PROGRESS NOTE - 10/18/24
+EVD weaned successfully over past 36h. 
+CT: resolving SAH, no new strokes, ventricles stable.
+EVD removed 1400 today. Site C/D/I.
+Ambulating w/ PT. Ready for floor transfer.
+
+
+FLOOR PROGRESS NOTE - 10/19/24
+POD#7 post-coiling. Doing excellent. 
+PT: ambulating 100ft independently. mRS=2, KPS~80.
+Taking all meds PO. No deficits on exam.
+Plan DC home tomorrow if continues stable.
+
+
+DISCHARGE NOTE - 10/20/24
+62M w/ aSAH from AComm aneurysm s/p coiling 10/12, c/b vasospasm (treated), hydrocephalus (EVD 10/11-10/18).
+Neuro exam normal. Ambulating independently. mRS 2, KPS 80.
+
+DC HOME in stable condition.
+
+DC MEDS:
+- Nimodipine 60mg PO q4h x 21d total (11d remaining)
+- Keppra 500mg PO BID x 3mo
+- Tylenol 650mg q6h PRN HA
+- Colace 100mg BID
+
+F/U:
+- NSG clinic 2wks
+- Repeat angio 6mo
+- CT head 4wks
+- No driving until cleared
+- RTC for severe HA, weakness, vision changes, or seizures
+
+Pt/family education provided. Questions answered. Verbalized understanding.

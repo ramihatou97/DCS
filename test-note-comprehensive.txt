@@ -1,0 +1,73 @@
+POD #1 - Post-operative Day 1
+Date: 10/13/2025
+
+PATIENT INFORMATION:
+Name: John Doe
+MRN: 12345678
+DOB: 06/15/1960
+Age: 65
+Gender: Male
+
+ADMISSION & DISCHARGE:
+Admission Date: 10/12/2025
+Discharge Date: 10/15/2025
+Attending: Dr. Smith
+
+DIAGNOSIS:
+Primary: Coronary Artery Disease
+Secondary: Status post CABG x3 (LIMA to LAD, SVG to OM, SVG to RCA)
+
+PAST MEDICAL HISTORY:
+- Hypertension
+- Type 2 Diabetes Mellitus
+- Hyperlipidemia
+- Previous MI (2020)
+
+ALLERGIES:
+- Penicillin (rash)
+
+HOSPITAL COURSE:
+POD #1: Patient is doing well post-operatively. Extubated this morning without difficulty. Chest tubes in place with minimal drainage. Pain well controlled on oral medications. Ambulating with assistance. Vital signs stable.
+
+VITAL SIGNS:
+- Blood Pressure: 128/76 mmHg
+- Heart Rate: 78 bpm
+- Respiratory Rate: 16
+- SpO2: 97% on room air
+- Temperature: 98.4°F
+
+PHYSICAL EXAMINATION:
+Neuro: Alert and oriented x3, no focal deficits
+Cardiovascular: Regular rate and rhythm, no murmurs
+Pulmonary: Clear to auscultation bilaterally
+Abdomen: Soft, non-tender, non-distended
+Extremities: No edema, distal pulses intact
+
+LABORATORY:
+- Hemoglobin: 11.2 g/dL
+- Platelets: 185 K/uL
+- Creatinine: 0.9 mg/dL
+- Potassium: 4.1 mEq/L
+- INR: 1.1
+
+MEDICATIONS ON DISCHARGE:
+1. Aspirin 81 mg PO daily
+2. Atorvastatin 40 mg PO at bedtime
+3. Metoprolol 25 mg PO twice daily
+4. Lisinopril 10 mg PO daily
+5. Metformin 500 mg PO twice daily
+6. Oxycodone 5 mg PO every 4-6 hours as needed for pain
+
+FOLLOW-UP:
+- Cardiology clinic in 2 weeks
+- Primary care in 1 week
+- Cardiac rehabilitation referral made
+
+DISCHARGE INSTRUCTIONS:
+- Activity: Gradually increase activity, no heavy lifting >10 lbs for 6 weeks
+- Diet: Heart-healthy, diabetic diet
+- Wound care: Keep incisions clean and dry
+- Call if: Chest pain, fever >101°F, increased wound drainage, shortness of breath
+
+DISPOSITION:
+Patient discharged home with family in stable condition.

@@ -1,0 +1,46 @@
+ADMISSION NOTE - NEUROSURGERY
+
+Patient is a 62-year-old male who presented to the emergency department on October 10, 2024 with sudden onset severe headache, nausea, and vomiting. Symptoms started suddenly this morning around 8 AM while patient was having breakfast.
+
+HISTORY OF PRESENT ILLNESS:
+Patient reports "worst headache of my life" with sudden onset. Associated symptoms include photophobia, neck stiffness, and one episode of loss of consciousness lasting approximately 2 minutes. No preceding trauma. Patient was on aspirin 81mg daily for cardiac prophylaxis.
+
+IMAGING:
+CT head performed in ED revealed diffuse subarachnoid hemorrhage in the basal cisterns and sylvian fissures bilaterally. CTA demonstrated a 7mm anterior communicating artery aneurysm.
+
+DIAGNOSIS:
+Aneurysmal subarachnoid hemorrhage (aSAH)
+Hunt and Hess Grade 3
+Modified Fisher Scale 3
+Anterior communicating artery aneurysm, 7mm
+
+HOSPITAL COURSE:
+Patient admitted to Neuro ICU on October 10, 2024. Aspirin was held on admission. External ventricular drain (EVD) placed on October 11, 2024 for treatment of acute hydrocephalus with opening pressure of 25 cm H2O.
+
+Underwent cerebral angiogram with coiling of anterior communicating artery aneurysm on October 12, 2024. Procedure performed by Dr. Smith without complications. Complete occlusion of aneurysm achieved.
+
+Post-procedure course complicated by vasospasm on hospital day 5 (October 15, 2024), managed with induced hypertension and nimodipine 60mg q4h. Transcranial Dopplers showed elevated velocities in bilateral MCAs (peak 180 cm/s), improved with treatment.
+
+EVD weaned successfully over 3 days and removed on October 18, 2024. Repeat CT showed resolving hemorrhage, no new infarcts.
+
+FUNCTIONAL STATUS:
+Patient ambulating independently with PT. Modified Rankin Scale (mRS) 2 at discharge. Karnofsky Performance Status (KPS) 80.
+
+DISCHARGE INFORMATION:
+Patient discharged to home on October 20, 2024 in stable condition.
+
+DISCHARGE MEDICATIONS:
+1. Nimodipine 60mg PO q4h x 21 days total (continue for 11 more days)
+2. Levetiracetam 500mg PO BID for seizure prophylaxis x 3 months
+3. Acetaminophen 650mg PO q6h PRN headache
+4. Docusate 100mg PO BID for constipation
+
+FOLLOW-UP:
+1. Neurosurgery clinic in 2 weeks for wound check and clinical assessment
+2. Repeat cerebral angiogram in 6 months to assess aneurysm occlusion
+3. Follow-up CT head in 4 weeks
+4. Gradual return to normal activities as tolerated
+5. No driving until cleared by neurosurgeon
+6. Watch for warning signs: severe headache, new weakness, vision changes, seizures
+
+Patient and family educated on discharge instructions and warning signs. All questions answered. Patient verbalized understanding.
