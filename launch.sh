@@ -14,8 +14,9 @@ YELLOW='\033[1;33m'
 RED='\033[0;31m'
 NC='\033[0m' # No Color
 
-# App directory
-APP_DIR="/Users/ramihatoum/Desktop/app/DCS"
+# App directory (use script location)
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+APP_DIR="${SCRIPT_DIR}"
 
 echo -e "${BLUE}╔══════════════════════════════════════════════════════════════════╗${NC}"
 echo -e "${BLUE}║           DCS App Launcher - Starting Servers...                 ║${NC}"
