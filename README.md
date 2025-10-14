@@ -88,12 +88,23 @@ GEMINI_API_KEY=AIzaSy-your-key-here
 
 #### 4. Start the Application
 
-**Option A: Automatic (Recommended)**
+**Option A: Single-Command Startup (Easiest)**
+```bash
+./start-servers.sh
+```
+This script automatically:
+- Cleans up old processes
+- Starts backend proxy server (port 3001)
+- Starts frontend dev server (port 5173)
+- Displays real-time status
+- Press `Ctrl+C` to stop both servers
+
+**Option B: Legacy Launcher**
 ```bash
 ./launch.sh
 ```
 
-**Option B: Manual (Two terminals)**
+**Option C: Manual (Two terminals)**
 ```bash
 # Terminal 1 - Start backend proxy server
 cd backend
@@ -496,7 +507,8 @@ DCS/
 ├── SECURITY.md                   # Security architecture
 ├── TESTING_GUIDE.md              # Testing documentation
 │
-├── launch.sh                      # Quick start script
+├── start-servers.sh               # Dual server startup (recommended)
+├── launch.sh                      # Legacy quick start script
 ├── deploy.sh                      # Deployment script
 └── run-tests.sh                   # Test runner
 ```
@@ -775,7 +787,8 @@ See [DEPLOYMENT_READY.md](./DEPLOYMENT_READY.md) for full status report.
 |------|---------|
 | Install all dependencies | `npm install && cd backend && npm install && cd ..` |
 | Setup API keys | `cd backend && cp .env.example .env && nano .env` |
-| Start (automatic) | `./launch.sh` |
+| **Start both servers** | `./start-servers.sh` |
+| Start (legacy) | `./launch.sh` |
 | Start backend (manual) | `cd backend && node server.js` |
 | Start frontend (manual) | `npm run dev` |
 | Run tests | `bash run-tests.sh` |
