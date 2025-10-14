@@ -69,7 +69,7 @@ function App() {
       if (metadata?.extractionMethod === 'llm' && metadata?.patternData) {
         console.log('Merging LLM and pattern extraction results...');
         const mergeResult = mergeExtractionResults(
-          metadata.patternData,
+          metadata.patternData.extracted,  // FIX: Use .extracted sub-object, not entire patternData
           { ...extracted, confidence },
           {
             llmConfidenceThreshold: 0.75,
