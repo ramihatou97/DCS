@@ -333,6 +333,176 @@ const ExtractedDataReview = ({ extractedData, validation, onDataCorrected, onPro
           )}
         </DataSection>
 
+        {/* Presenting Symptoms */}
+        {editedData.presentingSymptoms && editedData.presentingSymptoms.symptoms?.length > 0 && (
+          <DataSection
+            title="Presenting Symptoms"
+            icon={<Activity className="w-5 h-5" />}
+            expanded={expandedSections.presentingSymptoms}
+            onToggle={() => toggleSection('presentingSymptoms')}
+            badge={getConfidenceBadge('presentingSymptoms')}
+          >
+            <div className="text-sm">
+              <span className="font-medium">Symptoms: </span>
+              {editedData.presentingSymptoms.symptoms.map((symptom, idx) => (
+                <span key={idx} className="badge mr-2">{symptom}</span>
+              ))}
+            </div>
+            {editedData.presentingSymptoms.onset && (
+              <div className="text-sm">
+                <span className="font-medium">Onset: </span>
+                {editedData.presentingSymptoms.onset}
+              </div>
+            )}
+            {editedData.presentingSymptoms.severity && (
+              <div className="text-sm">
+                <span className="font-medium">Severity: </span>
+                {editedData.presentingSymptoms.severity}
+              </div>
+            )}
+          </DataSection>
+        )}
+
+        {/* Procedures */}
+        {editedData.procedures && editedData.procedures.procedures?.length > 0 && (
+          <DataSection
+            title="Procedures & Surgeries"
+            icon={<Activity className="w-5 h-5" />}
+            expanded={expandedSections.procedures}
+            onToggle={() => toggleSection('procedures')}
+            badge={getConfidenceBadge('procedures')}
+          >
+            <div className="text-sm space-y-1">
+              {editedData.procedures.procedures.map((procedure, idx) => (
+                <div key={idx} className="badge badge-blue mr-2 mb-2">{procedure}</div>
+              ))}
+            </div>
+          </DataSection>
+        )}
+
+        {/* Complications */}
+        {editedData.complications && editedData.complications.complications?.length > 0 && (
+          <DataSection
+            title="Complications"
+            icon={<AlertTriangle className="w-5 h-5" />}
+            expanded={expandedSections.complications}
+            onToggle={() => toggleSection('complications')}
+            badge={<span className="badge badge-yellow text-xs">Requires Attention</span>}
+          >
+            <div className="text-sm space-y-1">
+              {editedData.complications.complications.map((complication, idx) => (
+                <div key={idx} className="badge badge-yellow mr-2 mb-2">{complication}</div>
+              ))}
+            </div>
+          </DataSection>
+        )}
+
+        {/* Imaging */}
+        {editedData.imaging && editedData.imaging.findings?.length > 0 && (
+          <DataSection
+            title="Imaging Findings"
+            icon={<FileText className="w-5 h-5" />}
+            expanded={expandedSections.imaging}
+            onToggle={() => toggleSection('imaging')}
+            badge={getConfidenceBadge('imaging')}
+          >
+            <div className="text-sm space-y-2">
+              {editedData.imaging.findings.map((finding, idx) => (
+                <div key={idx} className="text-gray-700 dark:text-gray-300">• {finding}</div>
+              ))}
+            </div>
+          </DataSection>
+        )}
+
+        {/* Functional Scores */}
+        {editedData.functionalScores && (editedData.functionalScores.kps || editedData.functionalScores.ecog || editedData.functionalScores.mRS !== null) && (
+          <DataSection
+            title="Functional Status"
+            icon={<Activity className="w-5 h-5" />}
+            expanded={expandedSections.functionalScores}
+            onToggle={() => toggleSection('functionalScores')}
+            badge={getConfidenceBadge('functionalScores')}
+          >
+            {editedData.functionalScores.kps && (
+              <DataField
+                label="Karnofsky Performance Status (KPS)"
+                value={editedData.functionalScores.kps}
+                editing={editingField?.section === 'functionalScores' && editingField?.field === 'kps'}
+                onEdit={() => startEditing('functionalScores', 'kps')}
+                onSave={(value) => saveEdit('functionalScores', 'kps', parseInt(value))}
+                onCancel={cancelEdit}
+                type="number"
+                flags={getFieldFlags('functionalScores', 'kps')}
+              />
+            )}
+            {editedData.functionalScores.ecog !== null && editedData.functionalScores.ecog !== undefined && (
+              <DataField
+                label="ECOG Performance Status"
+                value={editedData.functionalScores.ecog}
+                editing={editingField?.section === 'functionalScores' && editingField?.field === 'ecog'}
+                onEdit={() => startEditing('functionalScores', 'ecog')}
+                onSave={(value) => saveEdit('functionalScores', 'ecog', parseInt(value))}
+                onCancel={cancelEdit}
+                type="number"
+                flags={getFieldFlags('functionalScores', 'ecog')}
+              />
+            )}
+            {editedData.functionalScores.mRS !== null && editedData.functionalScores.mRS !== undefined && (
+              <DataField
+                label="Modified Rankin Scale (mRS)"
+                value={editedData.functionalScores.mRS}
+                editing={editingField?.section === 'functionalScores' && editingField?.field === 'mRS'}
+                onEdit={() => startEditing('functionalScores', 'mRS')}
+                onSave={(value) => saveEdit('functionalScores', 'mRS', parseInt(value))}
+                onCancel={cancelEdit}
+                type="number"
+                flags={getFieldFlags('functionalScores', 'mRS')}
+              />
+            )}
+          </DataSection>
+        )}
+
+        {/* Medications */}
+        {editedData.medications && editedData.medications.current?.length > 0 && (
+          <DataSection
+            title="Medications"
+            icon={<Pill className="w-5 h-5" />}
+            expanded={expandedSections.medications}
+            onToggle={() => toggleSection('medications')}
+            badge={getConfidenceBadge('medications')}
+          >
+            <div className="text-sm space-y-2">
+              {editedData.medications.current.map((med, idx) => (
+                <div key={idx} className="flex items-start gap-2">
+                  <span className="badge badge-blue">{med.name}</span>
+                  {med.dose && <span className="text-gray-600 dark:text-gray-400">{med.dose}</span>}
+                  {med.frequency && <span className="text-gray-600 dark:text-gray-400">{med.frequency}</span>}
+                </div>
+              ))}
+            </div>
+          </DataSection>
+        )}
+
+        {/* Follow-up */}
+        {editedData.followUp && editedData.followUp.appointments?.length > 0 && (
+          <DataSection
+            title="Follow-up Plan"
+            icon={<Calendar className="w-5 h-5" />}
+            expanded={expandedSections.followUp}
+            onToggle={() => toggleSection('followUp')}
+            badge={getConfidenceBadge('followUp')}
+          >
+            <div className="text-sm space-y-2">
+              {editedData.followUp.appointments.map((appt, idx) => (
+                <div key={idx} className="text-gray-700 dark:text-gray-300">
+                  • {appt.specialty}: {appt.timing}
+                  {appt.purpose && ` - ${appt.purpose}`}
+                </div>
+              ))}
+            </div>
+          </DataSection>
+        )}
+
         {/* Anticoagulation (CRITICAL) */}
         {editedData.anticoagulation && (
           <DataSection
