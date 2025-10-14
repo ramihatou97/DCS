@@ -768,6 +768,48 @@ See [DEPLOYMENT_READY.md](./DEPLOYMENT_READY.md) for full status report.
 
 ---
 
+## 📋 Quick Reference - Deployment Commands
+
+### Local Development
+| Step | Command |
+|------|---------|
+| Install all dependencies | `npm install && cd backend && npm install && cd ..` |
+| Setup API keys | `cd backend && cp .env.example .env && nano .env` |
+| Start (automatic) | `./launch.sh` |
+| Start backend (manual) | `cd backend && node server.js` |
+| Start frontend (manual) | `npm run dev` |
+| Run tests | `bash run-tests.sh` |
+| Build for production | `npm run build` |
+| Preview build | `npm run preview` |
+
+### Production Deployment (Vercel + Railway)
+| Step | Command |
+|------|---------|
+| Install CLIs | `npm install -g vercel @railway/cli` |
+| Deploy frontend | `vercel --prod` |
+| Deploy backend | `cd backend && railway init && railway up` |
+| Set Railway env vars | `railway variables set ANTHROPIC_API_KEY=your-key` |
+| Quick deploy (automated) | `./deploy.sh` |
+
+### Docker Deployment
+| Step | Command |
+|------|---------|
+| Start all services | `docker-compose up -d` |
+| View logs | `docker-compose logs -f` |
+| Stop services | `docker-compose down` |
+| Build frontend | `docker build -t dcs-frontend .` |
+| Build backend | `cd backend && docker build -t dcs-backend .` |
+
+### Troubleshooting
+| Issue | Solution |
+|-------|----------|
+| Port in use | `lsof -ti:5173 \| xargs kill -9` (frontend)<br>`lsof -ti:3001 \| xargs kill -9` (backend) |
+| Dependencies fail | `npm cache clean --force && rm -rf node_modules && npm install` |
+| Build fails | `rm -rf dist && npm run build` |
+| API keys not working | Check `backend/.env` exists and has valid keys |
+
+---
+
 ## 🆘 Getting Help
 
 - **Documentation**: Check the docs listed above
