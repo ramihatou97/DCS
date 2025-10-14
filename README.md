@@ -803,7 +803,7 @@ See [DEPLOYMENT_READY.md](./DEPLOYMENT_READY.md) for full status report.
 ### Troubleshooting
 | Issue | Solution |
 |-------|----------|
-| Port in use | `lsof -ti:5173 \| xargs kill -9` (frontend)<br>`lsof -ti:3001 \| xargs kill -9` (backend) |
+| Port in use | `lsof -ti:5173 | xargs kill -9` (frontend)<br>`lsof -ti:3001 | xargs kill -9` (backend) |
 | Dependencies fail | `npm cache clean --force && rm -rf node_modules && npm install` |
 | Build fails | `rm -rf dist && npm run build` |
 | API keys not working | Check `backend/.env` exists and has valid keys |
