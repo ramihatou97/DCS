@@ -346,7 +346,9 @@ const ExtractedDataReview = ({ extractedData, validation, onDataCorrected, onPro
             <div className="text-sm">
               <span className="font-medium">Symptoms: </span>
               {editedData.presentingSymptoms.symptoms.map((symptom, idx) => (
-                <span key={idx} className="badge mr-2">{symptom}</span>
+                <span key={idx} className="badge mr-2">
+                  {typeof symptom === 'object' ? (symptom.name || symptom.description || JSON.stringify(symptom)) : symptom}
+                </span>
               ))}
             </div>
             {editedData.presentingSymptoms.onset && (
@@ -415,9 +417,21 @@ const ExtractedDataReview = ({ extractedData, validation, onDataCorrected, onPro
             onToggle={() => toggleSection('procedures')}
             badge={getConfidenceBadge('procedures')}
           >
-            <div className="text-sm space-y-1">
+            <div className="text-sm space-y-2">
               {editedData.procedures.procedures.map((procedure, idx) => (
-                <div key={idx} className="badge badge-blue mr-2 mb-2">{procedure}</div>
+                <div key={idx} className="flex items-start gap-2 p-2 bg-blue-50 dark:bg-blue-900/20 rounded">
+                  <div className="flex-1">
+                    <span className="font-medium text-blue-700 dark:text-blue-300">
+                      {typeof procedure === 'object' ? procedure.name : procedure}
+                    </span>
+                    {typeof procedure === 'object' && procedure.date && (
+                      <span className="ml-2 text-xs text-gray-600 dark:text-gray-400">({procedure.date})</span>
+                    )}
+                    {typeof procedure === 'object' && procedure.details && (
+                      <div className="text-xs text-gray-600 dark:text-gray-400 mt-1">{procedure.details}</div>
+                    )}
+                  </div>
+                </div>
               ))}
             </div>
           </DataSection>
@@ -432,9 +446,21 @@ const ExtractedDataReview = ({ extractedData, validation, onDataCorrected, onPro
             onToggle={() => toggleSection('complications')}
             badge={<span className="badge badge-yellow text-xs">Requires Attention</span>}
           >
-            <div className="text-sm space-y-1">
+            <div className="text-sm space-y-2">
               {editedData.complications.complications.map((complication, idx) => (
-                <div key={idx} className="badge badge-yellow mr-2 mb-2">{complication}</div>
+                <div key={idx} className="flex items-start gap-2 p-2 bg-yellow-50 dark:bg-yellow-900/20 rounded border-l-2 border-yellow-500">
+                  <div className="flex-1">
+                    <span className="font-medium text-yellow-700 dark:text-yellow-300">
+                      {typeof complication === 'object' ? complication.name : complication}
+                    </span>
+                    {typeof complication === 'object' && complication.date && (
+                      <span className="ml-2 text-xs text-gray-600 dark:text-gray-400">({complication.date})</span>
+                    )}
+                    {typeof complication === 'object' && complication.details && (
+                      <div className="text-xs text-gray-600 dark:text-gray-400 mt-1">{complication.details}</div>
+                    )}
+                  </div>
+                </div>
               ))}
             </div>
           </DataSection>
@@ -451,7 +477,9 @@ const ExtractedDataReview = ({ extractedData, validation, onDataCorrected, onPro
           >
             <div className="text-sm space-y-2">
               {editedData.imaging.findings.map((finding, idx) => (
-                <div key={idx} className="text-gray-700 dark:text-gray-300">• {finding}</div>
+                <div key={idx} className="text-gray-700 dark:text-gray-300">
+                  • {typeof finding === 'object' ? (finding.description || finding.finding || JSON.stringify(finding)) : finding}
+                </div>
               ))}
             </div>
           </DataSection>
@@ -515,13 +543,19 @@ const ExtractedDataReview = ({ extractedData, validation, onDataCorrected, onPro
             badge={getConfidenceBadge('medications')}
           >
             <div className="text-sm space-y-2">
-              {editedData.medications.current.map((med, idx) => (
-                <div key={idx} className="flex items-start gap-2">
-                  <span className="badge badge-blue">{med.name}</span>
-                  {med.dose && <span className="text-gray-600 dark:text-gray-400">{med.dose}</span>}
-                  {med.frequency && <span className="text-gray-600 dark:text-gray-400">{med.frequency}</span>}
-                </div>
-              ))}
+              {editedData.medications.current.map((med, idx) => {
+                // Defensive: handle if med is string or object
+                const medName = typeof med === 'object' ? (med.name || JSON.stringify(med)) : med;
+                const medDose = typeof med === 'object' ? med.dose : null;
+                const medFrequency = typeof med === 'object' ? med.frequency : null;
+                return (
+                  <div key={idx} className="flex items-start gap-2">
+                    <span className="badge badge-blue">{medName}</span>
+                    {medDose && <span className="text-gray-600 dark:text-gray-400">{medDose}</span>}
+                    {medFrequency && <span className="text-gray-600 dark:text-gray-400">{medFrequency}</span>}
+                  </div>
+                );
+              })}
             </div>
           </DataSection>
         )}
@@ -536,12 +570,18 @@ const ExtractedDataReview = ({ extractedData, validation, onDataCorrected, onPro
             badge={getConfidenceBadge('followUp')}
           >
             <div className="text-sm space-y-2">
-              {editedData.followUp.appointments.map((appt, idx) => (
-                <div key={idx} className="text-gray-700 dark:text-gray-300">
-                  • {appt.specialty}: {appt.timing}
-                  {appt.purpose && ` - ${appt.purpose}`}
-                </div>
-              ))}
+              {editedData.followUp.appointments.map((appt, idx) => {
+                // Defensive: handle if appt is string or object
+                if (typeof appt === 'string') {
+                  return <div key={idx} className="text-gray-700 dark:text-gray-300">• {appt}</div>;
+                }
+                return (
+                  <div key={idx} className="text-gray-700 dark:text-gray-300">
+                    • {appt.specialty || 'Follow-up'}: {appt.timing || 'TBD'}
+                    {appt.purpose && ` - ${appt.purpose}`}
+                  </div>
+                );
+              })}
             </div>
           </DataSection>
         )}

@@ -150,7 +150,7 @@ export const calculateCompleteness = (data) => {
   
   for (const field of expectedFields) {
     if (data[field] && (
-      (typeof data[field] === 'object' && Object.keys(data[field]).length > 0) ||
+      (typeof data[field] === 'object' && data[field] !== null && !Array.isArray(data[field]) && Object.keys(data[field]).length > 0) ||
       (typeof data[field] === 'string' && data[field].trim() !== '') ||
       (Array.isArray(data[field]) && data[field].length > 0)
     )) {
@@ -277,9 +277,10 @@ export const validatePathologyRequirements = (pathology, data) => {
   if (!required) return { valid: true };
   
   const missing = [];
-  
+
   for (const field of required) {
-    if (!data[field] || (typeof data[field] === 'object' && Object.keys(data[field]).length === 0)) {
+    // CRITICAL: null check before Object.keys()
+    if (!data[field] || (typeof data[field] === 'object' && data[field] !== null && !Array.isArray(data[field]) && Object.keys(data[field]).length === 0)) {
       missing.push(field);
     }
   }

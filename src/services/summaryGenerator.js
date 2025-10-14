@@ -248,11 +248,12 @@ const hasContent = (field) => {
   if (Array.isArray(field)) {
     return field.length > 0;
   }
-  
-  if (typeof field === 'object') {
+
+  // CRITICAL: null is typeof 'object', must check explicitly before Object.values()
+  if (typeof field === 'object' && field !== null && !Array.isArray(field)) {
     return Object.values(field).some(v => v !== null && v !== undefined && v !== '');
   }
-  
+
   return true;
 };
 
@@ -597,8 +598,9 @@ export const mergeSummaries = (summaries) => {
       if (Array.isArray(merged[key]) && Array.isArray(summary[key])) {
         // Combine arrays, remove duplicates
         merged[key] = [...new Set([...merged[key], ...summary[key]])];
-      } else if (typeof merged[key] === 'object' && typeof summary[key] === 'object') {
-        // Merge objects
+      } else if (typeof merged[key] === 'object' && merged[key] !== null && !Array.isArray(merged[key]) &&
+                 typeof summary[key] === 'object' && summary[key] !== null && !Array.isArray(summary[key])) {
+        // Merge objects (CRITICAL: null check before spread operator)
         merged[key] = { ...merged[key], ...summary[key] };
       } else if (!merged[key] && summary[key]) {
         // Use value if current is empty

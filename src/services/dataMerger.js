@@ -154,7 +154,9 @@ const mergeField = (
   }
 
   // For objects (demographics, dates, etc.)
-  if (typeof patternValue === 'object' && typeof llmValue === 'object') {
+  // CRITICAL: null is typeof 'object' in JavaScript, must check explicitly
+  if (typeof patternValue === 'object' && patternValue !== null &&
+      typeof llmValue === 'object' && llmValue !== null) {
     return mergeObjectFields(
       fieldName,
       patternValue,
@@ -380,7 +382,8 @@ const isEmptyValue = (value) => {
   if (value === null || value === undefined) return true;
   if (typeof value === 'string' && value.trim() === '') return true;
   if (Array.isArray(value) && value.length === 0) return true;
-  if (typeof value === 'object' && Object.keys(value).length === 0) return true;
+  // CRITICAL: null is typeof 'object', must check explicitly before Object.keys()
+  if (typeof value === 'object' && value !== null && Object.keys(value).length === 0) return true;
   return false;
 };
 

@@ -1451,7 +1451,7 @@ const applyLearnedPatterns = (extracted, text, learnedPatterns) => {
           // Add to existing data without replacing
           if (Array.isArray(extracted[field])) {
             extracted[field].push(...matches);
-          } else if (typeof extracted[field] === 'object') {
+          } else if (typeof extracted[field] === 'object' && extracted[field] !== null) {
             Object.assign(extracted[field], pattern.value);
           }
         }
@@ -1467,8 +1467,9 @@ const applyLearnedPatterns = (extracted, text, learnedPatterns) => {
  */
 const calculateConfidence = (data) => {
   if (!data) return CONFIDENCE.LOW;
-  
-  if (typeof data === 'object') {
+
+  // CRITICAL: null is typeof 'object', must check explicitly before Object.values()
+  if (typeof data === 'object' && data !== null && !Array.isArray(data)) {
     const values = Object.values(data).filter(v => v !== null && v !== undefined);
     if (values.length === 0) return CONFIDENCE.LOW;
     if (values.length >= 3) return CONFIDENCE.HIGH;
@@ -1561,10 +1562,11 @@ const mergeLLMAndPatternResults = (llmResult, patternResult) => {
     }
     
     // Merge objects - fill in null fields from pattern data
-    if (typeof llmData === 'object' && !Array.isArray(llmData) &&
-        typeof patternData === 'object' && !Array.isArray(patternData)) {
+    // CRITICAL: null is typeof 'object' in JavaScript, so must explicitly check for null
+    if (typeof llmData === 'object' && !Array.isArray(llmData) && llmData !== null &&
+        typeof patternData === 'object' && !Array.isArray(patternData) && patternData !== null) {
       for (const [key, value] of Object.entries(patternData)) {
-        if ((llmData[key] === null || llmData[key] === undefined || llmData[key] === '') && 
+        if ((llmData[key] === null || llmData[key] === undefined || llmData[key] === '') &&
             (value !== null && value !== undefined && value !== '')) {
           merged[category][key] = value;
         }
