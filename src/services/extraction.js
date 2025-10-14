@@ -276,19 +276,29 @@ const extractDemographics = (text) => {
   let ageConfidence = CONFIDENCE.LOW;
   let genderConfidence = CONFIDENCE.LOW;
   
-  // Age patterns
+  // Age patterns - ORDER MATTERS! Most specific patterns first
   const agePatterns = [
-    /(\d{1,3})\s*(?:year|yr|y\.?o\.?)\s*(?:old)?/i,
-    /age\s*:?\s*(\d{1,3})/i,
-    /(?:^|\s)(\d{1,3})\s*(?:M|F|male|female)/i,
-    /(?:M|F|male|female)\s*,?\s*(\d{1,3})/i
+    // Explicit "X-year-old" or "X year old" format (most common in clinical notes)
+    /\b(\d{1,3})\s*-\s*year\s*-\s*old\b/i,
+    /\b(\d{1,3})\s+year\s+old\b/i,
+    /\b(\d{1,3})\s*(?:yo|y\.o\.)\b/i,
+    // "Age: X" format
+    /\bage\s*:?\s*(\d{1,3})\b/i,
+    // "X years" (but not "X mm" or other measurements)
+    /\b(\d{1,3})\s+years?\b/i,
+    // "X M" or "X F" format - but must be followed by space or word boundary to avoid matching "7mm"
+    /\b(\d{1,3})\s*(?:M|F)\s+(?:male|female|man|woman|who|with|presented)\b/i,
+    /\b(\d{1,3})\s+(?:male|female|man|woman)\b/i,
+    // Last resort: gender followed by age (reversed order)
+    /\b(?:male|female)\s*,?\s*(\d{1,3})\b/i
   ];
   
   for (const pattern of agePatterns) {
     const match = text.match(pattern);
     if (match) {
       const age = parseInt(match[1]);
-      if (age > 0 && age < 120) {
+      // Validate reasonable age range
+      if (age >= 0 && age <= 120) {
         data.age = age;
         ageConfidence = CONFIDENCE.HIGH;
         break;
@@ -296,21 +306,26 @@ const extractDemographics = (text) => {
     }
   }
   
-  // Gender patterns
+  // Gender patterns - more specific matching
   const genderPatterns = [
-    { pattern: /\b(?:male|man|gentleman|he|his|him)\b/i, gender: 'M' },
-    { pattern: /\b(?:female|woman|lady|she|her|hers)\b/i, gender: 'F' }
+    // Explicit gender statements (highest confidence)
+    { pattern: /\b(?:gender|sex)\s*:?\s*(male|man|M)\b/i, gender: 'M', confidence: CONFIDENCE.HIGH },
+    { pattern: /\b(?:gender|sex)\s*:?\s*(female|woman|F)\b/i, gender: 'F', confidence: CONFIDENCE.HIGH },
+    // Age-gender combinations
+    { pattern: /\d+\s*-?\s*year\s*-?\s*old\s+(male|man)\b/i, gender: 'M', confidence: CONFIDENCE.HIGH },
+    { pattern: /\d+\s*-?\s*year\s*-?\s*old\s+(female|woman)\b/i, gender: 'F', confidence: CONFIDENCE.HIGH },
+    // Standalone gender mentions (medium confidence)
+    { pattern: /\bpatient\s+is\s+(?:a\s+)?(\d+\s*-?\s*(?:year|yr)?\s*-?\s*old\s+)?(male|man)\b/i, gender: 'M', confidence: CONFIDENCE.MEDIUM },
+    { pattern: /\bpatient\s+is\s+(?:a\s+)?(\d+\s*-?\s*(?:year|yr)?\s*-?\s*old\s+)?(female|woman)\b/i, gender: 'F', confidence: CONFIDENCE.MEDIUM },
+    // Pronoun-based detection (lower confidence)
+    { pattern: /\b(?:he|his|him)\b/i, gender: 'M', confidence: CONFIDENCE.LOW },
+    { pattern: /\b(?:she|her|hers)\b/i, gender: 'F', confidence: CONFIDENCE.LOW }
   ];
   
-  for (const { pattern, gender } of genderPatterns) {
+  for (const { pattern, gender, confidence: conf } of genderPatterns) {
     if (pattern.test(text)) {
       data.gender = gender;
-      genderConfidence = CONFIDENCE.MEDIUM;
-      
-      // Higher confidence if explicitly stated
-      if (/(?:gender|sex)\s*:?\s*(?:male|female)/i.test(text)) {
-        genderConfidence = CONFIDENCE.HIGH;
-      }
+      genderConfidence = conf;
       break;
     }
   }
@@ -336,12 +351,21 @@ const extractDates = (text, pathologyTypes) => {
   
   // Ictus date (CRITICAL for SAH and hemorrhagic pathologies)
   if (pathologyTypes.includes('SAH') || pathologyTypes.includes('TBI/cSDH')) {
-    const ictusPatterns = PATHOLOGY_PATTERNS.SAH?.ictusDatePatterns || [];
+    const ictusPatterns = [
+      // "ictus (on) date: DATE" format
+      /ictus\s+(?:on\s+)?(?:date\s*:?\s*)?([A-Za-z]+\s+\d{1,2},?\s+\d{4}|\d{1,2}\/\d{1,2}\/\d{2,4}|\d{1,2}-\d{1,2}-\d{2,4})/i,
+      // "ruptured on DATE" format
+      /ruptured?\s+(?:on\s+)?([A-Za-z]+\s+\d{1,2},?\s+\d{4}|\d{1,2}\/\d{1,2}\/\d{2,4}|\d{1,2}-\d{1,2}-\d{2,4})/i,
+      // "presented with SAH on DATE"
+      /presented\s+(?:to\s+\w+\s+)?(?:with|on)\s+(?:SAH|hemorrhage)?\s*(?:on\s+)?([A-Za-z]+\s+\d{1,2},?\s+\d{4}|\d{1,2}\/\d{1,2}\/\d{2,4})/i,
+      // "symptoms started on DATE" or "onset DATE"
+      /(?:symptoms?\s+started|onset)\s+(?:on\s+)?([A-Za-z]+\s+\d{1,2},?\s+\d{4}|\d{1,2}\/\d{1,2}\/\d{2,4})/i
+    ];
+    
     for (const pattern of ictusPatterns) {
-      const match = text.match(new RegExp(pattern, 'i'));
+      const match = text.match(pattern);
       if (match) {
-        const dateStr = match[1] || match[0];
-        const parsed = parseFlexibleDate(dateStr);
+        const parsed = parseFlexibleDate(match[1]);
         if (parsed) {
           data.ictusDate = normalizeDate(parsed);
           confidence = CONFIDENCE.CRITICAL;
@@ -351,17 +375,23 @@ const extractDates = (text, pathologyTypes) => {
     }
   }
   
-  // Admission date
+  // Admission date - more flexible patterns
   const admissionPatterns = [
-    /admitted\s+(?:on\s+)?([A-Za-z]+\s+\d{1,2},?\s+\d{4})/i,
+    // "admitted to X on DATE" - allows text between admitted and date
+    /admitted\s+(?:to\s+[\w\s]+\s+)?(?:on\s+)?([A-Za-z]+\s+\d{1,2},?\s+\d{4})/i,
+    // "admission (date): DATE"
     /admission\s+(?:date\s*:?\s*)?([A-Za-z]+\s+\d{1,2},?\s+\d{4})/i,
-    /\d{1,2}\/\d{1,2}\/\d{2,4}/
+    // "patient admitted DATE" 
+    /patient\s+admitted\s+(?:to\s+[\w\s]+\s+)?(?:on\s+)?([A-Za-z]+\s+\d{1,2},?\s+\d{4})/i,
+    // Numeric date formats
+    /admission\s+(?:date\s*:?\s*)?(\d{1,2}[/-]\d{1,2}[/-]\d{2,4})/i,
+    /admitted\s+(?:on\s+)?(\d{1,2}[/-]\d{1,2}[/-]\d{2,4})/i
   ];
   
   for (const pattern of admissionPatterns) {
     const match = text.match(pattern);
     if (match) {
-      const parsed = parseFlexibleDate(match[1] || match[0]);
+      const parsed = parseFlexibleDate(match[1]);
       if (parsed) {
         data.admissionDate = normalizeDate(parsed);
         break;
@@ -369,14 +399,19 @@ const extractDates = (text, pathologyTypes) => {
     }
   }
   
-  // Surgery dates (can be multiple)
+  // Surgery dates (can be multiple) - more flexible patterns
   const surgeryPatterns = [
-    /(?:surgery|operation|procedure)\s+(?:on\s+)?([A-Za-z]+\s+\d{1,2},?\s+\d{4})/gi,
-    /(\d{1,2}\/\d{1,2}\/\d{2,4})\s*:?\s*(?:underwent|surgery|craniotomy|coiling)/gi
+    // "underwent PROCEDURE on DATE" or "PROCEDURE on DATE"
+    /(?:underwent|received)?\s*(?:cerebral\s+)?(?:angiogram|coiling|craniotomy|surgery|operation|procedure)\s+(?:with\s+[\w\s]+\s+)?(?:on\s+)?([A-Za-z]+\s+\d{1,2},?\s+\d{4})/gi,
+    // "DATE: PROCEDURE" format
+    /([A-Za-z]+\s+\d{1,2},?\s+\d{4})\s*:?\s*(?:underwent|surgery|craniotomy|coiling|procedure)/gi,
+    // Numeric formats
+    /(\d{1,2}[/-]\d{1,2}[/-]\d{2,4})\s*:?\s*(?:underwent|surgery|craniotomy|coiling)/gi
   ];
   
   for (const pattern of surgeryPatterns) {
     let match;
+    pattern.lastIndex = 0; // Reset regex state
     while ((match = pattern.exec(text)) !== null) {
       const parsed = parseFlexibleDate(match[1]);
       if (parsed) {
@@ -388,10 +423,17 @@ const extractDates = (text, pathologyTypes) => {
     }
   }
   
-  // Discharge date
+  // Discharge date - more flexible patterns
   const dischargePatterns = [
-    /discharged?\s+(?:on\s+)?([A-Za-z]+\s+\d{1,2},?\s+\d{4})/i,
-    /discharge\s+(?:date\s*:?\s*)?([A-Za-z]+\s+\d{1,2},?\s+\d{4})/i
+    // "discharged (to X) on DATE"
+    /discharged?\s+(?:to\s+[\w\s]+\s+)?(?:on\s+)?([A-Za-z]+\s+\d{1,2},?\s+\d{4})/i,
+    // "discharge date: DATE"
+    /discharge\s+(?:date\s*:?\s*)?([A-Za-z]+\s+\d{1,2},?\s+\d{4})/i,
+    // "patient discharged DATE"
+    /patient\s+discharged?\s+(?:to\s+[\w\s]+\s+)?(?:on\s+)?([A-Za-z]+\s+\d{1,2},?\s+\d{4})/i,
+    // Numeric formats
+    /discharge\s+(?:date\s*:?\s*)?(\d{1,2}[/-]\d{1,2}[/-]\d{2,4})/i,
+    /discharged?\s+(?:on\s+)?(\d{1,2}[/-]\d{1,2}[/-]\d{2,4})/i
   ];
   
   for (const pattern of dischargePatterns) {
@@ -421,23 +463,76 @@ const extractPathology = (text, pathologyTypes) => {
   
   let confidence = CONFIDENCE.MEDIUM;
   
-  // Extract based on detected pathology types
+  // First, try to extract explicit diagnosis statements
+  const diagnosisPatterns = [
+    // "DIAGNOSIS:" section
+    /(?:DIAGNOSIS|Diagnosis)\s*:?\s*\n?\s*([^\n]+(?:\n(?!HISTORY|HOSPITAL|IMAGING|PROCEDURE)[^\n]+)*)/i,
+    // "Primary diagnosis:" format
+    /(?:primary\s+)?diagnosis\s*:?\s*([^\n.]+)/i,
+    // Parenthetical diagnosis like "(aSAH)"
+    /\(([^)]*(?:SAH|hemorrhage|aneurysm|tumor|hydrocephalus|cSDH|TBI|leak|fracture)[^)]*)\)/i,
+    // Standalone diagnosis statements
+    /(?:^|\n)\s*([^\n]*(?:subarachnoid hemorrhage|aSAH|aneurysmal SAH|brain tumor|glioblastoma|meningioma|hydrocephalus|subdural hematoma|cSDH)[^\n.]*)/im
+  ];
+  
+  for (const pattern of diagnosisPatterns) {
+    const match = text.match(pattern);
+    if (match && match[1]) {
+      // Clean up the extracted diagnosis
+      let diagnosis = match[1].trim()
+        .replace(/\s+/g, ' ')
+        .replace(/^[-•*]\s*/, ''); // Remove bullet points
+      
+      if (diagnosis.length > 5 && diagnosis.length < 200) {
+        data.primaryDiagnosis = diagnosis;
+        confidence = CONFIDENCE.HIGH;
+        break;
+      }
+    }
+  }
+  
+  // If no explicit diagnosis found, use pathology type detection
+  if (!data.primaryDiagnosis && pathologyTypes.length > 0) {
+    for (const pathType of pathologyTypes) {
+      const patterns = PATHOLOGY_PATTERNS[pathType];
+      if (!patterns) continue;
+      
+      // Use the pathology name as diagnosis
+      if (patterns.detectionPatterns) {
+        for (const pattern of patterns.detectionPatterns) {
+          if (new RegExp(pattern, 'i').test(text)) {
+            data.primaryDiagnosis = patterns.name || pathType;
+            confidence = CONFIDENCE.MEDIUM;
+            break;
+          }
+        }
+      }
+      
+      if (data.primaryDiagnosis) break;
+    }
+  }
+  
+  // Extract grading information for each detected pathology type
   for (const pathType of pathologyTypes) {
     const patterns = PATHOLOGY_PATTERNS[pathType];
     if (!patterns) continue;
     
-    // Primary diagnosis
-    if (patterns.detectionPatterns) {
-      for (const pattern of patterns.detectionPatterns) {
-        if (new RegExp(pattern, 'i').test(text)) {
-          data.primaryDiagnosis = pathType;
-          confidence = CONFIDENCE.HIGH;
-          break;
+    // SAH Grading (Hunt & Hess, Fisher, etc.)
+    if (pathType === 'SAH' && patterns.patterns?.gradingScales) {
+      for (const [gradeType, gradeInfo] of Object.entries(patterns.patterns.gradingScales)) {
+        if (gradeInfo.regex) {
+          for (const pattern of gradeInfo.regex) {
+            const match = text.match(new RegExp(pattern, 'i'));
+            if (match) {
+              data.grades[gradeType] = match[1] || match[0];
+              confidence = Math.max(confidence, gradeInfo.confidence || CONFIDENCE.MEDIUM);
+            }
+          }
         }
       }
     }
     
-    // Grading (SAH: H&H, Fisher; Tumors: WHO grade)
+    // Generic grading patterns
     if (patterns.gradingPatterns) {
       for (const [gradeType, gradePatterns] of Object.entries(patterns.gradingPatterns)) {
         for (const pattern of gradePatterns) {
@@ -448,15 +543,27 @@ const extractPathology = (text, pathologyTypes) => {
         }
       }
     }
-    
-    // Location (for tumors, hemorrhages, spine)
-    if (patterns.locationPatterns) {
-      for (const pattern of patterns.locationPatterns) {
-        const match = text.match(new RegExp(pattern, 'i'));
-        if (match) {
-          data.location = match[1] || match[0];
-          break;
-        }
+  }
+  
+  // Extract location information
+  const locationPatterns = [
+    // Specific anatomical locations
+    /(?:location|site)\s*:?\s*([^\n.;]+(?:artery|vein|ventricle|hemisphere|lobe|fossa|cistern|region)[^\n.;]*)/i,
+    // Aneurysm locations
+    /([^\s]+\s+(?:communicating|cerebral|basilar|carotid)\s+artery)\s+aneurysm/i,
+    // Tumor locations
+    /(?:tumor|mass|lesion)\s+(?:in|of|at)\s+(?:the\s+)?([^\n.;,]+(?:lobe|hemisphere|region|ventricle|fossa)[^\n.;,]*)/i,
+    // Generic "in the X" patterns
+    /(?:hemorrhage|bleeding|mass|lesion)\s+in\s+(?:the\s+)?([^\n.;,]+)/i
+  ];
+  
+  for (const pattern of locationPatterns) {
+    const match = text.match(pattern);
+    if (match && match[1]) {
+      const location = match[1].trim();
+      if (location.length > 3 && location.length < 100) {
+        data.location = location;
+        break;
       }
     }
   }
