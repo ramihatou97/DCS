@@ -320,13 +320,26 @@ export const extractWithLLM = async (notes, options = {}) => {
 
   const prompt = `You are analyzing neurosurgery clinical notes to extract structured medical data. Your task is to create a comprehensive, accurate JSON representation of the patient's case.
 
+These notes may have VARIABLE STYLES (formal/informal), UNSTRUCTURED formats, and REPETITIVE content across multiple entries. Your extraction must be IMPECCABLY ACCURATE by:
+
 EXTRACTION PRINCIPLES:
-1. CHRONOLOGICAL ACCURACY: Pay careful attention to the timeline of events
-2. EXPLICIT ONLY: Extract ONLY information explicitly stated - never guess, infer, or extrapolate
-3. NULL VALUES: Use null for any missing information
-4. DATE FORMAT: Use YYYY-MM-DD for all dates (extract exact dates when available)
-5. CLINICAL PRECISION: Maintain medical accuracy and terminology
-6. SAFETY CRITICAL: Special attention to anticoagulation status (bleeding risk)
+1. CHRONOLOGICAL ACCURACY: Pay careful attention to the timeline of events - distinguish initial presentation from complications from follow-up
+2. EXPLICIT ONLY: Extract ONLY information explicitly stated - NEVER guess, infer, or extrapolate
+3. NULL VALUES: Use null for any missing information - do not fill gaps with assumptions
+4. DATE FORMAT: Use YYYY-MM-DD for all dates (extract exact dates when available, convert MM/DD/YY format)
+5. CLINICAL PRECISION: Maintain medical accuracy and terminology exactly as stated
+6. SAFETY CRITICAL: Special attention to anticoagulation status (bleeding risk) - note when medications are HELD vs ACTIVE
+7. DEDUPLICATION: If same information appears multiple times, extract only once with earliest/most specific date
+8. CONTEXT AWARENESS: Distinguish between history (past events) and current presentation
+9. VARIABLE STYLES: Handle informal abbreviations (C/O, S/P, W/, POD, HD) and formal language equally
+10. STRUCTURED PARSING: Recognize common note sections (HPI, exam, imaging, assessment, plan) even without headers
+
+HANDLING UNSTRUCTURED NOTES:
+- Extract from progress notes even when formal sections absent
+- Recognize procedures mentioned casually ("EVD placed today", "underwent coiling")
+- Track temporal markers (POD#3, "3 days ago", "this morning", timestamps)
+- Parse vital changes and exam findings embedded in narrative text
+- Identify complications mentioned anywhere (not just in "complications" section)
 
 REQUIRED JSON STRUCTURE:
 {
@@ -407,6 +420,13 @@ REQUIRED JSON STRUCTURE:
   }
 }
 
+IMPORTANT REMINDERS:
+- Handle variable note styles: formal EMR notes, brief progress notes, informal updates
+- Deduplicate: if same finding appears in multiple notes, extract once
+- Parse temporal context: convert POD#3, "3 days ago", relative dates to absolute when possible
+- Recognize procedures in any context: "EVD placed", "underwent coiling", "s/p craniotomy"
+- Track anticoagulation changes carefully (held vs discontinued vs active)
+
 CLINICAL NOTES:
 ${noteText}
 
@@ -416,7 +436,7 @@ Return ONLY the JSON object with no markdown formatting, no explanation, no code
     ...options,
     task: 'extraction',
     responseFormat: 'json',
-    systemPrompt: 'You are a medical AI assistant specialized in neurosurgery clinical documentation. Extract structured data with perfect chronological accuracy. Return only valid JSON. Extract only explicitly stated information - never infer or extrapolate.'
+    systemPrompt: 'You are a medical AI assistant specialized in neurosurgery clinical documentation. Extract structured data with perfect accuracy from variable-style, unstructured, and repetitive clinical notes. Handle formal EMR notes, informal progress notes, and brief updates equally well. Return only valid JSON. Extract only explicitly stated information - never infer or extrapolate. Deduplicate repetitive content intelligently.'
   });
 
   return result;
@@ -438,23 +458,26 @@ ${sourceNotes}
 WRITING REQUIREMENTS:
 
 1. CHRONOLOGICAL COHERENCE:
-   - Present events in clear temporal sequence
+   - Present events in clear temporal sequence from admission to discharge
    - Use specific dates when available (e.g., "On October 13, 2025...")
-   - Show progression from admission to discharge
-   - Connect cause and effect relationships
+   - Show progression: initial presentation → workup → intervention → complications → resolution → discharge
+   - Connect cause and effect relationships clearly
+   - Handle repetitive information by using the FIRST/MOST SPECIFIC occurrence
 
 2. NATURAL MEDICAL LANGUAGE:
-   - Write in past tense for completed events
-   - Use professional but readable prose
+   - Write in past tense for completed events, present tense for discharge status
+   - Use professional but readable prose - write for human physicians
    - Avoid bullet points - use flowing narrative paragraphs
    - Spell out abbreviations on first use (e.g., "External ventricular drain (EVD)")
    - Use proper medical terminology with clarity
+   - Handle both formal and informal note styles seamlessly
 
 3. COMPREHENSIVE BUT CONCISE:
-   - Include all clinically significant information
-   - Omit redundant or trivial details
+   - Include all clinically significant information from ANY note style
+   - Omit redundant or trivial details (deduplicate repetitive content)
    - Each sentence should add meaningful information
    - Maintain professional tone throughout
+   - Synthesize information from multiple unstructured sources into coherent narrative
 
 4. SAFETY-CRITICAL INFORMATION:
    - Prominently mention anticoagulation status if relevant

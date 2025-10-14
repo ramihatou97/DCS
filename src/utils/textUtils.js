@@ -318,3 +318,333 @@ export const escapeRegExp = (string) => {
   if (!string) return '';
   return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 };
+
+/**
+ * Advanced text preprocessing for variable-style clinical notes
+ * Normalizes different formatting styles, timestamps, headers, and structure
+ */
+export const preprocessClinicalNote = (text) => {
+  if (!text) return '';
+  
+  let processed = text;
+  
+  // 1. Normalize line endings
+  processed = processed.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+  
+  // 2. Normalize timestamps (various formats to YYYY-MM-DD HH:MM)
+  // Handle formats like: 10/10/24 0847, 10/10/2024 08:47, Oct 10 2024 8:47am
+  processed = processed.replace(/(\d{1,2})\/(\d{1,2})\/(\d{2,4})\s+(\d{1,2}):?(\d{2})/g, (match, m, d, y, h, min) => {
+    const year = y.length === 2 ? '20' + y : y;
+    return `${year}-${m.padStart(2, '0')}-${d.padStart(2, '0')} ${h.padStart(2, '0')}:${min}`;
+  });
+  
+  // 3. Normalize section headers (various styles)
+  // e.g., "NEURO EXAM:", "Neuro Exam -", "**NEURO EXAM**", "===NEURO EXAM==="
+  processed = processed.replace(/^[\s*=\-]*([A-Z][A-Z\s&/]+?)[\s*:=\-]*$/gm, (match, header) => {
+    return '\n' + header.trim() + ':\n';
+  });
+  
+  // 4. Normalize bullet points and lists
+  processed = processed.replace(/^[\s]*[•\-\*\+]\s+/gm, '- ');
+  
+  // 5. Normalize abbreviations (consistent spacing)
+  // e.g., "C / O" -> "C/O", "s / p" -> "s/p"
+  processed = processed.replace(/([A-Za-z])\s*\/\s*([A-Za-z])/g, '$1/$2');
+  
+  // 6. Normalize medical abbreviations case (common ones)
+  const abbrevs = {
+    'c/o': 'C/O',
+    's/p': 'S/P',
+    'w/': 'W/',
+    'w/o': 'W/O',
+    'h/o': 'H/O',
+    'n/v': 'N/V',
+    'a&o': 'A&O',
+    'lol': 'LOL' // Level of alertness context
+  };
+  
+  for (const [lower, upper] of Object.entries(abbrevs)) {
+    const regex = new RegExp('\\b' + escapeRegExp(lower) + '\\b', 'gi');
+    processed = processed.replace(regex, upper);
+  }
+  
+  // 7. Normalize POD notation (Post-Operative Day)
+  // Handle: POD #3, POD3, POD-3, post-op day 3
+  processed = processed.replace(/(?:POD|post-?op(?:erative)?\s+day)\s*[#\-]?\s*(\d+)/gi, 'POD#$1');
+  
+  // 8. Normalize HD notation (Hospital Day)
+  processed = processed.replace(/(?:HD|hospital\s+day)\s*[#\-]?\s*(\d+)/gi, 'HD#$1');
+  
+  // 9. Remove excessive whitespace while preserving structure
+  processed = processed.replace(/[ \t]+/g, ' '); // Multiple spaces to single
+  processed = processed.replace(/\n{4,}/g, '\n\n\n'); // Max 2 blank lines
+  
+  // 10. Trim each line
+  processed = processed.split('\n').map(line => line.trim()).join('\n');
+  
+  return processed.trim();
+};
+
+/**
+ * Segment clinical note into structured sections
+ * Identifies common section headers and extracts content
+ */
+export const segmentClinicalNote = (text) => {
+  if (!text) return { sections: {}, unclassified: text };
+  
+  const sections = {};
+  const sectionPatterns = {
+    'chief_complaint': /(?:CHIEF COMPLAINT|CC|PRESENTING COMPLAINT):/i,
+    'history_present_illness': /(?:HISTORY OF PRESENT ILLNESS|HPI|PRESENT ILLNESS):/i,
+    'past_medical_history': /(?:PAST MEDICAL HISTORY|PMH|MEDICAL HISTORY):/i,
+    'medications': /(?:MEDICATIONS|MEDS|HOME MEDICATIONS):/i,
+    'allergies': /(?:ALLERGIES|ALLERGY):/i,
+    'physical_exam': /(?:PHYSICAL EXAM|EXAMINATION|EXAM):/i,
+    'neuro_exam': /(?:NEURO(?:LOGICAL)? EXAM):/i,
+    'assessment': /(?:ASSESSMENT|A&P|IMPRESSION):/i,
+    'plan': /(?:PLAN|MANAGEMENT|DISPOSITION):/i,
+    'imaging': /(?:IMAGING|RADIOLOGY|CT|MRI):/i,
+    'labs': /(?:LABS|LABORATORY|LAB RESULTS):/i,
+    'procedures': /(?:PROCEDURE|OPERATION|OPERATIVE):/i,
+    'complications': /(?:COMPLICATIONS|COMPLICATIONS?|ADVERSE EVENTS):/i,
+    'discharge': /(?:DISCHARGE|DC|DISPOSITION):/i,
+    'follow_up': /(?:FOLLOW-?UP|F\/U|FOLLOW UP PLAN):/i
+  };
+  
+  // Find all section headers with their positions
+  const foundSections = [];
+  for (const [sectionName, pattern] of Object.entries(sectionPatterns)) {
+    const match = text.match(pattern);
+    if (match) {
+      foundSections.push({
+        name: sectionName,
+        start: match.index,
+        headerLength: match[0].length
+      });
+    }
+  }
+  
+  // Sort by position
+  foundSections.sort((a, b) => a.start - b.start);
+  
+  // Extract content for each section
+  for (let i = 0; i < foundSections.length; i++) {
+    const current = foundSections[i];
+    const next = foundSections[i + 1];
+    
+    const contentStart = current.start + current.headerLength;
+    const contentEnd = next ? next.start : text.length;
+    
+    sections[current.name] = text.substring(contentStart, contentEnd).trim();
+  }
+  
+  // Extract unclassified content (before first section)
+  const unclassified = foundSections.length > 0 
+    ? text.substring(0, foundSections[0].start).trim()
+    : text;
+  
+  return { sections, unclassified };
+};
+
+/**
+ * Detect and normalize temporal references
+ * Converts relative dates to structured format
+ */
+export const extractTemporalReferences = (text) => {
+  if (!text) return [];
+  
+  const references = [];
+  
+  // Absolute dates: MM/DD/YY, MM/DD/YYYY
+  const absolutePattern = /(\d{1,2}\/\d{1,2}\/\d{2,4})/g;
+  let match;
+  while ((match = absolutePattern.exec(text)) !== null) {
+    references.push({
+      type: 'absolute',
+      text: match[1],
+      position: match.index,
+      context: text.substring(Math.max(0, match.index - 20), Math.min(text.length, match.index + match[0].length + 20))
+    });
+  }
+  
+  // Relative dates: POD#3, HD#5, "3 days ago", "yesterday"
+  const relativePatterns = [
+    { pattern: /POD#?(\d+)/gi, type: 'pod' },
+    { pattern: /HD#?(\d+)/gi, type: 'hd' },
+    { pattern: /(\d+)\s+days?\s+ago/gi, type: 'days_ago' },
+    { pattern: /(\d+)\s+weeks?\s+ago/gi, type: 'weeks_ago' },
+    { pattern: /yesterday/gi, type: 'yesterday' },
+    { pattern: /today/gi, type: 'today' },
+    { pattern: /this\s+morning/gi, type: 'this_morning' },
+    { pattern: /this\s+afternoon/gi, type: 'this_afternoon' },
+    { pattern: /tonight/gi, type: 'tonight' }
+  ];
+  
+  for (const { pattern, type } of relativePatterns) {
+    let match;
+    while ((match = pattern.exec(text)) !== null) {
+      references.push({
+        type: 'relative',
+        subtype: type,
+        text: match[0],
+        value: match[1] || null,
+        position: match.index,
+        context: text.substring(Math.max(0, match.index - 20), Math.min(text.length, match.index + match[0].length + 20))
+      });
+    }
+  }
+  
+  return references.sort((a, b) => a.position - b.position);
+};
+
+/**
+ * Remove duplicate sentences/phrases across multiple notes
+ * Uses semantic similarity for robust deduplication
+ */
+export const deduplicateContent = (texts, similarityThreshold = 0.85) => {
+  if (!texts || texts.length === 0) return [];
+  if (texts.length === 1) return texts;
+  
+  const allSentences = [];
+  
+  // Extract sentences from each text with source tracking
+  texts.forEach((text, textIndex) => {
+    const sentences = splitIntoSentences(text);
+    sentences.forEach(sentence => {
+      if (sentence.length > 10) { // Filter out very short sentences
+        allSentences.push({
+          text: sentence,
+          normalized: normalizeText(sentence),
+          sourceIndex: textIndex,
+          isDuplicate: false
+        });
+      }
+    });
+  });
+  
+  // Mark duplicates
+  for (let i = 0; i < allSentences.length; i++) {
+    if (allSentences[i].isDuplicate) continue;
+    
+    for (let j = i + 1; j < allSentences.length; j++) {
+      if (allSentences[j].isDuplicate) continue;
+      
+      // Check similarity
+      const similarity = calculateSimilarity(
+        allSentences[i].normalized,
+        allSentences[j].normalized
+      );
+      
+      if (similarity >= similarityThreshold) {
+        allSentences[j].isDuplicate = true;
+      }
+    }
+  }
+  
+  // Reconstruct texts without duplicates
+  const deduplicatedTexts = texts.map(() => []);
+  
+  allSentences.forEach(sentence => {
+    if (!sentence.isDuplicate) {
+      deduplicatedTexts[sentence.sourceIndex].push(sentence.text);
+    }
+  });
+  
+  return deduplicatedTexts.map(sentences => sentences.join('. ') + '.');
+};
+
+/**
+ * Extract structured medical events from text
+ * Identifies procedures, complications, interventions
+ */
+export const extractMedicalEvents = (text) => {
+  if (!text) return [];
+  
+  const events = [];
+  
+  // Event patterns with contextual keywords
+  const eventPatterns = [
+    {
+      type: 'procedure',
+      patterns: [
+        /(?:underwent|performed|completed)\s+([^.]+?procedure[^.]*)/gi,
+        /(?:EVD|craniotomy|coiling|clipping|surgery|operation)[^.]*performed/gi,
+        /PROCEDURE:\s*([^.\n]+)/gi
+      ]
+    },
+    {
+      type: 'complication',
+      patterns: [
+        /(?:complicated by|developed|c\/b)\s+([^.]+)/gi,
+        /(?:vasospasm|hydrocephalus|infection|hemorrhage|stroke)\s+(?:noted|detected|developed)/gi
+      ]
+    },
+    {
+      type: 'intervention',
+      patterns: [
+        /(?:started|initiated|began)\s+([^.]+therapy|[^.]+treatment)/gi,
+        /(?:given|administered)\s+([^.]+)/gi
+      ]
+    }
+  ];
+  
+  for (const { type, patterns } of eventPatterns) {
+    for (const pattern of patterns) {
+      let match;
+      while ((match = pattern.exec(text)) !== null) {
+        events.push({
+          type,
+          text: match[0],
+          details: match[1] || match[0],
+          position: match.index
+        });
+      }
+    }
+  }
+  
+  return events.sort((a, b) => a.position - b.position);
+};
+
+/**
+ * Identify and normalize medical abbreviations in context
+ * Returns expanded forms when context allows
+ */
+export const expandMedicalAbbreviations = (text, abbreviationDict = {}) => {
+  if (!text) return text;
+  
+  let expanded = text;
+  
+  // Common medical abbreviations with context-aware expansions
+  const contextualAbbrevs = {
+    'HA': { expanded: 'headache', context: /\b(?:severe|sudden|worst|throbbing)\s+HA\b/i },
+    'LOC': { expanded: 'loss of consciousness', context: /\bLOC\b(?!\s+hours)/i },
+    'SOB': { expanded: 'shortness of breath', context: /\bSOB\b/i },
+    'CP': { expanded: 'chest pain', context: /\bCP\b(?!\s*aneurysm)/i },
+    'N\/V': { expanded: 'nausea and vomiting', context: null },
+    'S\/P': { expanded: 'status post', context: null },
+    'C\/O': { expanded: 'complaining of', context: null },
+    'W\/': { expanded: 'with', context: null },
+    'W\/O': { expanded: 'without', context: null }
+  };
+  
+  for (const [abbrev, { expanded: exp, context }] of Object.entries(contextualAbbrevs)) {
+    if (context) {
+      // Context-dependent expansion
+      expanded = expanded.replace(context, (match) => {
+        return match.replace(new RegExp('\\b' + escapeRegExp(abbrev) + '\\b', 'g'), exp);
+      });
+    } else {
+      // Always expand
+      const regex = new RegExp('\\b' + escapeRegExp(abbrev) + '\\b', 'g');
+      expanded = expanded.replace(regex, exp);
+    }
+  }
+  
+  // Apply custom dictionary
+  for (const [abbrev, expansion] of Object.entries(abbreviationDict)) {
+    const regex = new RegExp('\\b' + escapeRegExp(abbrev) + '\\b', 'g');
+    expanded = expanded.replace(regex, expansion);
+  }
+  
+  return expanded;
+};

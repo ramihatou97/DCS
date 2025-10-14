@@ -16,11 +16,19 @@
 import { PATHOLOGY_PATTERNS, detectPathology } from '../config/pathologyPatterns.js';
 import { EXTRACTION_TARGETS, CONFIDENCE } from '../config/constants.js';
 import { parseFlexibleDate, normalizeDate } from '../utils/dateUtils.js';
-import { cleanText, extractTextBetween, countOccurrences } from '../utils/textUtils.js';
+import { 
+  cleanText, 
+  extractTextBetween, 
+  countOccurrences, 
+  preprocessClinicalNote,
+  segmentClinicalNote,
+  deduplicateContent
+} from '../utils/textUtils.js';
 import { MEDICAL_ABBREVIATIONS, expandAbbreviation } from '../utils/medicalAbbreviations.js';
 import { extractAnticoagulation } from '../utils/anticoagulationTracker.js';
 import { extractDischargeDestination } from '../utils/dischargeDestinations.js';
 import { isLLMAvailable, extractWithLLM } from './llmService.js';
+import { deduplicateNotes } from './deduplication.js';
 
 /**
  * Extract all medical entities from clinical notes
@@ -40,11 +48,33 @@ export const extractMedicalEntities = async (notes, options = {}) => {
     includeConfidence = true,
     targets = Object.values(EXTRACTION_TARGETS), // FIX: Use values (lowercase) not keys (UPPERCASE)
     useLLM = null, // null = auto, true = force LLM, false = force patterns
-    usePatterns = false
+    usePatterns = false,
+    enableDeduplication = true,
+    enablePreprocessing = true
   } = options;
 
   // Normalize input
-  const noteArray = Array.isArray(notes) ? notes : [notes];
+  let noteArray = Array.isArray(notes) ? notes : [notes];
+  
+  // Enhanced preprocessing for variable-style clinical notes
+  if (enablePreprocessing) {
+    console.log('Preprocessing clinical notes for variable styles and formats...');
+    noteArray = noteArray.map(note => preprocessClinicalNote(note));
+  }
+  
+  // Intelligent deduplication for repetitive content
+  if (enableDeduplication && noteArray.length > 1) {
+    console.log('Deduplicating repetitive content across notes...');
+    const dedupResult = deduplicateNotes(noteArray, {
+      similarityThreshold: 0.85,
+      preserveChronology: true,
+      mergeComplementary: true
+    });
+    
+    noteArray = dedupResult.deduplicated;
+    console.log(`  Deduplication: ${dedupResult.metadata.original} notes → ${dedupResult.metadata.final} notes (${dedupResult.metadata.reductionPercent}% reduction)`);
+  }
+  
   const combinedText = noteArray.join('\n\n');
   
   // Validate input
@@ -70,21 +100,23 @@ export const extractMedicalEntities = async (notes, options = {}) => {
       console.log('Running pattern extraction for data enrichment...');
       const patternResult = await extractWithPatterns(combinedText, noteArray, pathologyTypes, { targets, learnedPatterns, includeConfidence });
 
-      // Convert LLM result to our format
-      const extracted = llmResult;
-      const confidence = calculateLLMConfidence(llmResult);
+      // Merge LLM and pattern results for maximum accuracy
+      const merged = mergeLLMAndPatternResults(llmResult, patternResult.extracted);
+      const confidence = calculateMergedConfidence(llmResult, patternResult.confidence);
 
-      console.log('LLM extraction successful (with pattern fallback available)');
+      console.log('LLM extraction successful with pattern enrichment');
 
       return {
-        extracted,
+        extracted: merged,
         confidence,
         pathologyTypes,
         metadata: {
           noteCount: noteArray.length,
           totalLength: combinedText.length,
           extractionDate: new Date().toISOString(),
-          extractionMethod: 'llm',
+          extractionMethod: 'llm+patterns',
+          preprocessed: enablePreprocessing,
+          deduplicated: enableDeduplication,
           patternData: patternResult // Include pattern data for potential merging
         }
       };
@@ -881,6 +913,83 @@ const calculateLLMConfidence = (llmResult) => {
   }
   
   return confidence;
+};
+
+/**
+ * Merge LLM and pattern-based extraction results
+ * Uses LLM as primary source but enriches with pattern data
+ */
+const mergeLLMAndPatternResults = (llmResult, patternResult) => {
+  const merged = { ...llmResult };
+  
+  // For each category, merge pattern data if LLM missed something
+  for (const [category, patternData] of Object.entries(patternResult)) {
+    const llmData = merged[category];
+    
+    if (!llmData) {
+      // LLM didn't extract this category, use pattern data
+      merged[category] = patternData;
+      continue;
+    }
+    
+    // Merge arrays
+    if (Array.isArray(llmData) && Array.isArray(patternData)) {
+      // Add pattern items that aren't in LLM result
+      const llmNormalized = llmData.map(item => 
+        typeof item === 'string' ? item.toLowerCase().trim() : item
+      );
+      
+      for (const item of patternData) {
+        const normalized = typeof item === 'string' ? item.toLowerCase().trim() : item;
+        if (!llmNormalized.includes(normalized)) {
+          merged[category].push(item);
+        }
+      }
+    }
+    
+    // Merge objects - fill in null fields from pattern data
+    if (typeof llmData === 'object' && !Array.isArray(llmData) &&
+        typeof patternData === 'object' && !Array.isArray(patternData)) {
+      for (const [key, value] of Object.entries(patternData)) {
+        if ((llmData[key] === null || llmData[key] === undefined || llmData[key] === '') && 
+            (value !== null && value !== undefined && value !== '')) {
+          merged[category][key] = value;
+        }
+      }
+    }
+  }
+  
+  return merged;
+};
+
+/**
+ * Calculate merged confidence from LLM and pattern results
+ */
+const calculateMergedConfidence = (llmResult, patternConfidence) => {
+  const llmConfidence = calculateLLMConfidence(llmResult);
+  const merged = {};
+  
+  // Take the higher confidence for each category
+  const allCategories = new Set([
+    ...Object.keys(llmConfidence),
+    ...Object.keys(patternConfidence)
+  ]);
+  
+  for (const category of allCategories) {
+    const llmConf = llmConfidence[category] || 0;
+    const patternConf = patternConfidence[category] || 0;
+    
+    // Use LLM confidence as base, boost if pattern also found data
+    if (llmConf > 0 && patternConf > 0) {
+      // Both methods found data - high confidence
+      merged[category] = Math.min(0.95, Math.max(llmConf, patternConf) + 0.05);
+    } else {
+      // Only one method found data - use that confidence
+      merged[category] = Math.max(llmConf, patternConf);
+    }
+  }
+  
+  return merged;
 };
 
 /**
