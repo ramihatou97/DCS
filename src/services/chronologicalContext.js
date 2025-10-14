@@ -117,6 +117,7 @@ const extractReferenceDates = (extractedData) => {
 
 /**
  * Extract all events from extracted data
+ * Enhanced with POD (Post-Operative Day) pattern extraction
  */
 const extractEvents = (extractedData, referenceDates) => {
   const events = [];
@@ -202,7 +203,95 @@ const extractEvents = (extractedData, referenceDates) => {
     });
   }
   
+  // Extract POD (Post-Operative Day) events from source notes if available
+  // This captures daily progress notes with POD markers
+  // Pattern: POD#3 or POD 3 or Post-op day 3
+  if (extractedData.clinicalEvolution) {
+    const podEvents = extractPODEvents(extractedData.clinicalEvolution, referenceDates);
+    events.push(...podEvents);
+  }
+  
   return events;
+};
+
+/**
+ * Extract POD (Post-Operative Day) events from clinical evolution
+ * Enhanced pattern matching for multiple POD formats
+ */
+const extractPODEvents = (clinicalEvolution, referenceDates) => {
+  const events = [];
+  
+  if (!clinicalEvolution || typeof clinicalEvolution !== 'string') {
+    return events;
+  }
+  
+  // Multiple POD patterns to match various documentation styles
+  const podPatterns = [
+    /POD[#\s]*(\d+)[:\s]*([^POD]*?)(?=POD|$)/gi,  // POD#3: details or POD 3: details
+    /post[-\s]*op(?:erative)?\s+day\s+(\d+)[:\s]*([^\.]*)/gi,  // Post-op day 3: details
+    /day\s+(\d+)\s+post[-\s]*op[:\s]*([^\.]*)/gi  // Day 3 post-op: details
+  ];
+  
+  for (const pattern of podPatterns) {
+    let match;
+    while ((match = pattern.exec(clinicalEvolution)) !== null) {
+      const podNumber = parseInt(match[1]);
+      const description = match[2] ? match[2].trim() : '';
+      
+      // Skip if no description
+      if (!description || description.length < 10) continue;
+      
+      // Calculate date from POD if we have a procedure date
+      let eventDate = null;
+      if (referenceDates.procedures && referenceDates.procedures.length > 0) {
+        // Use the first procedure date as reference
+        const procedureDate = referenceDates.procedures[0].date;
+        eventDate = addDays(procedureDate, podNumber);
+      } else if (referenceDates.admission) {
+        // Fallback to admission date + POD
+        eventDate = addDays(referenceDates.admission, podNumber);
+      }
+      
+      events.push({
+        type: 'pod_update',
+        date: eventDate,
+        dateType: eventDate ? 'calculated' : 'relative',
+        description: `POD ${podNumber}: ${description.substring(0, 100)}`,
+        details: { pod: podNumber, notes: description },
+        priority: 4,
+        podNumber
+      });
+    }
+  }
+  
+  // Sort by POD number and deduplicate by day
+  const deduplicated = deduplicatePODEvents(events);
+  
+  return deduplicated;
+};
+
+/**
+ * Deduplicate POD events - merge events from same POD
+ */
+const deduplicatePODEvents = (events) => {
+  const byPOD = new Map();
+  
+  for (const event of events) {
+    if (!event.podNumber) continue;
+    
+    const key = event.podNumber;
+    
+    if (!byPOD.has(key)) {
+      byPOD.set(key, event);
+    } else {
+      // Merge descriptions if multiple entries for same POD
+      const existing = byPOD.get(key);
+      existing.description = `${existing.description}; ${event.description}`;
+      existing.details.notes = `${existing.details.notes} ${event.details.notes}`;
+    }
+  }
+  
+  return Array.from(byPOD.values());
 };
 
 /**

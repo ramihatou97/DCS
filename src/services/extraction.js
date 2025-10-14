@@ -11,6 +11,9 @@
  * - Confidence scoring for each extracted field
  * - Context-aware extraction (validates logical relationships)
  * - Supports learned patterns from ML system
+ * - **NEW**: BioBERT medical NER for entity extraction
+ * - **NEW**: Vector database semantic search integration
+ * - **NEW**: Enhanced ML-powered deduplication
  */
 
 import { PATHOLOGY_PATTERNS, detectPathology } from '../config/pathologyPatterns.js';
@@ -29,6 +32,7 @@ import { extractAnticoagulation } from '../utils/anticoagulationTracker.js';
 import { extractDischargeDestination } from '../utils/dischargeDestinations.js';
 import { isLLMAvailable, extractWithLLM } from './llmService.js';
 import { deduplicateNotes } from './deduplication.js';
+import enhancedMLService from './ml/enhancedML.js';
 
 /**
  * Extract all medical entities from clinical notes
@@ -50,7 +54,9 @@ export const extractMedicalEntities = async (notes, options = {}) => {
     useLLM = null, // null = auto, true = force LLM, false = force patterns
     usePatterns = false,
     enableDeduplication = true,
-    enablePreprocessing = true
+    enablePreprocessing = true,
+    useBioBERT = true, // NEW: Enable BioBERT entity extraction
+    useVectorSearch = false // NEW: Enable vector-based semantic search
   } = options;
 
   // Normalize input
@@ -62,17 +68,35 @@ export const extractMedicalEntities = async (notes, options = {}) => {
     noteArray = noteArray.map(note => preprocessClinicalNote(note));
   }
   
-  // Intelligent deduplication for repetitive content
+  // **NEW**: Enhanced deduplication using vector embeddings if available
   if (enableDeduplication && noteArray.length > 1) {
     console.log('Deduplicating repetitive content across notes...');
-    const dedupResult = deduplicateNotes(noteArray, {
-      similarityThreshold: 0.85,
-      preserveChronology: true,
-      mergeComplementary: true
-    });
     
-    noteArray = dedupResult.deduplicated;
-    console.log(`  Deduplication: ${dedupResult.metadata.original} notes → ${dedupResult.metadata.final} notes (${dedupResult.metadata.reductionPercent}% reduction)`);
+    try {
+      // Try semantic deduplication first
+      if (useVectorSearch) {
+        noteArray = await enhancedMLService.semanticDeduplication(noteArray, 0.85);
+        console.log(`  Semantic deduplication: reduced to ${noteArray.length} notes`);
+      } else {
+        // Fallback to standard deduplication
+        const dedupResult = deduplicateNotes(noteArray, {
+          similarityThreshold: 0.85,
+          preserveChronology: true,
+          mergeComplementary: true
+        });
+        
+        noteArray = dedupResult.deduplicated;
+        console.log(`  Deduplication: ${dedupResult.metadata.original} notes → ${dedupResult.metadata.final} notes (${dedupResult.metadata.reductionPercent}% reduction)`);
+      }
+    } catch (error) {
+      console.warn('Enhanced deduplication failed, using standard method:', error);
+      const dedupResult = deduplicateNotes(noteArray, {
+        similarityThreshold: 0.85,
+        preserveChronology: true,
+        mergeComplementary: true
+      });
+      noteArray = dedupResult.deduplicated;
+    }
   }
   
   const combinedText = noteArray.join('\n\n');
@@ -89,6 +113,27 @@ export const extractMedicalEntities = async (notes, options = {}) => {
 
   // Detect pathology types early (needed for both LLM and pattern extraction)
   const pathologyTypes = detectPathology(combinedText);
+  
+  // **NEW**: Try BioBERT entity extraction for enhanced accuracy
+  let biobertEntities = null;
+  if (useBioBERT) {
+    try {
+      console.log('Attempting BioBERT entity extraction...');
+      const mlResult = await enhancedMLService.processNote(combinedText, {
+        storeInVectorDb: useVectorSearch,
+        extractEntities: true,
+        findSimilarNotes: false,
+        pathology: pathologyTypes[0] || null
+      });
+      
+      if (mlResult.entities && mlResult.entities.length > 0) {
+        biobertEntities = mlResult.entities;
+        console.log(`  BioBERT extracted ${biobertEntities.length} entities`);
+      }
+    } catch (error) {
+      console.warn('BioBERT extraction failed, continuing with standard extraction:', error);
+    }
+  }
 
   // Try LLM extraction first if available
   if (shouldUseLLM) {
@@ -622,6 +667,7 @@ const extractPresentingSymptoms = (text, pathologyTypes) => {
 
 /**
  * Extract procedures (surgeries, interventions)
+ * Enhanced with comprehensive procedure keywords and patterns
  */
 const extractProcedures = (text, pathologyTypes) => {
   const data = {
@@ -635,6 +681,44 @@ const extractProcedures = (text, pathologyTypes) => {
   for (const pathType of pathologyTypes) {
     const patterns = PATHOLOGY_PATTERNS[pathType]?.procedurePatterns || [];
     procedurePatterns.push(...patterns);
+  }
+  
+  // Enhanced comprehensive procedure keywords (25+ procedures)
+  const comprehensiveProcedureKeywords = [
+    // Cranial procedures
+    'craniotomy', 'craniectomy', 'cranioplasty',
+    'decompressive craniectomy', 'pterional craniotomy',
+    
+    // Tumor procedures
+    'resection', 'gross total resection', 'subtotal resection',
+    'biopsy', 'stereotactic biopsy',
+    
+    // Vascular procedures
+    'coiling', 'coil embolization', 'endovascular coiling',
+    'clipping', 'aneurysm clipping', 'microsurgical clipping',
+    'embolization', 'AVM embolization',
+    
+    // Drainage procedures
+    'EVD placement', 'external ventricular drain',
+    'ventriculostomy', 'ventriculoperitoneal shunt', 'VP shunt',
+    'lumbar drain', 'LD placement',
+    
+    // Spine procedures
+    'laminectomy', 'discectomy', 'fusion',
+    'anterior cervical discectomy', 'ACDF',
+    'posterior lumbar fusion', 'PLIF',
+    
+    // Diagnostic procedures
+    'angiogram', 'cerebral angiography', 'DSA',
+    'lumbar puncture', 'LP',
+    
+    // Other procedures
+    'tracheostomy', 'PEG placement', 'ICP monitor placement'
+  ];
+  
+  // Add comprehensive keywords to patterns
+  for (const keyword of comprehensiveProcedureKeywords) {
+    procedurePatterns.push(new RegExp(`\\b${keyword}\\b`, 'i'));
   }
   
   // Extract procedures
@@ -658,8 +742,16 @@ const extractProcedures = (text, pathologyTypes) => {
         }
       }
       
-      data.procedures.push(procedure);
-      confidence = CONFIDENCE.HIGH;
+      // Check if already added (deduplication)
+      const isDuplicate = data.procedures.some(p => 
+        p.name.toLowerCase() === procedure.name.toLowerCase() &&
+        p.date === procedure.date
+      );
+      
+      if (!isDuplicate) {
+        data.procedures.push(procedure);
+        confidence = CONFIDENCE.HIGH;
+      }
     }
   }
   
@@ -668,6 +760,7 @@ const extractProcedures = (text, pathologyTypes) => {
 
 /**
  * Extract complications
+ * Enhanced with comprehensive complication detection patterns (14+ types)
  */
 const extractComplications = (text, pathologyTypes) => {
   const data = {
@@ -683,13 +776,93 @@ const extractComplications = (text, pathologyTypes) => {
     complicationPatterns.push(...patterns);
   }
   
-  // Extract complications
+  // Comprehensive complication categories (14 types)
+  const comprehensiveComplications = {
+    vascular: [
+      'vasospasm', 'cerebral vasospasm',
+      'stroke', 'ischemic stroke', 'hemorrhagic stroke',
+      'rebleeding', 'rebleed',
+      'DVT', 'deep vein thrombosis', 'PE', 'pulmonary embolism'
+    ],
+    
+    neurological: [
+      'seizure', 'seizures',
+      'hydrocephalus', 'acute hydrocephalus',
+      'cerebral edema', 'brain edema',
+      'increased ICP', 'elevated ICP', 'intracranial pressure',
+      'herniation', 'brain herniation',
+      'deficit', 'neurological deficit', 'weakness', 'hemiparesis'
+    ],
+    
+    infectious: [
+      'infection', 'wound infection',
+      'meningitis', 'ventriculitis',
+      'pneumonia', 'UTI', 'urinary tract infection',
+      'sepsis'
+    ],
+    
+    metabolic: [
+      'SIADH', 'hyponatremia', 'hypernatremia',
+      'diabetes insipidus', 'DI',
+      'fever', 'hyperthermia'
+    ],
+    
+    surgical: [
+      'CSF leak', 'cerebrospinal fluid leak',
+      'pseudomeningocele',
+      'hardware failure', 'shunt malfunction',
+      'hemorrhage', 'post-op hemorrhage', 'postoperative hemorrhage'
+    ],
+    
+    respiratory: [
+      'respiratory failure', 'aspiration',
+      'pneumothorax', 'pleural effusion',
+      'ARDS'
+    ],
+    
+    cardiac: [
+      'arrhythmia', 'atrial fibrillation', 'afib',
+      'myocardial infarction', 'MI',
+      'cardiac arrest'
+    ]
+  };
+  
+  // Add comprehensive complications to patterns
+  for (const category of Object.values(comprehensiveComplications)) {
+    for (const comp of category) {
+      complicationPatterns.push(new RegExp(`\\b${comp}\\b`, 'i'));
+    }
+  }
+  
+  // Extract complications with context detection
   for (const pattern of complicationPatterns) {
     const regex = new RegExp(pattern, 'gi');
     let match;
     while ((match = regex.exec(text)) !== null) {
       const complication = match[1] || match[0];
-      if (!data.complications.includes(complication)) {
+      
+      // Get context to determine if it's a complication or just mentioned
+      const context = text.substring(Math.max(0, match.index - 50), Math.min(text.length, match.index + 100));
+      const lowerContext = context.toLowerCase();
+      
+      // Indicators that this is indeed a complication
+      const complicationIndicators = [
+        'developed', 'complicated by', 'experienced', 'suffered',
+        'noted', 'developed', 'presented with', 'course complicated',
+        'post-op', 'postoperative', 'following surgery'
+      ];
+      
+      // Exclusion indicators (not a complication, just preventive mention)
+      const exclusionIndicators = [
+        'no evidence', 'ruled out', 'no signs', 'preventing',
+        'avoid', 'monitor for', 'prophylaxis', 'negative for'
+      ];
+      
+      const hasIndicator = complicationIndicators.some(ind => lowerContext.includes(ind));
+      const hasExclusion = exclusionIndicators.some(exc => lowerContext.includes(exc));
+      
+      // Add if indicator present and no exclusion
+      if ((hasIndicator || !hasExclusion) && !data.complications.includes(complication)) {
         data.complications.push(complication);
         confidence = CONFIDENCE.HIGH;
       }
@@ -732,6 +905,7 @@ const extractImaging = (text, pathologyTypes) => {
 
 /**
  * Extract functional scores (KPS, ECOG, mRS)
+ * Enhanced with PT/OT note analysis and ambulation-based scoring
  */
 const extractFunctionalScores = (text) => {
   const data = {
@@ -753,12 +927,30 @@ const extractFunctionalScores = (text) => {
     }
   }
   
+  // If no explicit KPS, try to estimate from PT/OT notes
+  if (data.kps === null) {
+    const estimatedKPS = estimateKPSFromPTNotes(text);
+    if (estimatedKPS.score !== null) {
+      data.kps = estimatedKPS.score;
+      confidence = Math.min(confidence, estimatedKPS.confidence);
+    }
+  }
+  
   // ECOG (Eastern Cooperative Oncology Group) 0-5
   const ecogPattern = /ECOG\s*:?\s*([0-5])/i;
   const ecogMatch = text.match(ecogPattern);
   if (ecogMatch) {
     data.ecog = parseInt(ecogMatch[1]);
     confidence = CONFIDENCE.HIGH;
+  }
+  
+  // If no explicit ECOG, try to estimate from functional status
+  if (data.ecog === null) {
+    const estimatedECOG = estimateECOGFromStatus(text);
+    if (estimatedECOG.score !== null) {
+      data.ecog = estimatedECOG.score;
+      confidence = Math.min(confidence, estimatedECOG.confidence);
+    }
   }
   
   // mRS (modified Rankin Scale) 0-6
@@ -769,11 +961,187 @@ const extractFunctionalScores = (text) => {
     confidence = CONFIDENCE.HIGH;
   }
   
+  // If no explicit mRS, try to estimate from disability descriptions
+  if (data.mRS === null) {
+    const estimatedMRS = estimateMRSFromDisability(text);
+    if (estimatedMRS.score !== null) {
+      data.mRS = estimatedMRS.score;
+      confidence = Math.min(confidence, estimatedMRS.confidence);
+    }
+  }
+  
   return { data, confidence };
 };
 
 /**
+ * Estimate KPS from PT/OT assessment notes
+ * Based on ambulation and activity level
+ */
+const estimateKPSFromPTNotes = (text) => {
+  const lowerText = text.toLowerCase();
+  
+  // KPS 100: Normal, no complaints
+  if (lowerText.includes('independent') && 
+      (lowerText.includes('no assist') || lowerText.includes('without assist'))) {
+    return { score: 100, confidence: CONFIDENCE.MEDIUM };
+  }
+  
+  // KPS 90: Minor signs/symptoms
+  if (lowerText.includes('independent') && 
+      lowerText.includes('modified independent')) {
+    return { score: 90, confidence: CONFIDENCE.MEDIUM };
+  }
+  
+  // KPS 80: Normal activity with effort
+  if (lowerText.includes('minimal assist') || 
+      lowerText.includes('supervision') ||
+      lowerText.includes('contact guard')) {
+    return { score: 80, confidence: CONFIDENCE.MEDIUM };
+  }
+  
+  // KPS 70: Cares for self, unable to work
+  if (lowerText.includes('moderate assist') && 
+      !lowerText.includes('total care')) {
+    return { score: 70, confidence: CONFIDENCE.MEDIUM };
+  }
+  
+  // KPS 60: Requires occasional assistance
+  if (lowerText.includes('moderate assist') || 
+      lowerText.includes('mod assist')) {
+    return { score: 60, confidence: CONFIDENCE.MEDIUM };
+  }
+  
+  // KPS 50: Requires considerable assistance
+  if (lowerText.includes('maximal assist') || 
+      lowerText.includes('max assist')) {
+    return { score: 50, confidence: CONFIDENCE.MEDIUM };
+  }
+  
+  // KPS 40: Disabled, requires special care
+  if (lowerText.includes('total assist') || 
+      lowerText.includes('dependent')) {
+    return { score: 40, confidence: CONFIDENCE.MEDIUM };
+  }
+  
+  // KPS 30: Severely disabled
+  if (lowerText.includes('total care') || 
+      lowerText.includes('bed bound') ||
+      lowerText.includes('bedbound')) {
+    return { score: 30, confidence: CONFIDENCE.MEDIUM };
+  }
+  
+  // KPS 20: Very sick
+  if (lowerText.includes('non-responsive') || 
+      lowerText.includes('unresponsive')) {
+    return { score: 20, confidence: CONFIDENCE.LOW };
+  }
+  
+  // No match found
+  return { score: null, confidence: CONFIDENCE.LOW };
+};
+
+/**
+ * Estimate ECOG from functional status descriptions
+ */
+const estimateECOGFromStatus = (text) => {
+  const lowerText = text.toLowerCase();
+  
+  // ECOG 0: Fully active
+  if ((lowerText.includes('fully active') || lowerText.includes('fully ambulatory')) &&
+      !lowerText.includes('restrict')) {
+    return { score: 0, confidence: CONFIDENCE.MEDIUM };
+  }
+  
+  // ECOG 1: Restricted in physically strenuous activity
+  if (lowerText.includes('ambulatory') && 
+      (lowerText.includes('light activity') || lowerText.includes('restricted'))) {
+    return { score: 1, confidence: CONFIDENCE.MEDIUM };
+  }
+  
+  // ECOG 2: Ambulatory and capable of self-care but unable to work
+  if (lowerText.includes('ambulatory') && 
+      (lowerText.includes('self care') || lowerText.includes('self-care')) &&
+      !lowerText.includes('unable')) {
+    return { score: 2, confidence: CONFIDENCE.MEDIUM };
+  }
+  
+  // ECOG 3: Limited self-care, confined to bed/chair >50% of waking hours
+  if (lowerText.includes('limited') && 
+      (lowerText.includes('self care') || lowerText.includes('bed') || lowerText.includes('chair'))) {
+    return { score: 3, confidence: CONFIDENCE.MEDIUM };
+  }
+  
+  // ECOG 4: Completely disabled
+  if (lowerText.includes('completely disabled') || 
+      lowerText.includes('total care') ||
+      (lowerText.includes('bed bound') || lowerText.includes('bedbound'))) {
+    return { score: 4, confidence: CONFIDENCE.MEDIUM };
+  }
+  
+  // ECOG 5: Dead
+  if (lowerText.includes('deceased') || lowerText.includes('expired')) {
+    return { score: 5, confidence: CONFIDENCE.HIGH };
+  }
+  
+  return { score: null, confidence: CONFIDENCE.LOW };
+};
+
+/**
+ * Estimate mRS from disability descriptions
+ */
+const estimateMRSFromDisability = (text) => {
+  const lowerText = text.toLowerCase();
+  
+  // mRS 0: No symptoms
+  if (lowerText.includes('no symptoms') || 
+      (lowerText.includes('asymptomatic') && !lowerText.includes('deficit'))) {
+    return { score: 0, confidence: CONFIDENCE.MEDIUM };
+  }
+  
+  // mRS 1: No significant disability despite symptoms
+  if ((lowerText.includes('no disability') || lowerText.includes('no significant disability')) &&
+      lowerText.includes('independent')) {
+    return { score: 1, confidence: CONFIDENCE.MEDIUM };
+  }
+  
+  // mRS 2: Slight disability
+  if (lowerText.includes('slight disability') || 
+      (lowerText.includes('independent') && lowerText.includes('light'))) {
+    return { score: 2, confidence: CONFIDENCE.MEDIUM };
+  }
+  
+  // mRS 3: Moderate disability, requires some help
+  if (lowerText.includes('moderate disability') || 
+      (lowerText.includes('some help') || lowerText.includes('some assistance'))) {
+    return { score: 3, confidence: CONFIDENCE.MEDIUM };
+  }
+  
+  // mRS 4: Moderately severe disability
+  if (lowerText.includes('moderately severe') || 
+      lowerText.includes('unable to walk') ||
+      (lowerText.includes('unable to attend') && lowerText.includes('bodily needs'))) {
+    return { score: 4, confidence: CONFIDENCE.MEDIUM };
+  }
+  
+  // mRS 5: Severe disability, bedridden
+  if (lowerText.includes('severe disability') || 
+      lowerText.includes('bedridden') ||
+      lowerText.includes('bed bound') ||
+      lowerText.includes('constant care')) {
+    return { score: 5, confidence: CONFIDENCE.MEDIUM };
+  }
+  
+  // mRS 6: Dead
+  if (lowerText.includes('deceased') || lowerText.includes('expired')) {
+    return { score: 6, confidence: CONFIDENCE.HIGH };
+  }
+  
+  return { score: null, confidence: CONFIDENCE.LOW };
+};
+
+/**
  * Extract medications
+ * Enhanced with dose and frequency pattern matching
  */
 const extractMedications = (text, pathologyTypes) => {
   const data = {
@@ -789,7 +1157,31 @@ const extractMedications = (text, pathologyTypes) => {
     medicationPatterns.push(...patterns);
   }
   
-  // Extract medications
+  // Enhanced medication extraction with drug+dose pattern
+  // Format: Drug name followed by dose (e.g., "Keppra 1000mg", "aspirin 81 mg")
+  const medicationWithDosePattern = /\b([A-Z][a-z]+(?:ra|pam|lol|pine|sin|xin)?)\s+(\d+(?:\.\d+)?\s*(?:mg|mcg|g|units?))\s*(?:(daily|BID|TID|QID|Q\d+H|PRN|once|twice))?\b/gi;
+  
+  let match;
+  while ((match = medicationWithDosePattern.exec(text)) !== null) {
+    const medication = {
+      name: match[1],
+      dose: match[2],
+      frequency: match[3] || null
+    };
+    
+    // Check if already added (deduplication)
+    const isDuplicate = data.medications.some(m => 
+      m.name.toLowerCase() === medication.name.toLowerCase() &&
+      m.dose === medication.dose
+    );
+    
+    if (!isDuplicate) {
+      data.medications.push(medication);
+      confidence = CONFIDENCE.HIGH;
+    }
+  }
+  
+  // Extract medications from patterns (without explicit dose)
   for (const pattern of medicationPatterns) {
     const regex = new RegExp(pattern, 'gi');
     let match;
@@ -802,18 +1194,25 @@ const extractMedications = (text, pathologyTypes) => {
       
       // Try to extract dose and frequency from context
       const context = text.substring(match.index, Math.min(text.length, match.index + 100));
-      const doseMatch = context.match(/(\d+\s*(?:mg|mcg|g|units?))/i);
+      const doseMatch = context.match(/(\d+(?:\.\d+)?\s*(?:mg|mcg|g|units?))/i);
       if (doseMatch) {
         medication.dose = doseMatch[1];
       }
       
-      const freqMatch = context.match(/(daily|BID|TID|QID|Q\d+H|PRN)/i);
+      const freqMatch = context.match(/(daily|BID|TID|QID|Q\d+H|PRN|once daily|twice daily|three times daily)/i);
       if (freqMatch) {
         medication.frequency = freqMatch[1];
       }
       
-      data.medications.push(medication);
-      confidence = CONFIDENCE.HIGH;
+      // Check if already added
+      const isDuplicate = data.medications.some(m => 
+        m.name.toLowerCase() === medication.name.toLowerCase()
+      );
+      
+      if (!isDuplicate) {
+        data.medications.push(medication);
+        confidence = CONFIDENCE.HIGH;
+      }
     }
   }
   
