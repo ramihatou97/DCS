@@ -625,6 +625,7 @@ const extractImaging = (text, pathologyTypes) => {
 
 /**
  * Extract functional scores (KPS, ECOG, mRS)
+ * Enhanced with PT/OT note analysis and ambulation-based scoring
  */
 const extractFunctionalScores = (text) => {
   const data = {
@@ -646,12 +647,30 @@ const extractFunctionalScores = (text) => {
     }
   }
   
+  // If no explicit KPS, try to estimate from PT/OT notes
+  if (data.kps === null) {
+    const estimatedKPS = estimateKPSFromPTNotes(text);
+    if (estimatedKPS.score !== null) {
+      data.kps = estimatedKPS.score;
+      confidence = Math.min(confidence, estimatedKPS.confidence);
+    }
+  }
+  
   // ECOG (Eastern Cooperative Oncology Group) 0-5
   const ecogPattern = /ECOG\s*:?\s*([0-5])/i;
   const ecogMatch = text.match(ecogPattern);
   if (ecogMatch) {
     data.ecog = parseInt(ecogMatch[1]);
     confidence = CONFIDENCE.HIGH;
+  }
+  
+  // If no explicit ECOG, try to estimate from functional status
+  if (data.ecog === null) {
+    const estimatedECOG = estimateECOGFromStatus(text);
+    if (estimatedECOG.score !== null) {
+      data.ecog = estimatedECOG.score;
+      confidence = Math.min(confidence, estimatedECOG.confidence);
+    }
   }
   
   // mRS (modified Rankin Scale) 0-6
@@ -662,7 +681,182 @@ const extractFunctionalScores = (text) => {
     confidence = CONFIDENCE.HIGH;
   }
   
+  // If no explicit mRS, try to estimate from disability descriptions
+  if (data.mRS === null) {
+    const estimatedMRS = estimateMRSFromDisability(text);
+    if (estimatedMRS.score !== null) {
+      data.mRS = estimatedMRS.score;
+      confidence = Math.min(confidence, estimatedMRS.confidence);
+    }
+  }
+  
   return { data, confidence };
+};
+
+/**
+ * Estimate KPS from PT/OT assessment notes
+ * Based on ambulation and activity level
+ */
+const estimateKPSFromPTNotes = (text) => {
+  const lowerText = text.toLowerCase();
+  
+  // KPS 100: Normal, no complaints
+  if (lowerText.includes('independent') && 
+      (lowerText.includes('no assist') || lowerText.includes('without assist'))) {
+    return { score: 100, confidence: CONFIDENCE.MEDIUM };
+  }
+  
+  // KPS 90: Minor signs/symptoms
+  if (lowerText.includes('independent') && 
+      lowerText.includes('modified independent')) {
+    return { score: 90, confidence: CONFIDENCE.MEDIUM };
+  }
+  
+  // KPS 80: Normal activity with effort
+  if (lowerText.includes('minimal assist') || 
+      lowerText.includes('supervision') ||
+      lowerText.includes('contact guard')) {
+    return { score: 80, confidence: CONFIDENCE.MEDIUM };
+  }
+  
+  // KPS 70: Cares for self, unable to work
+  if (lowerText.includes('moderate assist') && 
+      !lowerText.includes('total care')) {
+    return { score: 70, confidence: CONFIDENCE.MEDIUM };
+  }
+  
+  // KPS 60: Requires occasional assistance
+  if (lowerText.includes('moderate assist') || 
+      lowerText.includes('mod assist')) {
+    return { score: 60, confidence: CONFIDENCE.MEDIUM };
+  }
+  
+  // KPS 50: Requires considerable assistance
+  if (lowerText.includes('maximal assist') || 
+      lowerText.includes('max assist')) {
+    return { score: 50, confidence: CONFIDENCE.MEDIUM };
+  }
+  
+  // KPS 40: Disabled, requires special care
+  if (lowerText.includes('total assist') || 
+      lowerText.includes('dependent')) {
+    return { score: 40, confidence: CONFIDENCE.MEDIUM };
+  }
+  
+  // KPS 30: Severely disabled
+  if (lowerText.includes('total care') || 
+      lowerText.includes('bed bound') ||
+      lowerText.includes('bedbound')) {
+    return { score: 30, confidence: CONFIDENCE.MEDIUM };
+  }
+  
+  // KPS 20: Very sick
+  if (lowerText.includes('non-responsive') || 
+      lowerText.includes('unresponsive')) {
+    return { score: 20, confidence: CONFIDENCE.LOW };
+  }
+  
+  // No match found
+  return { score: null, confidence: CONFIDENCE.LOW };
+};
+
+/**
+ * Estimate ECOG from functional status descriptions
+ */
+const estimateECOGFromStatus = (text) => {
+  const lowerText = text.toLowerCase();
+  
+  // ECOG 0: Fully active
+  if ((lowerText.includes('fully active') || lowerText.includes('fully ambulatory')) &&
+      !lowerText.includes('restrict')) {
+    return { score: 0, confidence: CONFIDENCE.MEDIUM };
+  }
+  
+  // ECOG 1: Restricted in physically strenuous activity
+  if (lowerText.includes('ambulatory') && 
+      (lowerText.includes('light activity') || lowerText.includes('restricted'))) {
+    return { score: 1, confidence: CONFIDENCE.MEDIUM };
+  }
+  
+  // ECOG 2: Ambulatory and capable of self-care but unable to work
+  if (lowerText.includes('ambulatory') && 
+      (lowerText.includes('self care') || lowerText.includes('self-care')) &&
+      !lowerText.includes('unable')) {
+    return { score: 2, confidence: CONFIDENCE.MEDIUM };
+  }
+  
+  // ECOG 3: Limited self-care, confined to bed/chair >50% of waking hours
+  if (lowerText.includes('limited') && 
+      (lowerText.includes('self care') || lowerText.includes('bed') || lowerText.includes('chair'))) {
+    return { score: 3, confidence: CONFIDENCE.MEDIUM };
+  }
+  
+  // ECOG 4: Completely disabled
+  if (lowerText.includes('completely disabled') || 
+      lowerText.includes('total care') ||
+      (lowerText.includes('bed bound') || lowerText.includes('bedbound'))) {
+    return { score: 4, confidence: CONFIDENCE.MEDIUM };
+  }
+  
+  // ECOG 5: Dead
+  if (lowerText.includes('deceased') || lowerText.includes('expired')) {
+    return { score: 5, confidence: CONFIDENCE.HIGH };
+  }
+  
+  return { score: null, confidence: CONFIDENCE.LOW };
+};
+
+/**
+ * Estimate mRS from disability descriptions
+ */
+const estimateMRSFromDisability = (text) => {
+  const lowerText = text.toLowerCase();
+  
+  // mRS 0: No symptoms
+  if (lowerText.includes('no symptoms') || 
+      (lowerText.includes('asymptomatic') && !lowerText.includes('deficit'))) {
+    return { score: 0, confidence: CONFIDENCE.MEDIUM };
+  }
+  
+  // mRS 1: No significant disability despite symptoms
+  if ((lowerText.includes('no disability') || lowerText.includes('no significant disability')) &&
+      lowerText.includes('independent')) {
+    return { score: 1, confidence: CONFIDENCE.MEDIUM };
+  }
+  
+  // mRS 2: Slight disability
+  if (lowerText.includes('slight disability') || 
+      (lowerText.includes('independent') && lowerText.includes('light'))) {
+    return { score: 2, confidence: CONFIDENCE.MEDIUM };
+  }
+  
+  // mRS 3: Moderate disability, requires some help
+  if (lowerText.includes('moderate disability') || 
+      (lowerText.includes('some help') || lowerText.includes('some assistance'))) {
+    return { score: 3, confidence: CONFIDENCE.MEDIUM };
+  }
+  
+  // mRS 4: Moderately severe disability
+  if (lowerText.includes('moderately severe') || 
+      lowerText.includes('unable to walk') ||
+      (lowerText.includes('unable to attend') && lowerText.includes('bodily needs'))) {
+    return { score: 4, confidence: CONFIDENCE.MEDIUM };
+  }
+  
+  // mRS 5: Severe disability, bedridden
+  if (lowerText.includes('severe disability') || 
+      lowerText.includes('bedridden') ||
+      lowerText.includes('bed bound') ||
+      lowerText.includes('constant care')) {
+    return { score: 5, confidence: CONFIDENCE.MEDIUM };
+  }
+  
+  // mRS 6: Dead
+  if (lowerText.includes('deceased') || lowerText.includes('expired')) {
+    return { score: 6, confidence: CONFIDENCE.HIGH };
+  }
+  
+  return { score: null, confidence: CONFIDENCE.LOW };
 };
 
 /**

@@ -7,6 +7,11 @@
  * - Near-duplicates (semantic similarity)
  * - Redundant information across multiple notes
  * - Smart merging of complementary information
+ * 
+ * Uses hybrid similarity algorithm:
+ * - Jaccard Similarity (40% weight) - word overlap
+ * - Levenshtein Distance (20% weight) - edit distance
+ * - Semantic Similarity (40% weight) - medical concepts
  */
 
 import { 
@@ -16,6 +21,13 @@ import {
   cleanText,
   areTextsSimilar
 } from '../utils/textUtils.js';
+
+import { 
+  calculateCombinedSimilarity,
+  jaccardSimilarity,
+  semanticSimilarity,
+  normalizedLevenshtein
+} from '../utils/ml/similarityEngine.js';
 
 /**
  * Deduplicate array of clinical notes
@@ -261,7 +273,8 @@ const calculateNotePriority = (note, entities, temporalMarkers) => {
 };
 
 /**
- * Remove near-duplicate notes based on similarity
+ * Remove near-duplicate notes based on hybrid similarity
+ * Uses combined similarity algorithm with Jaccard, Levenshtein, and Semantic
  */
 const removeNearDuplicates = (analyzedNotes, threshold) => {
   const kept = [];
@@ -271,11 +284,13 @@ const removeNearDuplicates = (analyzedNotes, threshold) => {
     const current = analyzedNotes[i];
     let isDuplicate = false;
     
-    // Compare with already kept notes
+    // Compare with already kept notes using hybrid similarity
     for (const keptNote of kept) {
-      const similarity = calculateSimilarity(
-        current.signature,
-        keptNote.signature
+      // Use hybrid similarity algorithm (40% Jaccard, 20% Levenshtein, 40% Semantic)
+      const similarity = calculateCombinedSimilarity(
+        current.normalized,
+        keptNote.normalized,
+        { jaccard: 0.4, levenshtein: 0.2, semantic: 0.4 }
       );
       
       if (similarity >= threshold) {
@@ -304,6 +319,7 @@ const removeNearDuplicates = (analyzedNotes, threshold) => {
 
 /**
  * Deduplicate sentences across all notes
+ * Uses hybrid similarity for better detection
  */
 const deduplicateSentences = (analyzedNotes, threshold) => {
   // Track seen sentences globally
@@ -319,14 +335,19 @@ const deduplicateSentences = (analyzedNotes, threshold) => {
       const normalized = normalizeText(sentence);
       let isDuplicate = false;
       
-      // Check against previously seen sentences
+      // Check against previously seen sentences using hybrid similarity
       for (const [seenNormalized, seenData] of seenSentences.entries()) {
-        const similarity = calculateSimilarity(normalized, seenNormalized);
+        // Use hybrid similarity with early termination optimization
+        const similarity = calculateCombinedSimilarity(
+          normalized, 
+          seenNormalized,
+          { jaccard: 0.4, levenshtein: 0.2, semantic: 0.4 }
+        );
         
         if (similarity >= threshold) {
           isDuplicate = true;
           seenData.noteIndices.push(noteIndex);
-          break;
+          break; // Early termination for performance
         }
       }
       
@@ -373,9 +394,11 @@ const mergeComplementaryNotes = (analyzedNotes) => {
       const candidate = analyzedNotes[j];
       
       // Check if notes are complementary (low similarity but related content)
-      const similarity = calculateSimilarity(
-        currentNote.signature,
-        candidate.signature
+      // Use hybrid similarity for better detection
+      const similarity = calculateCombinedSimilarity(
+        currentNote.normalized,
+        candidate.normalized,
+        { jaccard: 0.4, levenshtein: 0.2, semantic: 0.4 }
       );
       
       // Complementary: similarity between 0.3-0.6 (related but not duplicate)

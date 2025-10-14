@@ -2,15 +2,22 @@
  * Deduplication Service
  * 
  * CRITICAL FOR ACCURACY: Removes duplicate information across repetitive notes
- * Uses Jaccard similarity and Levenshtein distance
+ * Uses hybrid similarity algorithm:
+ * - Jaccard Similarity (40% weight)
+ * - Levenshtein Distance (20% weight)
+ * - Semantic Similarity (40% weight)
+ * 
+ * Threshold: 0.85 (85% similarity triggers deduplication)
+ * Performance: O(n²) time complexity with early termination optimization
  */
 
 import { calculateSimilarity, levenshteinDistance } from '../../utils/textUtils';
+import { calculateCombinedSimilarity } from '../../utils/ml/similarityEngine';
 import { SIMILARITY_THRESHOLDS } from '../../config/constants';
 
 class DeduplicationService {
   /**
-   * Deduplicate array of text items
+   * Deduplicate array of text items using hybrid similarity
    */
   deduplicate(items, threshold = SIMILARITY_THRESHOLDS.HIGH) {
     if (!items || items.length === 0) return [];
@@ -23,15 +30,20 @@ class DeduplicationService {
       
       const normalized = item.trim().toLowerCase();
       
-      // Check if we've seen something very similar
+      // Check if we've seen something very similar using hybrid algorithm
       let isDuplicate = false;
       
       for (const seenItem of seen) {
-        const similarity = calculateSimilarity(normalized, seenItem);
+        // Use hybrid similarity: Jaccard 40%, Levenshtein 20%, Semantic 40%
+        const similarity = calculateCombinedSimilarity(
+          normalized, 
+          seenItem,
+          { jaccard: 0.4, levenshtein: 0.2, semantic: 0.4 }
+        );
         
         if (similarity >= threshold) {
           isDuplicate = true;
-          break;
+          break; // Early termination optimization
         }
       }
       
@@ -45,7 +57,7 @@ class DeduplicationService {
   }
   
   /**
-   * Deduplicate with confidence scoring
+   * Deduplicate with confidence scoring using hybrid similarity
    */
   deduplicateWithConfidence(items, threshold = SIMILARITY_THRESHOLDS.HIGH) {
     if (!items || items.length === 0) return [];
@@ -61,7 +73,12 @@ class DeduplicationService {
       // Try to add to existing cluster
       for (const cluster of clusters) {
         const representative = cluster.items[0].normalized;
-        const similarity = calculateSimilarity(normalized, representative);
+        // Use hybrid similarity algorithm
+        const similarity = calculateCombinedSimilarity(
+          normalized, 
+          representative,
+          { jaccard: 0.4, levenshtein: 0.2, semantic: 0.4 }
+        );
         
         if (similarity >= threshold) {
           cluster.items.push({
@@ -71,7 +88,7 @@ class DeduplicationService {
           });
           cluster.count++;
           addedToCluster = true;
-          break;
+          break; // Early termination
         }
       }
       
@@ -99,7 +116,7 @@ class DeduplicationService {
   }
   
   /**
-   * Merge similar text segments
+   * Merge similar text segments using hybrid similarity
    */
   mergeSegments(segments, threshold = SIMILARITY_THRESHOLDS.MEDIUM) {
     if (!segments || segments.length === 0) return [];
@@ -113,14 +130,15 @@ class DeduplicationService {
       const segment = segments[i];
       const similar = [segment];
       
-      // Find all similar segments
+      // Find all similar segments using hybrid similarity
       for (let j = i + 1; j < segments.length; j++) {
         if (processed.has(j)) continue;
         
         const other = segments[j];
-        const similarity = calculateSimilarity(
+        const similarity = calculateCombinedSimilarity(
           segment.toLowerCase(),
-          other.toLowerCase()
+          other.toLowerCase(),
+          { jaccard: 0.4, levenshtein: 0.2, semantic: 0.4 }
         );
         
         if (similarity >= threshold) {
