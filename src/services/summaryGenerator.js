@@ -9,11 +9,14 @@
  * - Quality scoring
  * - Export formatting (PDF, text, HL7, FHIR)
  * - Template customization
+ * - Chronological context awareness
+ * - Advanced deduplication
  */
 
 import { extractMedicalEntities } from './extraction.js';
 import { validateExtraction, getValidationSummary } from './validation.js';
 import { generateNarrative, formatNarrativeForExport, generateConciseSummary } from './narrativeEngine.js';
+import { buildChronologicalTimeline, generateTimelineNarrative } from './chronologicalContext.js';
 import { getTemplateByPathology, generateFromTemplate } from '../utils/templates.js';
 import { formatDate } from '../utils/dateUtils.js';
 
@@ -51,16 +54,37 @@ export const generateDischargeSummary = async (notes, options = {}) => {
   const startTime = Date.now();
 
   try {
-    // Step 1: Extract data from notes
-    const extraction = extractMedicalEntities(notes, {
+    // Step 1: Extract data from notes (with preprocessing and deduplication)
+    const extraction = await extractMedicalEntities(notes, {
       learnedPatterns,
-      includeConfidence: true
+      includeConfidence: true,
+      enableDeduplication: true,
+      enablePreprocessing: true
     });
 
     result.extractedData = extraction.extracted;
     result.metadata.pathologyTypes = extraction.pathologyTypes;
+    result.metadata.extractionMethod = extraction.metadata.extractionMethod;
+    result.metadata.preprocessed = extraction.metadata.preprocessed;
+    result.metadata.deduplicated = extraction.metadata.deduplicated;
 
-    // Step 2: Validate extracted data
+    // Step 2: Build chronological timeline with context awareness
+    console.log('Building chronological timeline...');
+    const timeline = buildChronologicalTimeline(
+      extraction.extracted,
+      Array.isArray(notes) ? notes : [notes],
+      {
+        resolveRelativeDates: true,
+        sortEvents: true,
+        deduplicateEvents: true,
+        includeContext: true
+      }
+    );
+    
+    result.timeline = timeline;
+    result.metadata.timelineCompleteness = timeline.metadata.completeness;
+
+    // Step 3: Validate extracted data
     if (validateData) {
       const validation = validateExtraction(
         extraction.extracted,
@@ -83,7 +107,7 @@ export const generateDischargeSummary = async (notes, options = {}) => {
       }
     }
 
-    // Step 3: Generate narrative
+    // Step 4: Generate narrative with chronological context
     const pathologyType = extraction.pathologyTypes[0] || 'general';
     
     let narrative;
@@ -91,14 +115,15 @@ export const generateDischargeSummary = async (notes, options = {}) => {
       // Use specific template
       narrative = generateFromTemplate(template, result.extractedData);
     } else {
-      // Generate narrative
-      narrative = generateNarrative(result.extractedData, {
+      // Generate narrative with source notes and timeline
+      const sourceNotes = Array.isArray(notes) ? notes.join('\n\n') : notes;
+      narrative = await generateNarrative(result.extractedData, sourceNotes, {
         pathologyType,
-        style: options.style || 'formal'
+        style: options.style || 'formal',
       });
     }
 
-    // Step 4: Format summary
+    // Step 5: Format summary
     if (format === 'text') {
       result.summary = formatNarrativeForExport(narrative, {
         includeHeaders: true,
@@ -108,11 +133,12 @@ export const generateDischargeSummary = async (notes, options = {}) => {
       result.summary = narrative;
     }
 
-    // Step 5: Calculate quality score
+    // Step 6: Calculate quality score (including timeline completeness)
     result.qualityScore = calculateQualityScore(
       result.extractedData,
       result.validation,
-      narrative
+      narrative,
+      timeline
     );
 
     // Success
@@ -135,27 +161,36 @@ export const generateDischargeSummary = async (notes, options = {}) => {
  * Calculate quality score for generated summary
  * 
  * Score based on:
- * - Data completeness (40%)
- * - Validation confidence (30%)
- * - Narrative coherence (30%)
+ * - Data completeness (35%)
+ * - Validation confidence (25%)
+ * - Narrative coherence (25%)
+ * - Timeline completeness (15%)
  */
-const calculateQualityScore = (extractedData, validation, narrative) => {
+const calculateQualityScore = (extractedData, validation, narrative, timeline) => {
   let score = 0;
 
-  // Data completeness (40 points)
+  // Data completeness (35 points)
   const completenessScore = calculateCompletenessScore(extractedData);
-  score += completenessScore * 0.4;
+  score += completenessScore * 0.35;
 
-  // Validation confidence (30 points)
+  // Validation confidence (25 points)
   if (validation) {
-    score += (validation.confidence / 100) * 0.3;
+    score += (validation.confidence / 100) * 0.25;
   } else {
-    score += 0.3; // Assume perfect if no validation
+    score += 0.25; // Assume perfect if no validation
   }
 
-  // Narrative coherence (30 points)
+  // Narrative coherence (25 points)
   const coherenceScore = calculateCoherenceScore(narrative);
-  score += coherenceScore * 0.3;
+  score += coherenceScore * 0.25;
+  
+  // Timeline completeness (15 points)
+  if (timeline && timeline.metadata && timeline.metadata.completeness) {
+    const timelineScore = timeline.metadata.completeness.score / 100;
+    score += timelineScore * 0.15;
+  } else {
+    score += 0.10; // Partial credit if timeline not available
+  }
 
   return Math.round(score * 100);
 };
