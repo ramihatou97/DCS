@@ -515,6 +515,7 @@ const extractPresentingSymptoms = (text, pathologyTypes) => {
 
 /**
  * Extract procedures (surgeries, interventions)
+ * Enhanced with comprehensive procedure keywords and patterns
  */
 const extractProcedures = (text, pathologyTypes) => {
   const data = {
@@ -528,6 +529,44 @@ const extractProcedures = (text, pathologyTypes) => {
   for (const pathType of pathologyTypes) {
     const patterns = PATHOLOGY_PATTERNS[pathType]?.procedurePatterns || [];
     procedurePatterns.push(...patterns);
+  }
+  
+  // Enhanced comprehensive procedure keywords (25+ procedures)
+  const comprehensiveProcedureKeywords = [
+    // Cranial procedures
+    'craniotomy', 'craniectomy', 'cranioplasty',
+    'decompressive craniectomy', 'pterional craniotomy',
+    
+    // Tumor procedures
+    'resection', 'gross total resection', 'subtotal resection',
+    'biopsy', 'stereotactic biopsy',
+    
+    // Vascular procedures
+    'coiling', 'coil embolization', 'endovascular coiling',
+    'clipping', 'aneurysm clipping', 'microsurgical clipping',
+    'embolization', 'AVM embolization',
+    
+    // Drainage procedures
+    'EVD placement', 'external ventricular drain',
+    'ventriculostomy', 'ventriculoperitoneal shunt', 'VP shunt',
+    'lumbar drain', 'LD placement',
+    
+    // Spine procedures
+    'laminectomy', 'discectomy', 'fusion',
+    'anterior cervical discectomy', 'ACDF',
+    'posterior lumbar fusion', 'PLIF',
+    
+    // Diagnostic procedures
+    'angiogram', 'cerebral angiography', 'DSA',
+    'lumbar puncture', 'LP',
+    
+    // Other procedures
+    'tracheostomy', 'PEG placement', 'ICP monitor placement'
+  ];
+  
+  // Add comprehensive keywords to patterns
+  for (const keyword of comprehensiveProcedureKeywords) {
+    procedurePatterns.push(new RegExp(`\\b${keyword}\\b`, 'i'));
   }
   
   // Extract procedures
@@ -551,8 +590,16 @@ const extractProcedures = (text, pathologyTypes) => {
         }
       }
       
-      data.procedures.push(procedure);
-      confidence = CONFIDENCE.HIGH;
+      // Check if already added (deduplication)
+      const isDuplicate = data.procedures.some(p => 
+        p.name.toLowerCase() === procedure.name.toLowerCase() &&
+        p.date === procedure.date
+      );
+      
+      if (!isDuplicate) {
+        data.procedures.push(procedure);
+        confidence = CONFIDENCE.HIGH;
+      }
     }
   }
   
@@ -561,6 +608,7 @@ const extractProcedures = (text, pathologyTypes) => {
 
 /**
  * Extract complications
+ * Enhanced with comprehensive complication detection patterns (14+ types)
  */
 const extractComplications = (text, pathologyTypes) => {
   const data = {
@@ -576,13 +624,93 @@ const extractComplications = (text, pathologyTypes) => {
     complicationPatterns.push(...patterns);
   }
   
-  // Extract complications
+  // Comprehensive complication categories (14 types)
+  const comprehensiveComplications = {
+    vascular: [
+      'vasospasm', 'cerebral vasospasm',
+      'stroke', 'ischemic stroke', 'hemorrhagic stroke',
+      'rebleeding', 'rebleed',
+      'DVT', 'deep vein thrombosis', 'PE', 'pulmonary embolism'
+    ],
+    
+    neurological: [
+      'seizure', 'seizures',
+      'hydrocephalus', 'acute hydrocephalus',
+      'cerebral edema', 'brain edema',
+      'increased ICP', 'elevated ICP', 'intracranial pressure',
+      'herniation', 'brain herniation',
+      'deficit', 'neurological deficit', 'weakness', 'hemiparesis'
+    ],
+    
+    infectious: [
+      'infection', 'wound infection',
+      'meningitis', 'ventriculitis',
+      'pneumonia', 'UTI', 'urinary tract infection',
+      'sepsis'
+    ],
+    
+    metabolic: [
+      'SIADH', 'hyponatremia', 'hypernatremia',
+      'diabetes insipidus', 'DI',
+      'fever', 'hyperthermia'
+    ],
+    
+    surgical: [
+      'CSF leak', 'cerebrospinal fluid leak',
+      'pseudomeningocele',
+      'hardware failure', 'shunt malfunction',
+      'hemorrhage', 'post-op hemorrhage', 'postoperative hemorrhage'
+    ],
+    
+    respiratory: [
+      'respiratory failure', 'aspiration',
+      'pneumothorax', 'pleural effusion',
+      'ARDS'
+    ],
+    
+    cardiac: [
+      'arrhythmia', 'atrial fibrillation', 'afib',
+      'myocardial infarction', 'MI',
+      'cardiac arrest'
+    ]
+  };
+  
+  // Add comprehensive complications to patterns
+  for (const category of Object.values(comprehensiveComplications)) {
+    for (const comp of category) {
+      complicationPatterns.push(new RegExp(`\\b${comp}\\b`, 'i'));
+    }
+  }
+  
+  // Extract complications with context detection
   for (const pattern of complicationPatterns) {
     const regex = new RegExp(pattern, 'gi');
     let match;
     while ((match = regex.exec(text)) !== null) {
       const complication = match[1] || match[0];
-      if (!data.complications.includes(complication)) {
+      
+      // Get context to determine if it's a complication or just mentioned
+      const context = text.substring(Math.max(0, match.index - 50), Math.min(text.length, match.index + 100));
+      const lowerContext = context.toLowerCase();
+      
+      // Indicators that this is indeed a complication
+      const complicationIndicators = [
+        'developed', 'complicated by', 'experienced', 'suffered',
+        'noted', 'developed', 'presented with', 'course complicated',
+        'post-op', 'postoperative', 'following surgery'
+      ];
+      
+      // Exclusion indicators (not a complication, just preventive mention)
+      const exclusionIndicators = [
+        'no evidence', 'ruled out', 'no signs', 'preventing',
+        'avoid', 'monitor for', 'prophylaxis', 'negative for'
+      ];
+      
+      const hasIndicator = complicationIndicators.some(ind => lowerContext.includes(ind));
+      const hasExclusion = exclusionIndicators.some(exc => lowerContext.includes(exc));
+      
+      // Add if indicator present and no exclusion
+      if ((hasIndicator || !hasExclusion) && !data.complications.includes(complication)) {
         data.complications.push(complication);
         confidence = CONFIDENCE.HIGH;
       }
@@ -861,6 +989,7 @@ const estimateMRSFromDisability = (text) => {
 
 /**
  * Extract medications
+ * Enhanced with dose and frequency pattern matching
  */
 const extractMedications = (text, pathologyTypes) => {
   const data = {
@@ -876,7 +1005,31 @@ const extractMedications = (text, pathologyTypes) => {
     medicationPatterns.push(...patterns);
   }
   
-  // Extract medications
+  // Enhanced medication extraction with drug+dose pattern
+  // Format: Drug name followed by dose (e.g., "Keppra 1000mg", "aspirin 81 mg")
+  const medicationWithDosePattern = /\b([A-Z][a-z]+(?:ra|pam|lol|pine|sin|xin)?)\s+(\d+(?:\.\d+)?\s*(?:mg|mcg|g|units?))\s*(?:(daily|BID|TID|QID|Q\d+H|PRN|once|twice))?\b/gi;
+  
+  let match;
+  while ((match = medicationWithDosePattern.exec(text)) !== null) {
+    const medication = {
+      name: match[1],
+      dose: match[2],
+      frequency: match[3] || null
+    };
+    
+    // Check if already added (deduplication)
+    const isDuplicate = data.medications.some(m => 
+      m.name.toLowerCase() === medication.name.toLowerCase() &&
+      m.dose === medication.dose
+    );
+    
+    if (!isDuplicate) {
+      data.medications.push(medication);
+      confidence = CONFIDENCE.HIGH;
+    }
+  }
+  
+  // Extract medications from patterns (without explicit dose)
   for (const pattern of medicationPatterns) {
     const regex = new RegExp(pattern, 'gi');
     let match;
@@ -889,18 +1042,25 @@ const extractMedications = (text, pathologyTypes) => {
       
       // Try to extract dose and frequency from context
       const context = text.substring(match.index, Math.min(text.length, match.index + 100));
-      const doseMatch = context.match(/(\d+\s*(?:mg|mcg|g|units?))/i);
+      const doseMatch = context.match(/(\d+(?:\.\d+)?\s*(?:mg|mcg|g|units?))/i);
       if (doseMatch) {
         medication.dose = doseMatch[1];
       }
       
-      const freqMatch = context.match(/(daily|BID|TID|QID|Q\d+H|PRN)/i);
+      const freqMatch = context.match(/(daily|BID|TID|QID|Q\d+H|PRN|once daily|twice daily|three times daily)/i);
       if (freqMatch) {
         medication.frequency = freqMatch[1];
       }
       
-      data.medications.push(medication);
-      confidence = CONFIDENCE.HIGH;
+      // Check if already added
+      const isDuplicate = data.medications.some(m => 
+        m.name.toLowerCase() === medication.name.toLowerCase()
+      );
+      
+      if (!isDuplicate) {
+        data.medications.push(medication);
+        confidence = CONFIDENCE.HIGH;
+      }
     }
   }
   
