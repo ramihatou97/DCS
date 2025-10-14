@@ -45,3 +45,22 @@ api-keys.json
 secrets.json
 backend/.env
 .env.rtf
+
+# Temporary files
+/tmp/**
+*.tmp
+*.temp
+
+# Debug files
+debug.log
+error.log
+
+# Test output
+test-results/
+*.test.local
+
+# IDE specific
+*.code-workspace
+
+# OS specific
+Thumbs.db
