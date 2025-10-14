@@ -32,29 +32,52 @@ export const CONFIDENCE = {
 
 // Extraction Targets (comprehensive field list)
 export const EXTRACTION_TARGETS = {
+  // Core Demographics & Timeline
   DEMOGRAPHICS: 'demographics',
   DATES: 'dates',
+
+  // Admission & Presentation
   PATHOLOGY: 'pathology',
   PRESENTING_SYMPTOMS: 'presentingSymptoms',
+  ADMISSION_STATUS: 'admissionStatus',
+  PHYSICAL_EXAM: 'physicalExam',
+  NEUROLOGICAL_EXAM: 'neurologicalExam',
+
+  // Hospital Course
+  HOSPITAL_COURSE: 'hospitalCourse',
   PROCEDURES: 'procedures',
   COMPLICATIONS: 'complications',
+  SIGNIFICANT_EVENTS: 'significantEvents',
+  ICU_STAY: 'icuStay',
+
+  // Clinical Status
+  PRE_OP_DEFICITS: 'preOpDeficits',
+  POST_OP_DEFICITS: 'postOpDeficits',
   ANTICOAGULATION: 'anticoagulation',
   IMAGING: 'imaging',
+  LABS: 'labs',
+  VITALS: 'vitals',
+
+  // Functional & Discharge
   FUNCTIONAL_SCORES: 'functionalScores',
   MEDICATIONS: 'medications',
+  CONSULTATIONS: 'consultations',
   FOLLOW_UP: 'followUp',
   DISCHARGE_DESTINATION: 'dischargeDestination',
+  DISCHARGE_CONDITION: 'dischargeCondition',
+
+  // Special Categories
   ONCOLOGY: 'oncology',
-  // Legacy/alias fields for backwards compatibility
   MEDICAL_HISTORY: 'medicalHistory',
+
+  // Legacy/alias fields for backwards compatibility
   PRESENTATION: 'presentation',
   DIAGNOSTIC_WORKUP: 'diagnosticWorkup',
   MANAGEMENT: 'management',
   CLINICAL_EVOLUTION: 'clinicalEvolution',
-  CONSULTATIONS: 'consultations',
-  NEUROLOGICAL_EXAMS: 'neurologicalExams',
+  NEUROLOGICAL_EXAMS: 'neurologicalExam',
   FAMILY_MEETINGS: 'familyMeetings',
-  DISCHARGE_STATUS: 'dischargeStatus'
+  DISCHARGE_STATUS: 'dischargeCondition'
 };
 
 // Discharge Destinations

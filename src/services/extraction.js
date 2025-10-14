@@ -146,8 +146,15 @@ export const extractMedicalEntities = async (notes, options = {}) => {
       const patternResult = await extractWithPatterns(combinedText, noteArray, pathologyTypes, { targets, learnedPatterns, includeConfidence });
 
       // Merge LLM and pattern results for maximum accuracy
-      const merged = mergeLLMAndPatternResults(llmResult, patternResult.extracted);
-      const confidence = calculateMergedConfidence(llmResult, patternResult.confidence);
+      // Add null safety checks
+      const merged = mergeLLMAndPatternResults(
+        llmResult || {},
+        patternResult?.extracted || {}
+      );
+      const confidence = calculateMergedConfidence(
+        llmResult || {},
+        patternResult?.confidence || {}
+      );
 
       console.log('LLM extraction successful with pattern enrichment');
 
@@ -1426,8 +1433,16 @@ const calculateLLMConfidence = (llmResult) => {
  * Uses LLM as primary source but enriches with pattern data
  */
 const mergeLLMAndPatternResults = (llmResult, patternResult) => {
+  // Add null safety
+  if (!llmResult || typeof llmResult !== 'object') {
+    return patternResult || {};
+  }
+  if (!patternResult || typeof patternResult !== 'object') {
+    return llmResult || {};
+  }
+
   const merged = { ...llmResult };
-  
+
   // For each category, merge pattern data if LLM missed something
   for (const [category, patternData] of Object.entries(patternResult)) {
     const llmData = merged[category];
@@ -1472,13 +1487,21 @@ const mergeLLMAndPatternResults = (llmResult, patternResult) => {
  * Calculate merged confidence from LLM and pattern results
  */
 const calculateMergedConfidence = (llmResult, patternConfidence) => {
+  // Add null safety
+  if (!llmResult || typeof llmResult !== 'object') {
+    return patternConfidence || {};
+  }
+  if (!patternConfidence || typeof patternConfidence !== 'object') {
+    patternConfidence = {};
+  }
+
   const llmConfidence = calculateLLMConfidence(llmResult);
   const merged = {};
-  
+
   // Take the higher confidence for each category
   const allCategories = new Set([
-    ...Object.keys(llmConfidence),
-    ...Object.keys(patternConfidence)
+    ...Object.keys(llmConfidence || {}),
+    ...Object.keys(patternConfidence || {})
   ]);
   
   for (const category of allCategories) {
