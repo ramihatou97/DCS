@@ -30,21 +30,31 @@ export const CONFIDENCE = {
   REVIEW_THRESHOLD: 0.70 // Flag for manual review
 };
 
-// Extraction Targets (13 critical fields)
+// Extraction Targets (comprehensive field list)
 export const EXTRACTION_TARGETS = {
   DEMOGRAPHICS: 'demographics',
+  DATES: 'dates',
+  PATHOLOGY: 'pathology',
+  PRESENTING_SYMPTOMS: 'presentingSymptoms',
+  PROCEDURES: 'procedures',
+  COMPLICATIONS: 'complications',
   ANTICOAGULATION: 'anticoagulation',
+  IMAGING: 'imaging',
+  FUNCTIONAL_SCORES: 'functionalScores',
+  MEDICATIONS: 'medications',
+  FOLLOW_UP: 'followUp',
+  DISCHARGE_DESTINATION: 'dischargeDestination',
+  ONCOLOGY: 'oncology',
+  // Legacy/alias fields for backwards compatibility
   MEDICAL_HISTORY: 'medicalHistory',
   PRESENTATION: 'presentation',
   DIAGNOSTIC_WORKUP: 'diagnosticWorkup',
   MANAGEMENT: 'management',
   CLINICAL_EVOLUTION: 'clinicalEvolution',
   CONSULTATIONS: 'consultations',
-  COMPLICATIONS: 'complications',
   NEUROLOGICAL_EXAMS: 'neurologicalExams',
   FAMILY_MEETINGS: 'familyMeetings',
-  DISCHARGE_STATUS: 'dischargeStatus',
-  FOLLOW_UP: 'followUp'
+  DISCHARGE_STATUS: 'dischargeStatus'
 };
 
 // Discharge Destinations

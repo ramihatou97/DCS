@@ -4,12 +4,14 @@
  */
 
 import React, { useState } from 'react';
-import { Brain, FileText, Settings, Activity, CheckCircle } from 'lucide-react';
+import { Brain, FileText, Settings, Activity, CheckCircle, TrendingUp, Upload as UploadIcon } from 'lucide-react';
 import { AppProvider } from './context/AppContext.jsx';
 import BatchUpload from './components/BatchUpload.jsx';
 import ExtractedDataReview from './components/ExtractedDataReview.jsx';
 import SummaryGeneratorComponent from './components/SummaryGenerator.jsx';
 import SettingsComponent from './components/Settings.jsx';
+import LearningDashboard from './components/LearningDashboard.jsx';
+import SummaryImporter from './components/SummaryImporter.jsx';
 
 // Import services
 import { extractMedicalEntities } from './services/extraction.js';
@@ -34,6 +36,8 @@ function App() {
     { id: 'upload', label: 'Upload Notes', icon: FileText },
     { id: 'review', label: 'Review Data', icon: Activity },
     { id: 'generate', label: 'Generate Summary', icon: Brain },
+    { id: 'learning', label: 'Learning Dashboard', icon: TrendingUp },
+    { id: 'import', label: 'Import Summary', icon: UploadIcon },
     { id: 'settings', label: 'Settings', icon: Settings },
   ];
 
@@ -212,6 +216,8 @@ function App() {
           <ExtractedDataReview
             extractedData={workflowState.extractedData}
             validation={workflowState.validation}
+            notes={workflowState.notes}
+            metadata={workflowState.metadata}
             onDataCorrected={handleDataCorrected}
             onProceedToGenerate={handleProceedToGenerate}
             canProceed={workflowState.canProceed.toGenerate}
@@ -241,6 +247,12 @@ function App() {
             notes={workflowState.notes}
           />
         );
+
+      case 'learning':
+        return <LearningDashboard />;
+
+      case 'import':
+        return <SummaryImporter />;
 
       case 'settings':
         return <SettingsComponent />;
@@ -292,10 +304,12 @@ function App() {
               {tabs.map((tab) => {
                 const Icon = tab.icon;
                 const isActive = activeTab === tab.id;
-                const canAccess = tab.id === 'upload' || 
+                const canAccess = tab.id === 'upload' ||
                                  (tab.id === 'review' && workflowState.canProceed.toReview) ||
                                  (tab.id === 'generate' && workflowState.canProceed.toGenerate) ||
-                                 tab.id === 'settings';
+                                 tab.id === 'settings' ||
+                                 tab.id === 'learning' ||
+                                 tab.id === 'import';
 
                 return (
                   <button

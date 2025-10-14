@@ -43,3 +43,5 @@ coverage
 *.patient
 api-keys.json
 secrets.json
+backend/.env
+.env.rtf

@@ -1,17 +1,18 @@
 /**
  * ExtractedDataReview Component
- * 
+ *
  * Interface for reviewing and editing extracted data with confidence indicators.
  * Allows manual corrections which feed into the ML learning system.
  */
 
 import React, { useState } from 'react';
-import { 
-  Check, X, AlertTriangle, Edit2, Save, ChevronDown, ChevronUp, 
+import {
+  Check, X, AlertTriangle, Edit2, Save, ChevronDown, ChevronUp,
   Info, Calendar, User, FileText, Activity, Pill, MapPin
 } from 'lucide-react';
+import { trackCorrection } from '../services/ml/correctionTracker.js';
 
-const ExtractedDataReview = ({ extractedData, validation, onDataCorrected, onProceed }) => {
+const ExtractedDataReview = ({ extractedData, validation, onDataCorrected, onProceed, notes = [], metadata = {} }) => {
   const [editingField, setEditingField] = useState(null);
   const [editedData, setEditedData] = useState({ ...extractedData });
   const [expandedSections, setExpandedSections] = useState({
@@ -49,9 +50,15 @@ const ExtractedDataReview = ({ extractedData, validation, onDataCorrected, onPro
   /**
    * Save edited field
    */
-  const saveEdit = (section, field, value) => {
+  const saveEdit = async (section, field, value) => {
     const updated = { ...editedData };
-    
+
+    // Get original value
+    const originalValue = field
+      ? extractedData[section]?.[field]
+      : extractedData[section];
+
+    // Update state
     if (field) {
       updated[section][field] = value;
     } else {
@@ -61,12 +68,49 @@ const ExtractedDataReview = ({ extractedData, validation, onDataCorrected, onPro
     setEditedData(updated);
     setEditingField(null);
 
+    // Track correction for ML learning (async, non-blocking)
+    try {
+      // Construct field path
+      const fieldPath = field ? `${section}.${field}` : section;
+
+      // Get source context from notes (if available)
+      const sourceText = notes && notes.length > 0
+        ? notes.map(n => n.content || n).join('\n\n')
+        : '';
+
+      // Get confidence score for this field
+      const fieldConfidence = validation?.confidence?.[fieldPath] || validation?.confidence || 0;
+
+      // Get pathology type
+      const pathologyTypes = metadata?.pathologyTypes || [];
+      const primaryPathology = pathologyTypes.length > 0 ? pathologyTypes[0] : 'unknown';
+
+      // Track the correction (don't await - let it run in background)
+      trackCorrection({
+        field: fieldPath,
+        originalValue,
+        correctedValue: value,
+        sourceText,
+        originalConfidence: fieldConfidence,
+        pathology: primaryPathology,
+        extractionMethod: metadata?.extractionMethod || 'unknown',
+      }).then(() => {
+        console.log(`✅ Correction tracked: ${fieldPath}`);
+      }).catch(error => {
+        console.error('Failed to track correction:', error);
+        // Don't block user if tracking fails
+      });
+    } catch (error) {
+      console.error('Correction tracking error:', error);
+      // Don't block user if tracking fails
+    }
+
     // Notify parent of correction
     if (onDataCorrected) {
       onDataCorrected({
         section,
         field,
-        before: extractedData[section]?.[field] || extractedData[section],
+        before: originalValue,
         after: value
       });
     }

@@ -38,7 +38,7 @@ export const extractMedicalEntities = async (notes, options = {}) => {
   const {
     learnedPatterns = [],
     includeConfidence = true,
-    targets = Object.keys(EXTRACTION_TARGETS),
+    targets = Object.values(EXTRACTION_TARGETS), // FIX: Use values (lowercase) not keys (UPPERCASE)
     useLLM = null, // null = auto, true = force LLM, false = force patterns
     usePatterns = false
   } = options;
@@ -57,27 +57,29 @@ export const extractMedicalEntities = async (notes, options = {}) => {
 
   console.log(`Extraction method: ${shouldUseLLM ? 'LLM-enhanced' : 'Pattern-based'}`);
 
+  // Detect pathology types early (needed for both LLM and pattern extraction)
+  const pathologyTypes = detectPathology(combinedText);
+
   // Try LLM extraction first if available
   if (shouldUseLLM) {
     try {
       console.log('Attempting LLM extraction...');
       const llmResult = await extractWithLLM(noteArray);
-      
+
       // Also run pattern extraction for comparison/merging
       console.log('Running pattern extraction for data enrichment...');
       const patternResult = await extractWithPatterns(combinedText, noteArray, pathologyTypes, { targets, learnedPatterns, includeConfidence });
-      
+
       // Convert LLM result to our format
       const extracted = llmResult;
       const confidence = calculateLLMConfidence(llmResult);
-      const pathologyTypesDetected = detectPathology(combinedText);
 
       console.log('LLM extraction successful (with pattern fallback available)');
-      
+
       return {
         extracted,
         confidence,
-        pathologyTypes: pathologyTypesDetected,
+        pathologyTypes,
         metadata: {
           noteCount: noteArray.length,
           totalLength: combinedText.length,
@@ -95,10 +97,7 @@ export const extractMedicalEntities = async (notes, options = {}) => {
   // Pattern-based extraction (fallback or explicit)
   console.log('Using pattern-based extraction');
 
-  // Detect pathology types
-  const pathologyTypes = detectPathology(combinedText);
-  
-  // Extract using patterns
+  // Extract using patterns (pathologyTypes already detected above)
   const patternResult = await extractWithPatterns(combinedText, noteArray, pathologyTypes, { targets, learnedPatterns, includeConfidence });
   
   return {
@@ -206,7 +205,7 @@ const extractWithPatterns = async (combinedText, noteArray, pathologyTypes, opti
   if (targets.includes('dischargeDestination')) {
     const destination = extractDischargeDestination(combinedText);
     extracted.dischargeDestination = destination;
-    confidence.dischargeDestination = destination.confidence || CONFIDENCE.HIGH;
+    confidence.dischargeDestination = destination?.confidence || CONFIDENCE.LOW;
   }
   
   // Oncology specific

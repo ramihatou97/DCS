@@ -65,49 +65,43 @@ const LLM_CONFIG = {
 
 /**
  * Get active LLM provider based on preferences and task
+ * Since API keys are on backend, we just return the preferred provider
+ * Backend will handle availability
  */
 export const getActiveLLMProvider = (task = null) => {
   const prefs = getPreferences();
-  
+
   // If specific task provider is set, use it
-  if (task === 'extraction' && prefs.extractionProvider && hasApiKey(prefs.extractionProvider)) {
+  if (task === 'extraction' && prefs.extractionProvider) {
     return prefs.extractionProvider;
   }
-  if (task === 'summarization' && prefs.summarizationProvider && hasApiKey(prefs.summarizationProvider)) {
+  if (task === 'summarization' && prefs.summarizationProvider) {
     return prefs.summarizationProvider;
   }
-  
+
   // If preferred provider is set, use it
-  if (prefs.preferredProvider && hasApiKey(prefs.preferredProvider)) {
+  if (prefs.preferredProvider) {
     return prefs.preferredProvider;
   }
-  
+
   // Auto-select by task priority if enabled
   if (prefs.autoSelectByTask && task && TASK_PRIORITIES[task.toUpperCase()]) {
     const priorities = TASK_PRIORITIES[task.toUpperCase()];
-    for (const provider of priorities) {
-      if (hasApiKey(provider)) {
-        return provider;
-      }
-    }
+    return priorities[0]; // Return first priority
   }
-  
-  // Fallback: use default priority order (Claude > OpenAI > Gemini)
-  const defaultPriority = ['anthropic', 'openai', 'gemini'];
-  for (const provider of defaultPriority) {
-    if (hasApiKey(provider)) {
-      return provider;
-    }
-  }
-  
-  return null;
+
+  // Fallback: use OpenAI GPT-4 (Anthropic has low credits)
+  return 'openai';
 };
 
 /**
  * Check if LLM is available
+ * Always return true since API keys are on backend (not frontend)
+ * The backend will handle the actual availability check
  */
 export const isLLMAvailable = () => {
-  return getActiveLLMProvider() !== null;
+  // Always try backend - it has the API keys
+  return true;
 };
 
 /**
@@ -132,15 +126,14 @@ export const callLLM = async (prompt, options = {}) => {
 
   // Select provider based on task priority if not specified
   const selectedProvider = provider || getActiveLLMProvider(task);
-  
+
   if (!selectedProvider) {
     throw new Error('No LLM provider configured. Please add an API key in Settings.');
   }
 
-  const apiKey = getApiKey(selectedProvider);
-  if (!apiKey) {
-    throw new Error(`No API key found for ${selectedProvider}`);
-  }
+  // API keys are on backend - we don't need to check frontend
+  // Backend will handle authentication
+  const apiKey = null; // Not needed - backend has the keys
 
   const config = LLM_CONFIG[selectedProvider];
   
@@ -192,9 +185,15 @@ const callOpenAI = async (prompt, systemPrompt, apiKey, config, options) => {
     messages[0].content += '\n\nRespond with valid JSON only.';
   }
 
+  // Get headers and remove undefined values (proxy doesn't need auth headers)
+  const headers = config.headers(apiKey);
+  const cleanHeaders = Object.fromEntries(
+    Object.entries(headers).filter(([_, v]) => v !== undefined)
+  );
+
   const response = await fetch(config.endpoint, {
     method: 'POST',
-    headers: config.headers(apiKey),
+    headers: cleanHeaders,
     body: JSON.stringify(body)
   });
 
@@ -227,9 +226,15 @@ const callAnthropic = async (prompt, systemPrompt, apiKey, config, options) => {
     ]
   };
 
+  // Get headers and remove undefined values (proxy doesn't need auth headers)
+  const headers = config.headers(apiKey);
+  const cleanHeaders = Object.fromEntries(
+    Object.entries(headers).filter(([_, v]) => v !== undefined)
+  );
+
   const response = await fetch(config.endpoint, {
     method: 'POST',
-    headers: config.headers(apiKey),
+    headers: cleanHeaders,
     body: JSON.stringify(body)
   });
 
@@ -273,7 +278,10 @@ const callGemini = async (prompt, systemPrompt, apiKey, config, options) => {
     }
   };
 
-  const response = await fetch(config.endpoint(apiKey), {
+  // Endpoint can be a function (Gemini with API key in URL) or string (proxy)
+  const endpoint = typeof config.endpoint === 'function' ? config.endpoint(apiKey) : config.endpoint;
+
+  const response = await fetch(endpoint, {
     method: 'POST',
     headers: config.headers(),
     body: JSON.stringify(body)

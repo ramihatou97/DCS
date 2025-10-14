@@ -296,7 +296,7 @@ export const normalizeWhitespace = (text) => {
 export const extractNumericValues = (text) => {
   const pattern = /(\d+(?:\.\d+)?)\s*(mg|g|kg|ml|L|mm|cm|%|mmHg|units?)/gi;
   const found = [];
-  
+
   let match;
   while ((match = pattern.exec(text)) !== null) {
     found.push({
@@ -306,6 +306,15 @@ export const extractNumericValues = (text) => {
       position: match.index
     });
   }
-  
+
   return found;
+};
+
+/**
+ * Escape special regex characters in a string
+ * Used for creating regex patterns from user input
+ */
+export const escapeRegExp = (string) => {
+  if (!string) return '';
+  return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 };
