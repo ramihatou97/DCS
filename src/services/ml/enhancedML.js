@@ -14,8 +14,6 @@
 
 import biobertNERService from './biobertNER.js';
 import vectorDatabaseService from './vectorDatabase.js';
-import { calculateCombinedSimilarity } from '../../utils/ml/similarityEngine.js';
-
 class EnhancedMLService {
   constructor() {
     this.isInitialized = false;
