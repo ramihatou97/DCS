@@ -1,0 +1,480 @@
+{
+  "extracted": {
+    "demographics": {
+      "age": 62,
+      "gender": "M"
+    },
+    "dates": {
+      "ictusDate": null,
+      "admissionDate": "2024-10-10",
+      "surgeryDates": [
+        "2024-10-12"
+      ],
+      "dischargeDate": "2024-10-20"
+    },
+    "pathology": {
+      "primaryDiagnosis": "Aneurysmal subarachnoid hemorrhage (aSAH) Hunt and Hess Grade 3 Modified Fisher Scale 3 Anterior communicating artery aneurysm, 7mm",
+      "secondaryDiagnoses": [],
+      "grades": {},
+      "location": "anterior communicating artery"
+    },
+    "presentingSymptoms": {
+      "symptoms": [],
+      "onset": "sudden onset",
+      "severity": null
+    },
+    "procedures": {
+      "procedures": [
+        {
+          "name": "coiling",
+          "date": null,
+          "details": null
+        },
+        {
+          "name": "External ventricular drain",
+          "date": null,
+          "details": null
+        },
+        {
+          "name": "angiogram",
+          "date": null,
+          "details": null
+        }
+      ]
+    },
+    "complications": {
+      "complications": [
+        "vasospasm",
+        "seizures",
+        "hydrocephalus",
+        "acute hydrocephalus",
+        "weakness",
+        "hemorrhage"
+      ]
+    },
+    "anticoagulation": {
+      "found": [
+        {
+          "medication": "ASPIRIN",
+          "brandName": "ASA",
+          "type": "antiplatelet",
+          "class": "COX inhibitor",
+          "reversal": "platelet transfusion",
+          "status": "held",
+          "context": "isode of loss of consciousness lasting approximately 2 minutes. No preceding trauma. Patient was on aspirin 81mg daily for cardiac prophylaxis.\n\nIMAGING:\n\nCT head performed in ED revealed diffuse subarachnoi"
+        }
+      ],
+      "hasAnticoagulation": true,
+      "hasCurrentAnticoagulation": false,
+      "hasReversed": false,
+      "riskLevel": "low"
+    },
+    "imaging": {
+      "findings": [
+        "performed in ED revealed diffuse subarachnoid hemorrhage in the basal cisterns and sylvian fissures bilaterally",
+        "in 4 weeks 4",
+        "resolving hemorrhage, no new infarcts"
+      ]
+    },
+    "functionalScores": {
+      "kps": 40,
+      "ecog": null,
+      "mRS": null
+    },
+    "medications": {
+      "medications": [
+        {
+          "name": "aspirin",
+          "dose": "81mg",
+          "frequency": "daily"
+        },
+        {
+          "name": "nimodipine",
+          "dose": "60mg",
+          "frequency": "q4h"
+        },
+        {
+          "name": "Levetiracetam",
+          "dose": "500mg",
+          "frequency": null
+        },
+        {
+          "name": "Acetaminophen",
+          "dose": "650mg",
+          "frequency": null
+        },
+        {
+          "name": "Docusate",
+          "dose": "100mg",
+          "frequency": null
+        }
+      ]
+    },
+    "followUp": {
+      "appointments": [],
+      "instructions": [
+        "and warning signs"
+      ]
+    },
+    "dischargeDestination": {
+      "primary": {
+        "destination": "home",
+        "label": "Home",
+        "description": "Independent living at home",
+        "independence": "high",
+        "priority": 1,
+        "matchedPattern": "\\bdischarged\\s+(?:to\\s+)?home\\b",
+        "context": "Scale (mRS) 2 at discharge. Karnofsky Performance Status (KPS) 80.\n\nDISCHARGE INFORMATION:\n\nPatient discharged to home on October 20, 2024 in stable condition.\n\nDISCHARGE MEDICATIONS:\n\n1. Nimodipine 60mg PO q4h x 21 da"
+      },
+      "alternatives": [],
+      "confidence": 0.7
+    },
+    "oncology": {
+      "histology": null,
+      "molecularMarkers": {},
+      "treatment": []
+    },
+    "physicalExam": {
+      "general": null,
+      "heent": null,
+      "cardiovascular": null,
+      "pulmonary": null,
+      "abdomen": null,
+      "extremities": null,
+      "skin": null
+    },
+    "neurologicalExam": {
+      "mentalStatus": null,
+      "cranialNerves": null,
+      "motor": null,
+      "sensory": null,
+      "reflexes": null,
+      "coordination": null,
+      "gait": null,
+      "gcs": null,
+      "pupils": null
+    },
+    "significantEvents": {
+      "events": [
+        {
+          "type": "seizure",
+          "description": "2. Levetiracetam 500mg PO BID for seizure prophylaxis x 3 months",
+          "date": "Levetiracetam 50"
+        },
+        {
+          "type": "hemorrhage",
+          "description": "CT head performed in ED revealed diffuse subarachnoid hemorrhage in the basal cisterns and sylvian fissures bilaterally. CTA demonstrated a 7mm anterior communicating artery aneurysm.",
+          "date": null
+        },
+        {
+          "type": "stroke",
+          "description": "EVD weaned successfully over 3 days and removed on October 18, 2024. Repeat CT showed resolving hemorrhage, no new infarcts.",
+          "date": "over 3"
+        },
+        {
+          "type": "vasospasm",
+          "description": "Post-procedure course complicated by vasospasm on HD#5 (October 15, 2024), managed with induced hypertension and nimodipine 60mg q4h. Transcranial Dopplers showed elevated velocities in bilateral MCAs (peak 180 cm/s), improved with treatment.",
+          "date": "5"
+        },
+        {
+          "type": "hydrocephalus",
+          "description": "Patient admitted to Neuro ICU on October 10, 2024. Aspirin was held on admission. External ventricular drain (EVD) placed on October 11, 2024 for treatment of acute hydrocephalus with opening pressure of 25 cm H2O.",
+          "date": "October 10"
+        }
+      ]
+    },
+    "icuStay": {
+      "admitted": true,
+      "duration": null,
+      "unit": "Neuro ICU",
+      "ventilator": false,
+      "ventilatorDays": null,
+      "pressors": false,
+      "sedation": false,
+      "complications": []
+    },
+    "preOpDeficits": {
+      "motor": [],
+      "sensory": [],
+      "cranialNerves": [],
+      "cognitive": [],
+      "speech": []
+    },
+    "postOpDeficits": {
+      "immediate": {
+        "motor": [],
+        "sensory": [],
+        "cranialNerves": [],
+        "cognitive": [],
+        "speech": []
+      },
+      "discharge": {
+        "motor": [],
+        "sensory": [],
+        "cranialNerves": [],
+        "cognitive": [],
+        "speech": []
+      },
+      "new": [],
+      "resolved": [],
+      "persistent": []
+    },
+    "consultations": {
+      "consultants": []
+    },
+    "labs": {
+      "sodium": null,
+      "potassium": null,
+      "hemoglobin": null,
+      "hematocrit": null,
+      "platelets": null,
+      "wbc": null,
+      "inr": null,
+      "creatinine": null
+    },
+    "vitals": {
+      "bloodPressure": null,
+      "heartRate": null,
+      "respiratoryRate": null,
+      "temperature": null,
+      "oxygenSaturation": null
+    },
+    "hospitalCourse": {
+      "timeline": [
+        {
+          "date": "Levetiracetam 50",
+          "type": "seizure",
+          "description": "2. Levetiracetam 500mg PO BID for seizure prophylaxis x 3 months",
+          "details": null
+        },
+        {
+          "date": "over 3",
+          "type": "stroke",
+          "description": "EVD weaned successfully over 3 days and removed on October 18, 2024. Repeat CT showed resolving hemorrhage, no new infarcts.",
+          "details": null
+        },
+        {
+          "date": "HD#5",
+          "type": "complication",
+          "description": "vasospasm",
+          "details": null
+        },
+        {
+          "date": "5",
+          "type": "vasospasm",
+          "description": "Post-procedure course complicated by vasospasm on HD#5 (October 15, 2024), managed with induced hypertension and nimodipine 60mg q4h. Transcranial Dopplers showed elevated velocities in bilateral MCAs (peak 180 cm/s), improved with treatment.",
+          "details": null
+        },
+        {
+          "date": "October 10",
+          "type": "procedure",
+          "description": {
+            "name": "coiling",
+            "date": null,
+            "details": null
+          },
+          "details": null
+        },
+        {
+          "date": "October 10",
+          "type": "procedure",
+          "description": {
+            "name": "External ventricular drain",
+            "date": null,
+            "details": null
+          },
+          "details": null
+        },
+        {
+          "date": "October 10",
+          "type": "procedure",
+          "description": {
+            "name": "angiogram",
+            "date": null,
+            "details": null
+          },
+          "details": null
+        },
+        {
+          "date": "October 10",
+          "type": "hydrocephalus",
+          "description": "Patient admitted to Neuro ICU on October 10, 2024. Aspirin was held on admission. External ventricular drain (EVD) placed on October 11, 2024 for treatment of acute hydrocephalus with opening pressure of 25 cm H2O.",
+          "details": null
+        },
+        {
+          "date": "2024-10-10",
+          "type": "admission",
+          "description": "Admitted with Aneurysmal subarachnoid hemorrhage (aSAH) Hunt and Hess Grade 3 Modified Fisher Scale 3 Anterior communicating artery aneurysm, 7mm",
+          "details": null
+        },
+        {
+          "date": "2024-10-20",
+          "type": "discharge",
+          "description": "Discharged to home",
+          "details": "Functional status: KPS 40, mRS not recorded"
+        },
+        {
+          "date": null,
+          "type": "complication",
+          "description": "seizures",
+          "details": null
+        },
+        {
+          "date": null,
+          "type": "complication",
+          "description": "hydrocephalus",
+          "details": null
+        },
+        {
+          "date": null,
+          "type": "complication",
+          "description": "acute hydrocephalus",
+          "details": null
+        },
+        {
+          "date": null,
+          "type": "complication",
+          "description": "weakness",
+          "details": null
+        },
+        {
+          "date": null,
+          "type": "complication",
+          "description": "hemorrhage",
+          "details": null
+        },
+        {
+          "date": null,
+          "type": "hemorrhage",
+          "description": "CT head performed in ED revealed diffuse subarachnoid hemorrhage in the basal cisterns and sylvian fissures bilaterally. CTA demonstrated a 7mm anterior communicating artery aneurysm.",
+          "details": null
+        },
+        {
+          "date": null,
+          "type": "imaging",
+          "description": "performed in ED revealed diffuse subarachnoid hemorrhage in the basal cisterns and sylvian fissures bilaterally",
+          "details": null
+        },
+        {
+          "date": null,
+          "type": "imaging",
+          "description": "in 4 weeks 4",
+          "details": null
+        },
+        {
+          "date": null,
+          "type": "imaging",
+          "description": "resolving hemorrhage, no new infarcts",
+          "details": null
+        }
+      ],
+      "summary": "Patient admitted to Neuro ICU on October 10, 2024. Aspirin was held on admission. External ventricular drain (EVD) placed on October 11, 2024 for treatment of acute hydrocephalus with opening pressure of 25 cm H2O.",
+      "admissionSummary": "NOTE - NEUROSURGERY Patient is a 62-year-old male who presented to the emergency department on October 10, 2024 with sudden onset severe headache, nausea, and vomiting. Symptoms started suddenly this morning around 8 AM while patient was having breakfast.",
+      "icuCourse": {
+        "admitted": true,
+        "duration": null,
+        "ventilated": false,
+        "events": [
+          {
+            "date": "HD#5",
+            "type": "complication",
+            "description": "vasospasm",
+            "details": null
+          },
+          {
+            "date": "October 10",
+            "type": "procedure",
+            "description": {
+              "name": "coiling",
+              "date": null,
+              "details": null
+            },
+            "details": null
+          },
+          {
+            "date": "October 10",
+            "type": "procedure",
+            "description": {
+              "name": "External ventricular drain",
+              "date": null,
+              "details": null
+            },
+            "details": null
+          },
+          {
+            "date": "October 10",
+            "type": "procedure",
+            "description": {
+              "name": "angiogram",
+              "date": null,
+              "details": null
+            },
+            "details": null
+          },
+          {
+            "date": null,
+            "type": "complication",
+            "description": "seizures",
+            "details": null
+          }
+        ]
+      },
+      "floorCourse": null,
+      "dischargeSummary": null
+    }
+  },
+  "confidence": {
+    "demographics": 0.85,
+    "dates": 0.7,
+    "pathology": 0.85,
+    "presentingSymptoms": 0.7,
+    "procedures": 0.85,
+    "complications": 0.85,
+    "anticoagulation": 0.85,
+    "imaging": 0.85,
+    "functionalScores": 0.7,
+    "medications": 0.85,
+    "followUp": 0.7,
+    "dischargeDestination": 0.7,
+    "oncology": 0.5,
+    "physicalExam": 0.5,
+    "neurologicalExam": 0.5,
+    "significantEvents": 0.85,
+    "icuStay": 0.85,
+    "preOpDeficits": 0.5,
+    "postOpDeficits": 0.5,
+    "consultations": 0.7,
+    "labs": 0.7,
+    "vitals": 0.7,
+    "hospitalCourse": 0.95
+  },
+  "pathologyTypes": [
+    {
+      "type": "SAH",
+      "name": "Subarachnoid Hemorrhage",
+      "confidence": 0.6666666666666666,
+      "priority": 1,
+      "matches": 2
+    },
+    {
+      "type": "HYDROCEPHALUS",
+      "name": "Hydrocephalus",
+      "confidence": 0.5,
+      "priority": 2,
+      "matches": 2
+    },
+    {
+      "type": "SEIZURES",
+      "name": "Seizures & Status Epilepticus",
+      "confidence": 0.4,
+      "priority": 1,
+      "matches": 2
+    }
+  ],
+  "metadata": {
+    "noteCount": 1,
+    "totalLength": 2701,
+    "extractionDate": "2025-10-14T21:40:53.895Z",
+    "extractionMethod": "pattern"
+  }
+}
