@@ -22,22 +22,68 @@ import {
   areTextsSimilar
 } from '../utils/textUtils.js';
 
-import natural from 'natural';
-import levenshtein from 'fast-levenshtein';
+/**
+ * Simple word tokenizer for browser environment
+ * Replaces natural.WordTokenizer
+ */
+function tokenize(text) {
+  return text
+    .toLowerCase()
+    .replace(/[^\w\s]/g, ' ')
+    .split(/\s+/)
+    .filter(word => word.length > 0);
+}
 
-// Jaccard Similarity using natural
+/**
+ * Jaccard Similarity (browser-compatible implementation)
+ * Measures word overlap between two texts
+ */
 export function jaccardSimilarity(str1, str2) {
-  const tokenizer = new natural.WordTokenizer();
-  const set1 = new Set(tokenizer.tokenize(str1.toLowerCase()));
-  const set2 = new Set(tokenizer.tokenize(str2.toLowerCase()));
+  const tokens1 = tokenize(str1);
+  const tokens2 = tokenize(str2);
+  const set1 = new Set(tokens1);
+  const set2 = new Set(tokens2);
   const intersection = new Set([...set1].filter(x => set2.has(x)));
   const union = new Set([...set1, ...set2]);
   return union.size === 0 ? 0 : intersection.size / union.size;
 }
 
-// Normalized Levenshtein Distance
+/**
+ * Levenshtein Distance calculation (browser-compatible implementation)
+ * Calculates edit distance between two strings
+ */
+function levenshteinDistance(str1, str2) {
+  const len1 = str1.length;
+  const len2 = str2.length;
+  
+  // Create matrix
+  const matrix = Array(len1 + 1).fill(null).map(() => Array(len2 + 1).fill(0));
+  
+  // Initialize first column and row
+  for (let i = 0; i <= len1; i++) matrix[i][0] = i;
+  for (let j = 0; j <= len2; j++) matrix[0][j] = j;
+  
+  // Fill matrix
+  for (let i = 1; i <= len1; i++) {
+    for (let j = 1; j <= len2; j++) {
+      const cost = str1[i - 1] === str2[j - 1] ? 0 : 1;
+      matrix[i][j] = Math.min(
+        matrix[i - 1][j] + 1,      // deletion
+        matrix[i][j - 1] + 1,      // insertion
+        matrix[i - 1][j - 1] + cost // substitution
+      );
+    }
+  }
+  
+  return matrix[len1][len2];
+}
+
+/**
+ * Normalized Levenshtein Distance (browser-compatible implementation)
+ * Returns similarity score from 0 to 1
+ */
 export function normalizedLevenshtein(str1, str2) {
-  const distance = levenshtein.get(str1, str2);
+  const distance = levenshteinDistance(str1, str2);
   const maxLen = Math.max(str1.length, str2.length);
   return maxLen === 0 ? 1 : 1 - (distance / maxLen);
 }
