@@ -22,13 +22,40 @@ import {
   areTextsSimilar
 } from '../utils/textUtils.js';
 
-import { 
-  calculateCombinedSimilarity,
-  jaccardSimilarity,
-  semanticSimilarity,
-  normalizedLevenshtein
-} from '../utils/ml/similarityEngine.js';
+import natural from 'natural';
+import levenshtein from 'fast-levenshtein';
 
+// Jaccard Similarity using natural
+export function jaccardSimilarity(str1, str2) {
+  const tokenizer = new natural.WordTokenizer();
+  const set1 = new Set(tokenizer.tokenize(str1.toLowerCase()));
+  const set2 = new Set(tokenizer.tokenize(str2.toLowerCase()));
+  const intersection = new Set([...set1].filter(x => set2.has(x)));
+  const union = new Set([...set1, ...set2]);
+  return union.size === 0 ? 0 : intersection.size / union.size;
+}
+
+// Normalized Levenshtein Distance
+export function normalizedLevenshtein(str1, str2) {
+  const distance = levenshtein.get(str1, str2);
+  const maxLen = Math.max(str1.length, str2.length);
+  return maxLen === 0 ? 1 : 1 - (distance / maxLen);
+}
+
+// Placeholder semantic similarity (returns 0.5 for now)
+// Replace with a real implementation if available
+export function semanticSimilarity(str1, str2) {
+  // TODO: Implement real semantic similarity
+  return 0.5;
+}
+
+// Combined similarity as described in the header (40% Jaccard, 20% Levenshtein, 40% Semantic)
+export function calculateCombinedSimilarity(str1, str2) {
+  const jaccard = jaccardSimilarity(str1, str2);
+  const levenshteinScore = normalizedLevenshtein(str1, str2);
+  const semantic = semanticSimilarity(str1, str2);
+  return 0.4 * jaccard + 0.2 * levenshteinScore + 0.4 * semantic;
+}
 /**
  * Deduplicate array of clinical notes
  * Removes redundant content while preserving unique information
