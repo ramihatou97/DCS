@@ -5,7 +5,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 [![React](https://img.shields.io/badge/React-18.3.1-61dafb.svg)](https://reactjs.org/)
 [![Node](https://img.shields.io/badge/Node-18+-green.svg)](https://nodejs.org/)
-[![Status](https://img.shields.io/badge/Status-Production%20Ready-brightgreen.svg)](./DEPLOYMENT_READY.md)
+![Status](https://img.shields.io/badge/Status-Production%20Ready-brightgreen.svg)
 
 ---
 
