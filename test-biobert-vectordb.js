@@ -96,9 +96,9 @@ async function runTests() {
     
     // Store a few more similar notes
     const similarNote = `
-    65yo female with SAH from anterior communicating artery aneurysm.
-    Underwent coil embolization. Post-op course notable for mild vasospasm.
-    Discharged on aspirin and seizure prophylaxis.
+  65yo female with SAH from anterior communicating artery aneurysm.
+  Underwent coil embolization. Post-op course notable for mild vasospasm.
+  Discharged on aspirin and seizure prophylaxis.
     `;
     
     await vectorDatabaseService.storeDocument('NOTES', {
