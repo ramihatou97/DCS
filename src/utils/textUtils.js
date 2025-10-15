@@ -322,8 +322,18 @@ export const escapeRegExp = (string) => {
 /**
  * Advanced text preprocessing for variable-style clinical notes
  * Normalizes different formatting styles, timestamps, headers, and structure
+ *
+ * PHASE 1 STEP 4: Added abbreviation expansion support
+ *
+ * @param {string} text - Clinical note text
+ * @param {object} options - Preprocessing options
+ * @param {boolean} options.expandAbbreviations - Enable abbreviation expansion (default: false)
+ * @param {string|string[]} options.pathology - Detected pathology types for context-aware expansion
+ * @param {boolean} options.preserveOriginal - Keep original abbreviation in parentheses (default: true)
+ * @param {boolean} options.institutionSpecific - Include institution-specific abbreviations (default: true)
+ * @returns {string} Preprocessed text
  */
-export const preprocessClinicalNote = (text) => {
+export const preprocessClinicalNote = (text, options = {}) => {
   if (!text) return '';
 
   // Ensure text is a string (handle objects with content property)
@@ -391,7 +401,32 @@ export const preprocessClinicalNote = (text) => {
   
   // 10. Trim each line
   processed = processed.split('\n').map(line => line.trim()).join('\n');
-  
+
+  // PHASE 1 STEP 4: Expand abbreviations with context awareness
+  if (options.expandAbbreviations) {
+    try {
+      // Import abbreviation expansion function
+      const { expandAbbreviationsInText } = require('./medicalAbbreviations.js');
+
+      // Get pathology context (handle both string and array)
+      const pathology = Array.isArray(options.pathology)
+        ? options.pathology[0]
+        : options.pathology;
+
+      // Expand abbreviations with context
+      processed = expandAbbreviationsInText(processed, {
+        pathology,
+        preserveOriginal: options.preserveOriginal !== false,
+        institutionSpecific: options.institutionSpecific !== false
+      });
+
+      console.log('✅ Abbreviations expanded with context awareness');
+    } catch (error) {
+      console.warn('⚠️ Abbreviation expansion failed, continuing without expansion:', error.message);
+      // Continue without expansion - no breaking change
+    }
+  }
+
   return processed.trim();
 };
 

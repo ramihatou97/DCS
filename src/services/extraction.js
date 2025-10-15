@@ -26,8 +26,19 @@ import {
 import { extractAnticoagulation } from '../utils/anticoagulationTracker.js';
 import { extractDischargeDestination } from '../utils/dischargeDestinations.js';
 import { isLLMAvailable, extractWithLLM } from './llmService.js';
+import contextProvider from './context/contextProvider.js';
+import learningEngine from './ml/learningEngine.js';
 // ML services temporarily disabled - models not available
 // import enhancedMLService from './ml/enhancedML.js';
+
+// Phase 1 Enhancement: Negation Detection
+import { validateComplicationExtraction } from '../utils/negationDetection.js';
+
+// Phase 1 Enhancement: Temporal Qualifiers
+import { extractTemporalQualifier } from '../utils/temporalQualifiers.js';
+
+// Phase 1 Enhancement: Source Quality Assessment
+import { assessSourceQuality, calibrateConfidence } from '../utils/sourceQuality.js';
 import {
   extractPhysicalExam,
   extractNeurologicalExam,
@@ -115,12 +126,49 @@ export const extractMedicalEntities = async (notes, options = {}) => {
 
   // Normalize input
   let noteArray = Array.isArray(notes) ? notes : [notes];
+
+  // Build context early for extraction
+  const combinedTextForContext = noteArray.join('\n\n');
+  const context = contextProvider.buildContext(combinedTextForContext);
+  console.log('🧠 Context built for extraction:', {
+    pathology: context.pathology.primary,
+    consultants: context.consultants.count,
+    complexity: context.clinical.complexity
+  });
+
+  // Load learned patterns from database if not provided
+  let patternsToUse = learnedPatterns;
+  if (patternsToUse.length === 0) {
+    try {
+      // Get all learned patterns from the learning engine
+      await learningEngine.initialize();
+      const db = learningEngine.db;
+      if (db) {
+        const tx = db.transaction('learnedPatterns', 'readonly');
+        const allPatterns = await tx.store.getAll();
+        const enabledPatterns = allPatterns.filter(p => p.enabled !== false);
+        if (enabledPatterns && enabledPatterns.length > 0) {
+          patternsToUse = enabledPatterns;
+          console.log(`📚 Loaded ${patternsToUse.length} learned patterns from database`);
+        }
+      }
+    } catch (error) {
+      console.warn('Could not load learned patterns:', error);
+    }
+  }
   
   // Enhanced preprocessing for variable-style clinical notes
   if (enablePreprocessing) {
     console.log('Preprocessing clinical notes for variable styles and formats...');
     try {
-      noteArray = noteArray.map(note => preprocessClinicalNote(note));
+      // PHASE 1 STEP 4: Abbreviation expansion infrastructure in place
+      // Currently disabled by default (expandAbbreviations: false)
+      // Can be enabled by passing pathology context after detection
+      noteArray = noteArray.map(note => preprocessClinicalNote(note, {
+        expandAbbreviations: false, // Disabled by default - enable after pathology detection
+        preserveOriginal: true,
+        institutionSpecific: true
+      }));
       console.log('✓ Preprocessing complete');
     } catch (error) {
       console.error('Preprocessing failed:', error);
@@ -163,7 +211,12 @@ export const extractMedicalEntities = async (notes, options = {}) => {
   console.log(`Extraction method: ${shouldUseLLM ? 'LLM-enhanced' : 'Pattern-based'}`);
 
   // Detect pathology types early (needed for both LLM and pattern extraction)
-  const pathologyTypes = detectPathology(combinedText);
+  // FIX: detectPathology returns array of objects: [{ type: 'SAH', name: '...', confidence: 0.9 }]
+  // Extract just the type strings for backward compatibility: ['SAH', 'TUMORS', ...]
+  const pathologyObjects = detectPathology(combinedText);
+  const pathologyTypes = pathologyObjects.map(p => p.type);
+
+  console.log('🔍 Detected pathologies:', pathologyTypes);
 
   // Try LLM extraction first if available
   if (shouldUseLLM) {
@@ -174,7 +227,12 @@ export const extractMedicalEntities = async (notes, options = {}) => {
 
       // Also run pattern extraction for comparison/merging
       console.log('Running pattern extraction for data enrichment...');
-      const patternResult = await extractWithPatterns(combinedText, noteArray, pathologyTypes, { targets, learnedPatterns, includeConfidence });
+      const patternResult = await extractWithPatterns(combinedText, noteArray, pathologyTypes, {
+        targets,
+        learnedPatterns: patternsToUse,
+        includeConfidence,
+        context
+      });
 
       // Merge LLM and pattern results for maximum accuracy
       // Add null safety checks
@@ -215,28 +273,66 @@ export const extractMedicalEntities = async (notes, options = {}) => {
   console.log('Using pattern-based extraction');
 
   // Extract using patterns (pathologyTypes already detected above)
-  const patternResult = await extractWithPatterns(combinedText, noteArray, pathologyTypes, { targets, learnedPatterns, includeConfidence });
-  
+  const patternResult = await extractWithPatterns(combinedText, noteArray, pathologyTypes, {
+    targets,
+    learnedPatterns: patternsToUse,
+    includeConfidence,
+    context
+  });
+
+  // PHASE 1 ENHANCEMENT: Merge metadata from patternResult (includes sourceQuality)
   return {
     extracted: patternResult.extracted,
     confidence: patternResult.confidence,
     pathologyTypes,
     metadata: {
-      noteCount: noteArray.length,
-      totalLength: combinedText.length,
-      extractionDate: new Date().toISOString(),
-      extractionMethod: 'pattern'
+      ...patternResult.metadata, // Include source quality and other metadata from pattern extraction
+      extractionMethod: 'pattern',
+      preprocessed: enablePreprocessing,
+      deduplicated: enableDeduplication
     }
   };
 };
 
 /**
  * Extract using pattern-based methods
+ * PHASE 1 ENHANCEMENT: Now includes source quality assessment and confidence calibration
  * @private
  */
 const extractWithPatterns = async (combinedText, noteArray, pathologyTypes, options) => {
-  const { targets, learnedPatterns, includeConfidence = true } = options;
-  
+  const { targets, learnedPatterns, includeConfidence = true, context } = options;
+
+  // PHASE 1 ENHANCEMENT: Assess source quality
+  let sourceQuality = null;
+  try {
+    sourceQuality = assessSourceQuality(combinedText, {
+      includeRecommendations: false,
+      detailedAnalysis: false
+    });
+    console.log(`📊 Source Quality: ${sourceQuality.grade} (${(sourceQuality.overallScore * 100).toFixed(1)}%)`);
+
+    // Log quality issues if any
+    if (sourceQuality.issues.length > 0) {
+      console.log(`⚠️ Quality Issues: ${sourceQuality.issues.map(i => i.factor).join(', ')}`);
+    }
+  } catch (error) {
+    console.warn('Source quality assessment failed:', error.message);
+    // Continue without quality assessment
+  }
+
+  // Log learned patterns usage
+  if (learnedPatterns && learnedPatterns.length > 0) {
+    console.log(`📚 Applying ${learnedPatterns.length} learned patterns to extraction`);
+
+    // Filter patterns by pathology if context available
+    if (context && context.pathology.primary) {
+      const pathologySpecificPatterns = learnedPatterns.filter(p =>
+        !p.pathology || p.pathology === context.pathology.primary
+      );
+      console.log(`  → ${pathologySpecificPatterns.length} patterns match pathology ${context.pathology.primary}`);
+    }
+  }
+
   // Extract each target
   const extracted = {};
   const confidence = {};
@@ -414,14 +510,40 @@ const extractWithPatterns = async (combinedText, noteArray, pathologyTypes, opti
     applyLearnedPatterns(extracted, combinedText, learnedPatterns);
   }
 
+  // PHASE 1 ENHANCEMENT: Calibrate confidence scores based on source quality
+  let calibratedConfidence = confidence;
+  if (sourceQuality && includeConfidence) {
+    try {
+      calibratedConfidence = {};
+      for (const [key, value] of Object.entries(confidence)) {
+        // Defensive programming: ensure value is a number
+        if (typeof value === 'number') {
+          calibratedConfidence[key] = calibrateConfidence(value, sourceQuality);
+        } else {
+          calibratedConfidence[key] = value; // Keep original if not a number
+        }
+      }
+      console.log(`✅ Confidence scores calibrated based on source quality`);
+    } catch (error) {
+      console.warn('Confidence calibration failed:', error.message);
+      calibratedConfidence = confidence; // Fallback to original
+    }
+  }
+
   return {
     extracted,
-    confidence: includeConfidence ? confidence : undefined,
+    confidence: includeConfidence ? calibratedConfidence : undefined,
     pathologyTypes,
     metadata: {
       noteCount: noteArray.length,
       totalLength: combinedText.length,
-      extractionDate: new Date().toISOString()
+      extractionDate: new Date().toISOString(),
+      // PHASE 1 ENHANCEMENT: Include source quality in metadata
+      sourceQuality: sourceQuality ? {
+        grade: sourceQuality.grade,
+        score: sourceQuality.overallScore,
+        factors: sourceQuality.factors
+      } : null
     }
   };
 };
@@ -448,6 +570,9 @@ const extractDemographics = (text) => {
     /\bage\s*:?\s*(\d{1,3})\b/i,
     // "X years" (but not "X mm" or other measurements)
     /\b(\d{1,3})\s+years?\b/i,
+    // PHASE 1 FIX: "##M" or "##F" format at end of line or after comma (e.g., "John Doe, 55M")
+    /,\s*(\d{1,3})\s*[MF]\b/i,
+    /\b(\d{1,3})\s*[MF]\s*$/im,
     // "X M" or "X F" format - but must be followed by space or word boundary to avoid matching "7mm"
     /\b(\d{1,3})\s*(?:M|F)\s+(?:male|female|man|woman|who|with|presented)\b/i,
     /\b(\d{1,3})\s+(?:male|female|man|woman)\b/i,
@@ -473,6 +598,11 @@ const extractDemographics = (text) => {
     // Explicit gender statements (highest confidence)
     { pattern: /\b(?:gender|sex)\s*:?\s*(male|man|M)\b/i, gender: 'M', confidence: CONFIDENCE.HIGH },
     { pattern: /\b(?:gender|sex)\s*:?\s*(female|woman|F)\b/i, gender: 'F', confidence: CONFIDENCE.HIGH },
+    // PHASE 1 FIX: "##M" or "##F" format (e.g., "55M", "45F")
+    { pattern: /,\s*\d{1,3}\s*M\b/i, gender: 'M', confidence: CONFIDENCE.HIGH },
+    { pattern: /,\s*\d{1,3}\s*F\b/i, gender: 'F', confidence: CONFIDENCE.HIGH },
+    { pattern: /\b\d{1,3}\s*M\s*$/im, gender: 'M', confidence: CONFIDENCE.HIGH },
+    { pattern: /\b\d{1,3}\s*F\s*$/im, gender: 'F', confidence: CONFIDENCE.HIGH },
     // Age-gender combinations
     { pattern: /\d+\s*-?\s*year\s*-?\s*old\s+(male|man)\b/i, gender: 'M', confidence: CONFIDENCE.HIGH },
     { pattern: /\d+\s*-?\s*year\s*-?\s*old\s+(female|woman)\b/i, gender: 'F', confidence: CONFIDENCE.HIGH },
@@ -500,15 +630,23 @@ const extractDemographics = (text) => {
 
 /**
  * Extract critical dates (ictus, admission, surgery, discharge)
+ * PHASE 1 ENHANCEMENT: Now includes temporal context for each date
  */
 const extractDates = (text, pathologyTypes) => {
   const data = {
     ictusDate: null,
     admissionDate: null,
     surgeryDates: [],
-    dischargeDate: null
+    dischargeDate: null,
+    // PHASE 1 ENHANCEMENT: Add temporal context for dates
+    temporalContext: {
+      ictus: null,
+      admission: null,
+      surgeries: [],
+      discharge: null
+    }
   };
-  
+
   let confidence = CONFIDENCE.MEDIUM;
   
   // Ictus date (CRITICAL for SAH and hemorrhagic pathologies)
@@ -531,6 +669,19 @@ const extractDates = (text, pathologyTypes) => {
         if (parsed) {
           data.ictusDate = normalizeDate(parsed);
           confidence = CONFIDENCE.CRITICAL;
+
+          // PHASE 1 ENHANCEMENT: Extract temporal context for ictus date
+          try {
+            const temporal = extractTemporalQualifier('ictus', text);
+            data.temporalContext.ictus = {
+              category: temporal.category,
+              confidence: temporal.confidence,
+              type: temporal.type || temporal.category
+            };
+          } catch (error) {
+            console.warn('Temporal qualifier extraction failed for ictus:', error.message);
+          }
+
           break;
         }
       }
@@ -556,6 +707,19 @@ const extractDates = (text, pathologyTypes) => {
       const parsed = parseFlexibleDate(match[1]);
       if (parsed) {
         data.admissionDate = normalizeDate(parsed);
+
+        // PHASE 1 ENHANCEMENT: Extract temporal context for admission date
+        try {
+          const temporal = extractTemporalQualifier('admission', text);
+          data.temporalContext.admission = {
+            category: temporal.category,
+            confidence: temporal.confidence,
+            type: temporal.type || temporal.category
+          };
+        } catch (error) {
+          console.warn('Temporal qualifier extraction failed for admission:', error.message);
+        }
+
         break;
       }
     }
@@ -580,6 +744,26 @@ const extractDates = (text, pathologyTypes) => {
         const normalized = normalizeDate(parsed);
         if (!data.surgeryDates.includes(normalized)) {
           data.surgeryDates.push(normalized);
+
+          // PHASE 1 ENHANCEMENT: Extract temporal context for each surgery date
+          try {
+            const temporal = extractTemporalQualifier('surgery', text);
+            data.temporalContext.surgeries.push({
+              date: normalized,
+              category: temporal.category,
+              confidence: temporal.confidence,
+              type: temporal.type || temporal.category
+            });
+          } catch (error) {
+            console.warn('Temporal qualifier extraction failed for surgery:', error.message);
+            // Add entry without temporal context
+            data.temporalContext.surgeries.push({
+              date: normalized,
+              category: 'UNKNOWN',
+              confidence: 0,
+              type: 'UNKNOWN'
+            });
+          }
         }
       }
     }
@@ -604,11 +788,24 @@ const extractDates = (text, pathologyTypes) => {
       const parsed = parseFlexibleDate(match[1]);
       if (parsed) {
         data.dischargeDate = normalizeDate(parsed);
+
+        // PHASE 1 ENHANCEMENT: Extract temporal context for discharge date
+        try {
+          const temporal = extractTemporalQualifier('discharge', text);
+          data.temporalContext.discharge = {
+            category: temporal.category,
+            confidence: temporal.confidence,
+            type: temporal.type || temporal.category
+          };
+        } catch (error) {
+          console.warn('Temporal qualifier extraction failed for discharge:', error.message);
+        }
+
         break;
       }
     }
   }
-  
+
   return { data, confidence };
 };
 
@@ -617,12 +814,13 @@ const extractDates = (text, pathologyTypes) => {
  */
 const extractPathology = (text, pathologyTypes) => {
   const data = {
+    primary: null, // PHASE 1 FIX: Add primary field for backward compatibility
     primaryDiagnosis: null,
     secondaryDiagnoses: [],
     grades: {},
     location: null
   };
-  
+
   let confidence = CONFIDENCE.MEDIUM;
   
   // First, try to extract explicit diagnosis statements
@@ -647,6 +845,7 @@ const extractPathology = (text, pathologyTypes) => {
       
       if (diagnosis.length > 5 && diagnosis.length < 200) {
         data.primaryDiagnosis = diagnosis;
+        data.primary = diagnosis; // PHASE 1 FIX: Set primary field
         confidence = CONFIDENCE.HIGH;
         break;
       }
@@ -664,6 +863,7 @@ const extractPathology = (text, pathologyTypes) => {
         for (const pattern of patterns.detectionPatterns) {
           if (new RegExp(pattern, 'i').test(text)) {
             data.primaryDiagnosis = patterns.name || pathType;
+            data.primary = patterns.name || pathType; // PHASE 1 FIX: Set primary field
             confidence = CONFIDENCE.MEDIUM;
             break;
           }
@@ -805,39 +1005,51 @@ const extractProcedures = (text, pathologyTypes) => {
     // Cranial procedures
     'craniotomy', 'craniectomy', 'cranioplasty',
     'decompressive craniectomy', 'pterional craniotomy',
-    
+
     // Tumor procedures
     'resection', 'gross total resection', 'subtotal resection',
     'biopsy', 'stereotactic biopsy',
-    
+
     // Vascular procedures
     'coiling', 'coil embolization', 'endovascular coiling',
     'clipping', 'aneurysm clipping', 'microsurgical clipping',
     'embolization', 'AVM embolization',
-    
+    // PHASE 1 FIX: Add combined angiogram procedures
+    'cerebral angiogram with coiling', 'angiogram with coiling',
+    'cerebral angiogram', 'angiogram and coiling',
+
     // Drainage procedures
     'EVD placement', 'external ventricular drain',
     'ventriculostomy', 'ventriculoperitoneal shunt', 'VP shunt',
     'lumbar drain', 'LD placement',
-    
+
     // Spine procedures
     'laminectomy', 'discectomy', 'fusion',
     'anterior cervical discectomy', 'ACDF',
     'posterior lumbar fusion', 'PLIF',
-    
+
     // Diagnostic procedures
     'angiogram', 'cerebral angiography', 'DSA',
     'lumbar puncture', 'LP',
-    
+
     // Other procedures
     'tracheostomy', 'PEG placement', 'ICP monitor placement'
   ];
   
+  // PHASE 1 FIX: Add explicit "underwent/received" patterns first (higher priority)
+  const explicitProcedurePatterns = [
+    /(?:underwent|received|had|performed)\s+([^.;]+?(?:angiogram|coiling|craniotomy|clipping|embolization|resection|biopsy|drain|shunt|laminectomy)[^.;]*)/gi,
+    /(?:procedure|surgery|operation)\s*:?\s*([^.;\n]+)/gi
+  ];
+
+  // Add explicit patterns first (higher priority)
+  procedurePatterns.unshift(...explicitProcedurePatterns);
+
   // Add comprehensive keywords to patterns
   for (const keyword of comprehensiveProcedureKeywords) {
     procedurePatterns.push(new RegExp(`\\b${keyword}\\b`, 'i'));
   }
-  
+
   // Extract procedures
   for (const pattern of procedurePatterns) {
     const regex = new RegExp(pattern, 'gi');
@@ -952,40 +1164,73 @@ const extractComplications = (text, pathologyTypes) => {
   }
   
   // Extract complications with context detection
+  // PHASE 1 ENHANCEMENT: Integrated negation detection for improved accuracy
   for (const pattern of complicationPatterns) {
     const regex = new RegExp(pattern, 'gi');
     let match;
     while ((match = regex.exec(text)) !== null) {
       const complication = match[1] || match[0];
-      
+
+      // Skip if already extracted (avoid duplicates)
+      if (data.complications.includes(complication)) {
+        continue;
+      }
+
       // Get context to determine if it's a complication or just mentioned
       const context = text.substring(Math.max(0, match.index - 50), Math.min(text.length, match.index + 100));
       const lowerContext = context.toLowerCase();
-      
+
       // Indicators that this is indeed a complication
       const complicationIndicators = [
         'developed', 'complicated by', 'experienced', 'suffered',
         'noted', 'developed', 'presented with', 'course complicated',
         'post-op', 'postoperative', 'following surgery'
       ];
-      
+
       // Exclusion indicators (not a complication, just preventive mention)
       const exclusionIndicators = [
         'no evidence', 'ruled out', 'no signs', 'preventing',
         'avoid', 'monitor for', 'prophylaxis', 'negative for'
       ];
-      
+
       const hasIndicator = complicationIndicators.some(ind => lowerContext.includes(ind));
       const hasExclusion = exclusionIndicators.some(exc => lowerContext.includes(exc));
-      
-      // Add if indicator present and no exclusion
-      if ((hasIndicator || !hasExclusion) && !data.complications.includes(complication)) {
+
+      // PHASE 1 ENHANCEMENT: Use negation detection utility for more accurate filtering
+      // This replaces the simple exclusion check with sophisticated NegEx algorithm
+      let shouldInclude = false;
+
+      try {
+        // Validate using negation detection
+        const validation = validateComplicationExtraction(complication, text);
+
+        if (validation.valid) {
+          // Negation detection says it's valid (not negated)
+          shouldInclude = hasIndicator || !hasExclusion;
+        } else {
+          // Negation detection found negation
+          // Only include if there's a strong positive indicator
+          shouldInclude = hasIndicator && !hasExclusion;
+
+          // Log for debugging
+          if (validation.reason) {
+            console.log(`⚠️ Complication "${complication}" filtered: ${validation.reason}`);
+          }
+        }
+      } catch (error) {
+        // Fallback to original logic if negation detection fails
+        console.warn('Negation detection failed, using fallback logic:', error.message);
+        shouldInclude = (hasIndicator || !hasExclusion);
+      }
+
+      // Add if validation passed
+      if (shouldInclude) {
         data.complications.push(complication);
         confidence = CONFIDENCE.HIGH;
       }
     }
   }
-  
+
   return { data, confidence };
 };
 
@@ -1400,7 +1645,8 @@ const extractOncology = (text, pathologyTypes) => {
   let confidence = CONFIDENCE.MEDIUM;
   
   // Only relevant for tumor pathologies
-  if (!pathologyTypes.includes('Tumors') && !pathologyTypes.includes('Metastases')) {
+  // FIX: Use uppercase pathology types to match PATHOLOGY_TYPES constants
+  if (!pathologyTypes.includes('TUMORS') && !pathologyTypes.includes('METASTASES')) {
     return { data, confidence: CONFIDENCE.LOW };
   }
   

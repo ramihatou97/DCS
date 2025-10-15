@@ -26,17 +26,18 @@ import { escapeRegExp } from '../../utils/textUtils.js';
  * Learning database configuration
  */
 const DB_NAME = 'dcs-learning';
-const DB_VERSION = 1;
+const DB_VERSION = 2; // Incremented for narrative patterns
 const STORE_PATTERNS = 'learnedPatterns';
 const STORE_RULES = 'extractionRules';
 const STORE_CONTEXT = 'contextualClues';
+const STORE_NARRATIVE = 'narrativePatterns'; // NEW: For summary-level learning
 
 /**
  * Initialize learning database
  */
 async function initLearningDB() {
   return await openDB(DB_NAME, DB_VERSION, {
-    upgrade(db) {
+    upgrade(db, oldVersion) {
       // Learned patterns store
       if (!db.objectStoreNames.contains(STORE_PATTERNS)) {
         const patternStore = db.createObjectStore(STORE_PATTERNS, {
@@ -68,6 +69,19 @@ async function initLearningDB() {
         });
         contextStore.createIndex('field', 'field');
         contextStore.createIndex('strength', 'strength');
+      }
+
+      // Narrative patterns store (NEW for summary-level learning)
+      if (!db.objectStoreNames.contains(STORE_NARRATIVE)) {
+        const narrativeStore = db.createObjectStore(STORE_NARRATIVE, {
+          keyPath: 'id',
+          autoIncrement: true
+        });
+        narrativeStore.createIndex('section', 'section');
+        narrativeStore.createIndex('patternType', 'patternType');
+        narrativeStore.createIndex('pathology', 'pathology');
+        narrativeStore.createIndex('confidence', 'confidence');
+        narrativeStore.createIndex('enabled', 'enabled');
       }
     }
   });
@@ -913,6 +927,367 @@ class LearningEngine {
 
     return regex;
   }
+
+  // ==================== NARRATIVE LEARNING METHODS ====================
+
+  /**
+   * Learn from summary corrections (narrative-level learning)
+   *
+   * @param {Array} corrections - Array of summary corrections
+   * @returns {Promise<Object>} Learning results
+   */
+  async learnFromSummaryCorrections(corrections) {
+    await this.initialize();
+
+    if (!corrections || corrections.length === 0) {
+      console.log('ℹ️  No summary corrections to learn from');
+      return { patternsLearned: 0 };
+    }
+
+    console.log(`🧠 Learning from ${corrections.length} summary corrections...`);
+
+    const patterns = [];
+
+    // Group corrections by section
+    const bySection = {};
+    for (const correction of corrections) {
+      if (!bySection[correction.section]) {
+        bySection[correction.section] = [];
+      }
+      bySection[correction.section].push(correction);
+    }
+
+    // Learn patterns for each section
+    for (const [section, sectionCorrections] of Object.entries(bySection)) {
+      console.log(`📝 Learning patterns for section: ${section} (${sectionCorrections.length} corrections)`);
+
+      // Strategy 1: Learn style preferences
+      const stylePatterns = this._learnStylePatterns(section, sectionCorrections);
+      patterns.push(...stylePatterns);
+
+      // Strategy 2: Learn terminology preferences
+      const termPatterns = this._learnTerminologyPatterns(section, sectionCorrections);
+      patterns.push(...termPatterns);
+
+      // Strategy 3: Learn structure preferences
+      const structurePatterns = this._learnStructurePatterns(section, sectionCorrections);
+      patterns.push(...structurePatterns);
+
+      // Strategy 4: Learn transition phrases
+      const transitionPatterns = this._learnTransitionPatterns(section, sectionCorrections);
+      patterns.push(...transitionPatterns);
+
+      // Strategy 5: Learn detail level preferences
+      const detailPatterns = this._learnDetailPatterns(section, sectionCorrections);
+      patterns.push(...detailPatterns);
+    }
+
+    // Store learned patterns
+    await this._storeNarrativePatterns(patterns);
+
+    console.log(`✅ Learned ${patterns.length} narrative patterns`);
+
+    return {
+      patternsLearned: patterns.length,
+      sections: Object.keys(bySection),
+      corrections: corrections.length
+    };
+  }
+
+  /**
+   * Learn style preferences (concise vs detailed, formal vs casual)
+   * @private
+   */
+  _learnStylePatterns(section, corrections) {
+    const patterns = [];
+
+    // Analyze length changes
+    const lengthChanges = corrections.map(c => ({
+      ratio: c.correctedLength / c.originalLength,
+      pathology: c.pathology
+    }));
+
+    const avgRatio = lengthChanges.reduce((sum, c) => sum + c.ratio, 0) / lengthChanges.length;
+
+    if (avgRatio < 0.8) {
+      // User prefers concise style
+      patterns.push({
+        section,
+        patternType: 'style',
+        preference: 'concise',
+        confidence: Math.min(0.9, 0.5 + (corrections.length * 0.1)),
+        examples: corrections.length,
+        metadata: { avgLengthRatio: avgRatio }
+      });
+    } else if (avgRatio > 1.2) {
+      // User prefers detailed style
+      patterns.push({
+        section,
+        patternType: 'style',
+        preference: 'detailed',
+        confidence: Math.min(0.9, 0.5 + (corrections.length * 0.1)),
+        examples: corrections.length,
+        metadata: { avgLengthRatio: avgRatio }
+      });
+    }
+
+    return patterns;
+  }
+
+  /**
+   * Learn terminology preferences (abbreviations, medical terms)
+   * @private
+   */
+  _learnTerminologyPatterns(section, corrections) {
+    const patterns = [];
+
+    // Track abbreviation usage
+    const abbrevChanges = {
+      expanded: 0,  // User expanded abbreviations
+      abbreviated: 0  // User added abbreviations
+    };
+
+    for (const correction of corrections) {
+      if (correction.correctionType === 'abbreviation') {
+        // Check if user expanded or abbreviated
+        const origAbbrevs = (correction.originalText.match(/\b[A-Z]{2,}\b/g) || []).length;
+        const corrAbbrevs = (correction.correctedText.match(/\b[A-Z]{2,}\b/g) || []).length;
+
+        if (corrAbbrevs < origAbbrevs) {
+          abbrevChanges.expanded++;
+        } else if (corrAbbrevs > origAbbrevs) {
+          abbrevChanges.abbreviated++;
+        }
+      }
+    }
+
+    if (abbrevChanges.expanded > abbrevChanges.abbreviated && abbrevChanges.expanded >= 2) {
+      patterns.push({
+        section,
+        patternType: 'terminology',
+        preference: 'expand_abbreviations',
+        confidence: Math.min(0.9, 0.5 + (abbrevChanges.expanded * 0.15)),
+        examples: abbrevChanges.expanded,
+        metadata: { expandedCount: abbrevChanges.expanded }
+      });
+    } else if (abbrevChanges.abbreviated > abbrevChanges.expanded && abbrevChanges.abbreviated >= 2) {
+      patterns.push({
+        section,
+        patternType: 'terminology',
+        preference: 'use_abbreviations',
+        confidence: Math.min(0.9, 0.5 + (abbrevChanges.abbreviated * 0.15)),
+        examples: abbrevChanges.abbreviated,
+        metadata: { abbreviatedCount: abbrevChanges.abbreviated }
+      });
+    }
+
+    return patterns;
+  }
+
+  /**
+   * Learn structure preferences (sentence ordering, paragraph organization)
+   * @private
+   */
+  _learnStructurePatterns(section, corrections) {
+    const patterns = [];
+
+    // Analyze sentence count changes
+    for (const correction of corrections) {
+      const origSentences = correction.originalText.split(/[.!?]+/).filter(s => s.trim().length > 0);
+      const corrSentences = correction.correctedText.split(/[.!?]+/).filter(s => s.trim().length > 0);
+
+      if (corrSentences.length > origSentences.length * 1.3) {
+        // User prefers more sentences (shorter, clearer)
+        patterns.push({
+          section,
+          patternType: 'structure',
+          preference: 'shorter_sentences',
+          confidence: 0.6,
+          examples: 1,
+          metadata: {
+            originalSentences: origSentences.length,
+            correctedSentences: corrSentences.length
+          }
+        });
+      }
+    }
+
+    return patterns;
+  }
+
+  /**
+   * Learn transition phrase preferences
+   * @private
+   */
+  _learnTransitionPatterns(section, corrections) {
+    const patterns = [];
+
+    const commonTransitions = [
+      'subsequently', 'following', 'after', 'during', 'on post-operative day',
+      'the patient', 'he was', 'she was', 'additionally', 'furthermore'
+    ];
+
+    const addedTransitions = [];
+
+    for (const correction of corrections) {
+      const origLower = correction.originalText.toLowerCase();
+      const corrLower = correction.correctedText.toLowerCase();
+
+      for (const transition of commonTransitions) {
+        const origHas = origLower.includes(transition);
+        const corrHas = corrLower.includes(transition);
+
+        if (!origHas && corrHas) {
+          addedTransitions.push(transition);
+        }
+      }
+    }
+
+    // If user consistently adds certain transitions
+    const transitionCounts = {};
+    for (const t of addedTransitions) {
+      transitionCounts[t] = (transitionCounts[t] || 0) + 1;
+    }
+
+    for (const [transition, count] of Object.entries(transitionCounts)) {
+      if (count >= 2) {
+        patterns.push({
+          section,
+          patternType: 'transition',
+          preference: transition,
+          confidence: Math.min(0.9, 0.5 + (count * 0.15)),
+          examples: count,
+          metadata: { transitionPhrase: transition }
+        });
+      }
+    }
+
+    return patterns;
+  }
+
+  /**
+   * Learn detail level preferences
+   * @private
+   */
+  _learnDetailPatterns(section, corrections) {
+    const patterns = [];
+
+    // Track what types of details are added
+    const detailTypes = {
+      dates: 0,
+      times: 0,
+      laterality: 0,  // left/right
+      specificity: 0  // specific vs general terms
+    };
+
+    for (const correction of corrections) {
+      const origText = correction.originalText;
+      const corrText = correction.correctedText;
+
+      // Check for date additions
+      const origDates = (origText.match(/\d{1,2}\/\d{1,2}\/\d{2,4}|\d{4}-\d{2}-\d{2}/g) || []).length;
+      const corrDates = (corrText.match(/\d{1,2}\/\d{1,2}\/\d{2,4}|\d{4}-\d{2}-\d{2}/g) || []).length;
+      if (corrDates > origDates) detailTypes.dates++;
+
+      // Check for laterality additions
+      const lateralityTerms = ['left', 'right', 'bilateral'];
+      const origLaterality = lateralityTerms.filter(t => origText.toLowerCase().includes(t)).length;
+      const corrLaterality = lateralityTerms.filter(t => corrText.toLowerCase().includes(t)).length;
+      if (corrLaterality > origLaterality) detailTypes.laterality++;
+
+      // Check for specificity
+      if (corrText.length > origText.length * 1.2) {
+        detailTypes.specificity++;
+      }
+    }
+
+    // Create patterns for consistent detail additions
+    for (const [detailType, count] of Object.entries(detailTypes)) {
+      if (count >= 2) {
+        patterns.push({
+          section,
+          patternType: 'detail',
+          preference: `add_${detailType}`,
+          confidence: Math.min(0.9, 0.5 + (count * 0.15)),
+          examples: count,
+          metadata: { detailType, count }
+        });
+      }
+    }
+
+    return patterns;
+  }
+
+  /**
+   * Store narrative patterns in database
+   * @private
+   */
+  async _storeNarrativePatterns(patterns) {
+    if (patterns.length === 0) return;
+
+    const tx = this.db.transaction(STORE_NARRATIVE, 'readwrite');
+
+    for (const pattern of patterns) {
+      const record = {
+        ...pattern,
+        enabled: true,
+        createdAt: new Date().toISOString(),
+        lastUsed: null,
+        successCount: 0,
+        failureCount: 0
+      };
+
+      await tx.store.add(record);
+    }
+
+    await tx.done;
+
+    console.log(`💾 Stored ${patterns.length} narrative patterns`);
+  }
+
+  /**
+   * Get narrative patterns for a section
+   *
+   * @param {string} section - Section name
+   * @param {string} pathology - Pathology type (optional)
+   * @returns {Promise<Array>} Narrative patterns
+   */
+  async getNarrativePatterns(section, pathology = null) {
+    await this.initialize();
+
+    const tx = this.db.transaction(STORE_NARRATIVE, 'readonly');
+    const index = tx.store.index('section');
+    let patterns = await index.getAll(section);
+    await tx.done;
+
+    // Filter by pathology if specified
+    if (pathology) {
+      patterns = patterns.filter(p => !p.pathology || p.pathology === pathology);
+    }
+
+    // Filter enabled only
+    patterns = patterns.filter(p => p.enabled);
+
+    // Sort by confidence
+    patterns.sort((a, b) => b.confidence - a.confidence);
+
+    return patterns;
+  }
+
+  /**
+   * Get all narrative patterns
+   *
+   * @returns {Promise<Array>} All narrative patterns
+   */
+  async getAllNarrativePatterns() {
+    await this.initialize();
+
+    const tx = this.db.transaction(STORE_NARRATIVE, 'readonly');
+    const patterns = await tx.store.getAll();
+    await tx.done;
+
+    return patterns.filter(p => p.enabled);
+  }
 }
 
 // Singleton instance
@@ -930,3 +1305,8 @@ export const getLearningStatistics = () => learningEngine.getStatistics();
 export const exportLearning = () => learningEngine.exportLearning();
 export const importLearning = (data) => learningEngine.importLearning(data);
 export const clearAllLearning = () => learningEngine.clearAllLearning();
+
+// Narrative learning exports
+export const learnFromSummaryCorrections = (corrections) => learningEngine.learnFromSummaryCorrections(corrections);
+export const getNarrativePatterns = (section, pathology) => learningEngine.getNarrativePatterns(section, pathology);
+export const getAllNarrativePatterns = () => learningEngine.getAllNarrativePatterns();

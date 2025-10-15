@@ -330,6 +330,7 @@ const BatchUpload = ({ onNotesProcessed, isProcessing = false }) => {
         <h4 className="font-medium mb-2">💡 Tips</h4>
         <ul className="text-sm text-gray-600 dark:text-gray-400 space-y-1">
           <li>• You can upload multiple notes at once - they'll be combined for extraction</li>
+          <li>• <strong>Include consultant notes when available</strong> - neurology, PT/OT, cardiology, etc. provide critical specialty expertise</li>
           <li>• Include all relevant notes: admission, progress, operative, consultant, PT/OT</li>
           <li>• More complete notes = better extraction accuracy</li>
           <li>• The system automatically detects note types and pathology</li>

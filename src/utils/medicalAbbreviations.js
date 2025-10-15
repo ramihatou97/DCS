@@ -417,4 +417,303 @@ export const getAbbreviationsByCategory = (category) => {
   return categories[category] || [];
 };
 
+// ==================== PHASE 1 STEP 4: CONTEXT-AWARE EXPANSION ====================
+
+/**
+ * Institution-specific abbreviations (user-configurable)
+ */
+export const INSTITUTION_SPECIFIC_ABBREVIATIONS = {
+  'NSGY': 'Neurosurgery',
+  'NICU': 'Neurological Intensive Care Unit',
+  'SICU': 'Surgical Intensive Care Unit',
+  'MICU': 'Medical Intensive Care Unit',
+  'CCU': 'Cardiac Care Unit',
+  'PACU': 'Post-Anesthesia Care Unit',
+  'OR': 'Operating Room',
+  'ER': 'Emergency Room',
+  'ED': 'Emergency Department',
+  'ICU': 'Intensive Care Unit',
+  'PICU': 'Pediatric Intensive Care Unit',
+  'CVICU': 'Cardiovascular Intensive Care Unit',
+  'TICU': 'Trauma Intensive Care Unit',
+  'BICU': 'Burn Intensive Care Unit',
+  'SDU': 'Step-Down Unit',
+  'IMC': 'Intermediate Care',
+  'PCU': 'Progressive Care Unit',
+  'Tele': 'Telemetry',
+  'Floor': 'General Floor',
+  'Consult': 'Consultation'
+};
+
+/**
+ * Ambiguous abbreviations with context-dependent meanings
+ */
+export const AMBIGUOUS_ABBREVIATIONS = {
+  'MS': {
+    'mental status': ['alert', 'oriented', 'confused', 'lethargic', 'obtunded', 'comatose', 'GCS', 'consciousness'],
+    'motor strength': ['motor', 'strength', '5/5', '4/5', '3/5', 'weakness', 'extremit', 'arm', 'leg', 'hand', 'foot'],
+    'multiple sclerosis': ['demyelinating', 'lesion', 'plaque', 'relapsing', 'remitting', 'history of MS']
+  },
+  'DC': {
+    'decompressive craniectomy': ['craniotomy', 'craniectomy', 'bone flap', 'malignant', 'edema', 'herniation', 'ICP', 'underwent', 'performed'],
+    'discharge': ['discharged', 'discharge', 'home', 'rehab', 'SNF', 'facility', 'disposition', 'ready for']
+  },
+  'PE': {
+    'pulmonary embolism': ['CT angiogram', 'CTA chest', 'DVT', 'anticoagulation', 'clot', 'embolus', 'pulmonary'],
+    'physical exam': ['exam', 'examination', 'reveals', 'shows', 'demonstrates', 'findings', 'on exam']
+  },
+  'PT': {
+    'Physical Therapy': ['therapy', 'therapist', 'PT/OT', 'rehabilitation', 'mobility', 'ambulation', 'consult'],
+    'patient': ['pt is', 'pt was', 'pt has', 'pt underwent', 'the pt'],
+    'prothrombin time': ['INR', 'coagulation', 'PT/INR', 'PT/PTT', 'lab', 'coags']
+  },
+  'ST': {
+    'Speech Therapy': ['therapy', 'therapist', 'swallow', 'dysphagia', 'speech', 'language', 'consult'],
+    'sinus tachycardia': ['heart rate', 'HR', 'tachycardia', 'rhythm', 'cardiac', 'EKG', 'ECG']
+  },
+  'PC': {
+    'posterior communicating': ['artery', 'aneurysm', 'PCoA', 'vascular', 'vessel'],
+    'palliative care': ['palliative', 'comfort', 'goals of care', 'hospice', 'end of life', 'consult']
+  },
+  'AC': {
+    'anterior communicating': ['artery', 'aneurysm', 'ACoA', 'vascular', 'vessel'],
+    'anticoagulation': ['warfarin', 'heparin', 'Coumadin', 'Eliquis', 'anticoagulant', 'INR', 'bleeding']
+  },
+  'LD': {
+    'lumbar drain': ['drain', 'CSF', 'drainage', 'placed', 'removed', 'output'],
+    'lactate dehydrogenase': ['lab', 'LDH', 'enzyme', 'level', 'elevated']
+  },
+  'HTS': {
+    'hypertonic saline': ['saline', '3%', 'sodium', 'ICP', 'edema', 'osmotherapy'],
+    'heel to shin': ['exam', 'coordination', 'cerebellar', 'ataxia', 'test']
+  }
+};
+
+/**
+ * Pathology-specific abbreviation mappings
+ */
+export const PATHOLOGY_SPECIFIC_ABBREVIATIONS = {
+  'SAH': {
+    'DC': 'decompressive craniectomy',
+    'PC': 'posterior communicating',
+    'AC': 'anterior communicating',
+    'HTS': 'hypertonic saline',
+    'MS': 'mental status',
+    'LD': 'lumbar drain'
+  },
+  'TUMORS': {
+    'DC': 'discharge',
+    'PC': 'palliative care',
+    'MS': 'multiple sclerosis',
+    'PT': 'Physical Therapy',
+    'ST': 'Speech Therapy'
+  },
+  'SPINE': {
+    'MS': 'motor strength',
+    'PT': 'Physical Therapy',
+    'ST': 'Speech Therapy',
+    'LD': 'lactate dehydrogenase',
+    'DC': 'discharge'
+  },
+  'HYDROCEPHALUS': {
+    'LD': 'lumbar drain',
+    'HTS': 'hypertonic saline',
+    'DC': 'decompressive craniectomy',
+    'MS': 'mental status'
+  },
+  'TBI_CSDH': {
+    'DC': 'decompressive craniectomy',
+    'MS': 'mental status',
+    'HTS': 'hypertonic saline',
+    'PT': 'Physical Therapy'
+  },
+  'SEIZURES': {
+    'MS': 'mental status',
+    'PT': 'Physical Therapy',
+    'ST': 'Speech Therapy',
+    'DC': 'discharge'
+  },
+  'METASTASES': {
+    'DC': 'discharge',
+    'PC': 'palliative care',
+    'MS': 'multiple sclerosis',
+    'PT': 'Physical Therapy'
+  },
+  'CSF_LEAK': {
+    'LD': 'lumbar drain',
+    'DC': 'discharge',
+    'MS': 'mental status'
+  }
+};
+
+/**
+ * Context-aware abbreviation expansion
+ * Uses surrounding text to disambiguate ambiguous abbreviations
+ */
+export const expandAbbreviationWithContext = (abbrev, context, pathology = null) => {
+  if (!abbrev) return abbrev;
+
+  try {
+    const lowerContext = context ? context.toLowerCase() : '';
+    const upperAbbrev = abbrev.toUpperCase();
+
+    // First, try pathology-specific expansion (highest priority)
+    if (pathology && PATHOLOGY_SPECIFIC_ABBREVIATIONS[pathology]?.[upperAbbrev]) {
+      return PATHOLOGY_SPECIFIC_ABBREVIATIONS[pathology][upperAbbrev];
+    }
+
+    // Then, try context-based disambiguation for ambiguous abbreviations
+    // Only if we have context to work with
+    if (context && AMBIGUOUS_ABBREVIATIONS[upperAbbrev]) {
+      const meanings = AMBIGUOUS_ABBREVIATIONS[upperAbbrev];
+
+      // Score each possible meaning based on context keywords
+      let bestMatch = null;
+      let bestScore = 0;
+
+      for (const [meaning, keywords] of Object.entries(meanings)) {
+        let score = 0;
+        for (const keyword of keywords) {
+          if (lowerContext.includes(keyword.toLowerCase())) {
+            score++;
+          }
+        }
+
+        if (score > bestScore) {
+          bestScore = score;
+          bestMatch = meaning;
+        }
+      }
+
+      // If we found a good match (at least 1 keyword), use it
+      if (bestMatch && bestScore > 0) {
+        return bestMatch;
+      }
+
+      // If no context match but is ambiguous, return first meaning as default
+      return Object.keys(meanings)[0];
+    }
+
+    // Check institution-specific abbreviations
+    if (INSTITUTION_SPECIFIC_ABBREVIATIONS[upperAbbrev]) {
+      return INSTITUTION_SPECIFIC_ABBREVIATIONS[upperAbbrev];
+    }
+
+    // Finally, check standard medical abbreviations
+    if (MEDICAL_ABBREVIATIONS[upperAbbrev]) {
+      return MEDICAL_ABBREVIATIONS[upperAbbrev];
+    }
+
+    // If no match found, return original
+    return abbrev;
+
+  } catch (error) {
+    console.warn('⚠️ Context-aware expansion failed:', error.message);
+    // Fallback to basic expansion
+    return MEDICAL_ABBREVIATIONS[abbrev] || abbrev;
+  }
+};
+
+/**
+ * Expand abbreviations in text with context awareness
+ * Preserves original abbreviation in parentheses
+ */
+export const expandAbbreviationsInText = (text, options = {}) => {
+  if (!text) return text;
+
+  try {
+    const {
+      pathology = null,
+      preserveOriginal = true,
+      institutionSpecific = true,
+      contextWindow = 50 // characters before/after for context
+    } = options;
+
+    let expanded = text;
+
+    // Combine all abbreviation sources
+    const allAbbreviations = {
+      ...MEDICAL_ABBREVIATIONS,
+      ...(institutionSpecific ? INSTITUTION_SPECIFIC_ABBREVIATIONS : {})
+    };
+
+    // Sort by length (descending) to handle longer abbreviations first
+    const sortedAbbrs = Object.keys(allAbbreviations).sort((a, b) => b.length - a.length);
+
+    // Track already expanded positions to avoid double expansion
+    const expandedPositions = new Set();
+
+    for (const abbr of sortedAbbrs) {
+      // Create regex to find word boundaries
+      const regex = new RegExp(`\\b${abbr.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'g');
+      let match;
+
+      while ((match = regex.exec(text)) !== null) {
+        const position = match.index;
+
+        // Skip if already expanded
+        if (expandedPositions.has(position)) continue;
+
+        // Get context around the abbreviation
+        const contextStart = Math.max(0, position - contextWindow);
+        const contextEnd = Math.min(text.length, position + abbr.length + contextWindow);
+        const context = text.substring(contextStart, contextEnd);
+
+        // Get context-aware expansion
+        const fullForm = expandAbbreviationWithContext(abbr, context, pathology);
+
+        // Only expand if we got a different result
+        if (fullForm && fullForm !== abbr) {
+          const replacement = preserveOriginal
+            ? `${abbr} (${fullForm})`
+            : fullForm;
+
+          // Replace in expanded text
+          const before = expanded.substring(0, position);
+          const after = expanded.substring(position + abbr.length);
+          expanded = before + replacement + after;
+
+          // Mark position as expanded
+          expandedPositions.add(position);
+
+          // Adjust regex lastIndex for the new text length
+          regex.lastIndex = position + replacement.length;
+        }
+      }
+    }
+
+    return expanded;
+
+  } catch (error) {
+    console.warn('⚠️ Abbreviation expansion in text failed:', error.message);
+    // Fallback: return original text
+    return text;
+  }
+};
+
+/**
+ * Get list of ambiguous abbreviations
+ */
+export const getAmbiguousAbbreviations = () => {
+  return Object.keys(AMBIGUOUS_ABBREVIATIONS);
+};
+
+/**
+ * Check if abbreviation is ambiguous
+ */
+export const isAmbiguousAbbreviation = (abbrev) => {
+  return AMBIGUOUS_ABBREVIATIONS.hasOwnProperty(abbrev.toUpperCase());
+};
+
+/**
+ * Get possible meanings for an ambiguous abbreviation
+ */
+export const getAbbreviationMeanings = (abbrev) => {
+  const upperAbbrev = abbrev.toUpperCase();
+  if (AMBIGUOUS_ABBREVIATIONS[upperAbbrev]) {
+    return Object.keys(AMBIGUOUS_ABBREVIATIONS[upperAbbrev]);
+  }
+  return [];
+};
+
 export default MEDICAL_ABBREVIATIONS;

@@ -20,6 +20,7 @@ import { MEDICAL_ABBREVIATIONS, expandAbbreviation } from '../utils/medicalAbbre
 import { formatDate, calculateDaysBetween, getRelativeTime } from '../utils/dateUtils.js';
 import { cleanText } from '../utils/textUtils.js';
 import { isLLMAvailable, generateSummaryWithLLM } from './llmService.js';
+import { getNarrativePatterns } from './ml/learningEngine.js';
 
 /**
  * Generate complete narrative from extracted data
@@ -33,9 +34,9 @@ export const generateNarrative = async (extractedData, sourceNotes = '', options
   const {
     pathologyType = extractedData.pathology?.type || 'general',
     style = 'formal', // 'formal', 'concise', 'detailed'
-    includeAbbreviations = true,
     expandAbbreviations = false,
-    useLLM = null // null = auto, true = force LLM, false = force templates
+    useLLM = null, // null = auto, true = force LLM, false = force templates
+    applyLearnedPatterns = true // NEW: Apply learned narrative patterns
   } = options;
 
   // Determine if we should use LLM
@@ -43,24 +44,60 @@ export const generateNarrative = async (extractedData, sourceNotes = '', options
 
   console.log(`Narrative generation method: ${shouldUseLLM ? 'LLM-powered' : 'Template-based'}`);
 
+  // Load learned narrative patterns if enabled
+  let learnedPatterns = {};
+  if (applyLearnedPatterns) {
+    try {
+      const sections = ['chiefComplaint', 'historyOfPresentIllness', 'hospitalCourse',
+                       'procedures', 'complications', 'dischargeStatus', 'dischargeMedications', 'followUpPlan'];
+
+      for (const section of sections) {
+        const patterns = await getNarrativePatterns(section, pathologyType);
+        if (patterns.length > 0) {
+          learnedPatterns[section] = patterns;
+        }
+      }
+
+      if (Object.keys(learnedPatterns).length > 0) {
+        console.log(`📚 Applying ${Object.keys(learnedPatterns).length} learned narrative patterns`);
+      }
+    } catch (error) {
+      console.warn('Failed to load learned patterns:', error);
+      learnedPatterns = {};
+    }
+  }
+
   // Try LLM generation first if available
   if (shouldUseLLM && sourceNotes) {
     try {
       console.log('Attempting LLM narrative generation...');
-      const llmNarrative = await generateSummaryWithLLM(extractedData, sourceNotes, options);
-      
+
+      // Pass learned patterns to LLM for enhanced generation
+      const enhancedOptions = {
+        ...options,
+        learnedPatterns: Object.keys(learnedPatterns).length > 0 ? learnedPatterns : undefined
+      };
+
+      const llmNarrative = await generateSummaryWithLLM(extractedData, sourceNotes, enhancedOptions);
+
       // Parse LLM narrative into sections
       const parsedNarrative = parseLLMNarrative(llmNarrative);
-      
+
+      // Apply learned patterns to parsed narrative
+      const enhancedNarrative = applyLearnedPatterns ?
+        applyNarrativePatternsToSections(parsedNarrative, learnedPatterns) :
+        parsedNarrative;
+
       console.log('LLM narrative generation successful');
-      
+
       return {
-        ...parsedNarrative,
+        ...enhancedNarrative,
         metadata: {
           generatedAt: new Date().toISOString(),
           pathologyType,
           style,
-          generationMethod: 'llm'
+          generationMethod: 'llm',
+          learnedPatternsApplied: Object.keys(learnedPatterns).length
         }
       };
     } catch (error) {
@@ -713,8 +750,115 @@ const parseLLMNarrative = (llmText) => {
   }
 
   console.log(`LLM narrative parsed: ${extractedSections}/8 sections extracted`);
-  
+
   return narrative;
+};
+
+/**
+ * Apply learned narrative patterns to generated sections
+ *
+ * @param {Object} narrative - Generated narrative sections
+ * @param {Object} learnedPatterns - Learned patterns by section
+ * @returns {Object} Enhanced narrative
+ */
+const applyNarrativePatternsToSections = (narrative, learnedPatterns) => {
+  const enhanced = { ...narrative };
+
+  for (const [section, patterns] of Object.entries(learnedPatterns)) {
+    if (!enhanced[section] || enhanced[section] === 'Not available.') continue;
+
+    let text = enhanced[section];
+
+    // Apply each pattern type
+    for (const pattern of patterns) {
+      switch (pattern.patternType) {
+        case 'style':
+          text = applyStylePattern(text, pattern);
+          break;
+        case 'terminology':
+          text = applyTerminologyPattern(text, pattern);
+          break;
+        case 'transition':
+          text = applyTransitionPattern(text, pattern);
+          break;
+        case 'detail':
+          text = applyDetailPattern(text, pattern);
+          break;
+      }
+    }
+
+    enhanced[section] = text;
+  }
+
+  return enhanced;
+};
+
+/**
+ * Apply style pattern (concise vs detailed)
+ */
+const applyStylePattern = (text, pattern) => {
+  if (pattern.preference === 'concise') {
+    // Make text more concise
+    text = text.replace(/\bthe patient\b/gi, 'Patient');
+    text = text.replace(/\bhe was\b/gi, 'He');
+    text = text.replace(/\bshe was\b/gi, 'She');
+  }
+  return text;
+};
+
+/**
+ * Apply terminology pattern (abbreviations)
+ */
+const applyTerminologyPattern = (text, pattern) => {
+  if (pattern.preference === 'expand_abbreviations') {
+    // Expand common abbreviations on first use
+    const abbrevs = {
+      'SAH': 'subarachnoid hemorrhage (SAH)',
+      'ICH': 'intracerebral hemorrhage (ICH)',
+      'EVD': 'external ventricular drain (EVD)',
+      'ICP': 'intracranial pressure (ICP)',
+      'GCS': 'Glasgow Coma Scale (GCS)',
+      'mRS': 'modified Rankin Scale (mRS)'
+    };
+
+    for (const [abbrev, expanded] of Object.entries(abbrevs)) {
+      const regex = new RegExp(`\\b${abbrev}\\b`, 'g');
+      const matches = text.match(regex);
+      if (matches && matches.length > 0) {
+        // Replace first occurrence with expanded form
+        text = text.replace(regex, expanded);
+        // Subsequent occurrences remain abbreviated
+        text = text.replace(new RegExp(expanded.replace(/[()]/g, '\\$&'), 'g'), abbrev);
+      }
+    }
+  }
+  return text;
+};
+
+/**
+ * Apply transition pattern
+ */
+const applyTransitionPattern = (text, pattern) => {
+  // Add transition phrases if missing
+  const sentences = text.split(/\.\s+/);
+  if (sentences.length > 1 && pattern.metadata?.transitionPhrase) {
+    const transition = pattern.metadata.transitionPhrase;
+    // Add transition to second sentence if it doesn't have one
+    if (!sentences[1].toLowerCase().startsWith(transition)) {
+      sentences[1] = `${transition.charAt(0).toUpperCase() + transition.slice(1)}, ${sentences[1].charAt(0).toLowerCase() + sentences[1].slice(1)}`;
+    }
+  }
+  return sentences.join('. ');
+};
+
+/**
+ * Apply detail pattern
+ */
+const applyDetailPattern = (text, pattern) => {
+  // Detail patterns are more complex and context-dependent
+  // For now, just return text as-is
+  // Future: Add specific date/time/laterality details based on pattern
+  return text;
 };
 
 export default {

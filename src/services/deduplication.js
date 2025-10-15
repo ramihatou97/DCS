@@ -321,27 +321,52 @@ const extractKeyEntities = (note) => {
  */
 const calculateNotePriority = (note, entities, temporalMarkers) => {
   let score = 0;
-  
+  const noteLower = note.toLowerCase();
+
   // Longer notes generally have more information
   score += note.length / 100;
-  
+
   // Notes with more entities are more valuable
   score += (entities.procedures.length + entities.complications.length) * 10;
-  
+
   // Notes with temporal markers are more structured
   score += temporalMarkers.length * 5;
-  
-  // Notes with specific keywords have higher priority
+
+  // CRITICAL: Consultant notes have HIGHEST priority (when present)
+  // These provide specialty expertise and critical recommendations
+  const consultantKeywords = [
+    'neurology consult', 'cardiology consult', 'infectious disease consult',
+    'endocrine consult', 'nephrology consult', 'pulmonology consult',
+    'hematology consult', 'oncology consult', 'radiation oncology',
+    'physical therapy', 'occupational therapy', 'speech therapy',
+    'pt consult', 'ot consult', 'st consult', 'pt/ot', 'ot/pt',
+    'consultant:', 'consultation:', 'consult note', 'consult service',
+    'recommendations:', 'consultant recommendations'
+  ];
+
+  for (const keyword of consultantKeywords) {
+    if (noteLower.includes(keyword)) {
+      score += 30; // HIGHEST PRIORITY - consultant notes are critical
+      break; // Only count once per note
+    }
+  }
+
+  // High-value clinical documentation keywords
   const highValueKeywords = [
     'operative', 'procedure', 'impression', 'assessment', 'discharge', 'follow-up'
   ];
-  
+
   for (const keyword of highValueKeywords) {
-    if (note.toLowerCase().includes(keyword)) {
+    if (noteLower.includes(keyword)) {
       score += 15;
     }
   }
-  
+
+  // Attending notes have higher priority than resident notes
+  if (noteLower.includes('attending note') || noteLower.includes('attending assessment')) {
+    score += 20;
+  }
+
   return score;
 };
 

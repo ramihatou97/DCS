@@ -1,19 +1,25 @@
 /**
  * SummaryGenerator Component
- * 
- * Displays generated discharge summary with export options.
+ *
+ * Displays generated discharge summary with export options and inline editing.
+ * Tracks corrections for ML learning.
  */
 
 import React, { useState, useEffect } from 'react';
-import { Download, Copy, FileText, CheckCircle, Loader, RefreshCw } from 'lucide-react';
-import { generateDischargeSummary, exportSummary } from '../services/summaryGenerator.js';
+import { Download, Copy, FileText, CheckCircle, Loader, RefreshCw, Edit2, Save, X } from 'lucide-react';
+import { generateDischargeSummary, exportSummary, compareSummaries } from '../services/summaryGenerator.js';
 import { formatNarrativeForExport } from '../services/narrativeEngine.js';
+import { trackSummaryCorrections } from '../services/ml/summaryCorrections.js';
+import { learnFromSummaryCorrections } from '../services/ml/learningEngine.js';
 
 const SummaryGeneratorComponent = ({ extractedData, notes }) => {
   const [loading, setLoading] = useState(false);
   const [summary, setSummary] = useState(null);
   const [error, setError] = useState(null);
   const [copied, setCopied] = useState(false);
+  const [editMode, setEditMode] = useState(false);
+  const [editedSummary, setEditedSummary] = useState(null);
+  const [saving, setSaving] = useState(false);
 
   /**
    * Generate summary on mount
@@ -120,6 +126,92 @@ const SummaryGeneratorComponent = ({ extractedData, notes }) => {
     URL.revokeObjectURL(url);
   };
 
+  /**
+   * Enter edit mode
+   */
+  const handleEdit = () => {
+    setEditMode(true);
+    setEditedSummary({ ...summary.summary });
+  };
+
+  /**
+   * Cancel editing
+   */
+  const handleCancelEdit = () => {
+    setEditMode(false);
+    setEditedSummary(null);
+  };
+
+  /**
+   * Handle section edit
+   */
+  const handleSectionEdit = (section, newContent) => {
+    setEditedSummary(prev => ({
+      ...prev,
+      [section]: newContent
+    }));
+  };
+
+  /**
+   * Save corrections and learn from them
+   */
+  const handleSaveCorrections = async () => {
+    if (!editedSummary || !summary) return;
+
+    setSaving(true);
+
+    try {
+      // Compare original vs edited
+      const differences = compareSummaries(summary.summary, editedSummary);
+
+      console.log(`📝 Detected ${differences.changed.length} section changes`);
+
+      // Track corrections for learning
+      if (differences.changed.length > 0) {
+        const corrections = differences.changed.map(change => ({
+          section: change.section,
+          originalText: change.before,
+          correctedText: change.after,
+          context: {
+            pathology: summary.metadata?.pathologyTypes?.[0] || 'unknown',
+            extractedData: summary.extractedData
+          }
+        }));
+
+        // Track corrections (non-blocking)
+        trackSummaryCorrections(corrections).then(tracked => {
+          console.log(`✅ Tracked ${tracked.length} summary corrections`);
+
+          // Trigger learning (non-blocking)
+          learnFromSummaryCorrections(tracked).then(result => {
+            console.log(`🧠 Learned ${result.patternsLearned} narrative patterns`);
+          }).catch(error => {
+            console.error('Failed to learn from corrections:', error);
+          });
+        }).catch(error => {
+          console.error('Failed to track corrections:', error);
+        });
+      }
+
+      // Update summary with edited content
+      setSummary(prev => ({
+        ...prev,
+        summary: editedSummary
+      }));
+
+      setEditMode(false);
+      setEditedSummary(null);
+
+      console.log('✅ Summary corrections saved');
+
+    } catch (error) {
+      console.error('Failed to save corrections:', error);
+      setError('Failed to save corrections: ' + error.message);
+    } finally {
+      setSaving(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex flex-col items-center justify-center py-12">
@@ -215,83 +307,164 @@ const SummaryGeneratorComponent = ({ extractedData, notes }) => {
 
       {/* Action Buttons */}
       <div className="flex gap-3 flex-wrap">
-        <button
-          onClick={handleCopy}
-          className="btn btn-primary"
-        >
-          {copied ? (
-            <>
-              <CheckCircle className="w-4 h-4 mr-2" />
-              Copied!
-            </>
-          ) : (
-            <>
-              <Copy className="w-4 h-4 mr-2" />
-              Copy to Clipboard
-            </>
-          )}
-        </button>
-        <button
-          onClick={handleDownloadText}
-          className="btn"
-        >
-          <Download className="w-4 h-4 mr-2" />
-          Download Text
-        </button>
-        <button
-          onClick={handleDownloadJSON}
-          className="btn"
-        >
-          <Download className="w-4 h-4 mr-2" />
-          Download JSON
-        </button>
-        <button
-          onClick={handleGenerate}
-          className="btn"
-        >
-          <RefreshCw className="w-4 h-4 mr-2" />
-          Regenerate
-        </button>
+        {!editMode ? (
+          <>
+            <button
+              onClick={handleEdit}
+              className="btn btn-primary"
+            >
+              <Edit2 className="w-4 h-4 mr-2" />
+              Edit Summary
+            </button>
+            <button
+              onClick={handleCopy}
+              className="btn"
+            >
+              {copied ? (
+                <>
+                  <CheckCircle className="w-4 h-4 mr-2" />
+                  Copied!
+                </>
+              ) : (
+                <>
+                  <Copy className="w-4 h-4 mr-2" />
+                  Copy to Clipboard
+                </>
+              )}
+            </button>
+            <button
+              onClick={handleDownloadText}
+              className="btn"
+            >
+              <Download className="w-4 h-4 mr-2" />
+              Download Text
+            </button>
+            <button
+              onClick={handleDownloadJSON}
+              className="btn"
+            >
+              <Download className="w-4 h-4 mr-2" />
+              Download JSON
+            </button>
+            <button
+              onClick={handleGenerate}
+              className="btn"
+            >
+              <RefreshCw className="w-4 h-4 mr-2" />
+              Regenerate
+            </button>
+          </>
+        ) : (
+          <>
+            <button
+              onClick={handleSaveCorrections}
+              disabled={saving}
+              className="btn btn-primary"
+            >
+              {saving ? (
+                <>
+                  <Loader className="w-4 h-4 mr-2 animate-spin" />
+                  Saving...
+                </>
+              ) : (
+                <>
+                  <Save className="w-4 h-4 mr-2" />
+                  Save Corrections
+                </>
+              )}
+            </button>
+            <button
+              onClick={handleCancelEdit}
+              disabled={saving}
+              className="btn"
+            >
+              <X className="w-4 h-4 mr-2" />
+              Cancel
+            </button>
+          </>
+        )}
       </div>
 
       {/* Summary Content */}
       <div className="space-y-4">
-        {summary.summary.chiefComplaint && (
-          <SummarySection title="Chief Complaint" content={summary.summary.chiefComplaint} />
-        )}
-        
-        {summary.summary.historyOfPresentIllness && (
-          <SummarySection 
-            title="History of Present Illness" 
-            content={summary.summary.historyOfPresentIllness} 
+        {(editMode ? editedSummary : summary.summary).chiefComplaint && (
+          <SummarySection
+            title="Chief Complaint"
+            sectionKey="chiefComplaint"
+            content={editMode ? editedSummary.chiefComplaint : summary.summary.chiefComplaint}
+            editable={editMode}
+            onEdit={handleSectionEdit}
           />
         )}
-        
-        {summary.summary.hospitalCourse && (
-          <SummarySection title="Hospital Course" content={summary.summary.hospitalCourse} />
-        )}
-        
-        {summary.summary.procedures && (
-          <SummarySection title="Procedures" content={summary.summary.procedures} />
-        )}
-        
-        {summary.summary.complications && (
-          <SummarySection title="Complications" content={summary.summary.complications} />
-        )}
-        
-        {summary.summary.dischargeStatus && (
-          <SummarySection title="Discharge Status" content={summary.summary.dischargeStatus} />
-        )}
-        
-        {summary.summary.dischargeMedications && (
-          <SummarySection 
-            title="Discharge Medications" 
-            content={summary.summary.dischargeMedications} 
+
+        {(editMode ? editedSummary : summary.summary).historyOfPresentIllness && (
+          <SummarySection
+            title="History of Present Illness"
+            sectionKey="historyOfPresentIllness"
+            content={editMode ? editedSummary.historyOfPresentIllness : summary.summary.historyOfPresentIllness}
+            editable={editMode}
+            onEdit={handleSectionEdit}
           />
         )}
-        
-        {summary.summary.followUpPlan && (
-          <SummarySection title="Follow-Up Plan" content={summary.summary.followUpPlan} />
+
+        {(editMode ? editedSummary : summary.summary).hospitalCourse && (
+          <SummarySection
+            title="Hospital Course"
+            sectionKey="hospitalCourse"
+            content={editMode ? editedSummary.hospitalCourse : summary.summary.hospitalCourse}
+            editable={editMode}
+            onEdit={handleSectionEdit}
+          />
+        )}
+
+        {(editMode ? editedSummary : summary.summary).procedures && (
+          <SummarySection
+            title="Procedures"
+            sectionKey="procedures"
+            content={editMode ? editedSummary.procedures : summary.summary.procedures}
+            editable={editMode}
+            onEdit={handleSectionEdit}
+          />
+        )}
+
+        {(editMode ? editedSummary : summary.summary).complications && (
+          <SummarySection
+            title="Complications"
+            sectionKey="complications"
+            content={editMode ? editedSummary.complications : summary.summary.complications}
+            editable={editMode}
+            onEdit={handleSectionEdit}
+          />
+        )}
+
+        {(editMode ? editedSummary : summary.summary).dischargeStatus && (
+          <SummarySection
+            title="Discharge Status"
+            sectionKey="dischargeStatus"
+            content={editMode ? editedSummary.dischargeStatus : summary.summary.dischargeStatus}
+            editable={editMode}
+            onEdit={handleSectionEdit}
+          />
+        )}
+
+        {(editMode ? editedSummary : summary.summary).dischargeMedications && (
+          <SummarySection
+            title="Discharge Medications"
+            sectionKey="dischargeMedications"
+            content={editMode ? editedSummary.dischargeMedications : summary.summary.dischargeMedications}
+            editable={editMode}
+            onEdit={handleSectionEdit}
+          />
+        )}
+
+        {(editMode ? editedSummary : summary.summary).followUpPlan && (
+          <SummarySection
+            title="Follow-Up Plan"
+            sectionKey="followUpPlan"
+            content={editMode ? editedSummary.followUpPlan : summary.summary.followUpPlan}
+            editable={editMode}
+            onEdit={handleSectionEdit}
+          />
         )}
       </div>
 
@@ -312,8 +485,8 @@ const SummaryGeneratorComponent = ({ extractedData, notes }) => {
       {/* Info */}
       <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4 text-sm">
         <p className="text-blue-900 dark:text-blue-100">
-          💡 <strong>Tip:</strong> Review the summary carefully before using. You can edit any section
-          by regenerating or copying to your EMR and editing there.
+          💡 <strong>Tip:</strong> Click "Edit Summary" to make corrections directly. The system learns from your edits
+          to improve future summaries! Your corrections help train the AI to match your preferred style and terminology.
         </p>
       </div>
     </div>
@@ -321,12 +494,27 @@ const SummaryGeneratorComponent = ({ extractedData, notes }) => {
 };
 
 /**
- * Summary Section Component
+ * Summary Section Component with Inline Editing
  */
-const SummarySection = ({ title, content }) => {
+const SummarySection = ({ title, sectionKey, content, editable = false, onEdit }) => {
+  const [localContent, setLocalContent] = React.useState(content);
+
+  // Update local content when content prop changes
+  React.useEffect(() => {
+    setLocalContent(content);
+  }, [content]);
+
   if (!content || content === 'Not available.' || content === 'Not documented.') {
     return null;
   }
+
+  const handleChange = (e) => {
+    const newContent = e.target.value;
+    setLocalContent(newContent);
+    if (onEdit) {
+      onEdit(sectionKey, newContent);
+    }
+  };
 
   return (
     <div className="card">
@@ -334,9 +522,21 @@ const SummarySection = ({ title, content }) => {
         {title.toUpperCase()}
       </h3>
       <div className="prose dark:prose-invert max-w-none">
-        <p className="text-gray-800 dark:text-gray-200 leading-relaxed whitespace-pre-wrap">
-          {content}
-        </p>
+        {editable ? (
+          <textarea
+            value={localContent}
+            onChange={handleChange}
+            className="w-full min-h-[150px] p-3 border border-gray-300 dark:border-gray-600 rounded-lg
+                     bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200
+                     focus:ring-2 focus:ring-blue-500 focus:border-transparent
+                     leading-relaxed resize-y"
+            style={{ fontFamily: 'inherit' }}
+          />
+        ) : (
+          <p className="text-gray-800 dark:text-gray-200 leading-relaxed whitespace-pre-wrap">
+            {content}
+          </p>
+        )}
       </div>
     </div>
   );

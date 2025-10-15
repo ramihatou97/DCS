@@ -1,0 +1,648 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Step 4: Abbreviation Expansion - Test Suite</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 20px;
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        .header h1 { font-size: 28px; margin-bottom: 10px; }
+        .header p { opacity: 0.9; font-size: 14px; }
+        .controls {
+            padding: 20px 30px;
+            background: #f8f9fa;
+            border-bottom: 1px solid #e0e0e0;
+            display: flex;
+            gap: 15px;
+            align-items: center;
+        }
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4); }
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+        .btn-secondary:hover { background: #5a6268; }
+        .progress-bar {
+            height: 6px;
+            background: #e0e0e0;
+            border-radius: 3px;
+            overflow: hidden;
+            flex: 1;
+        }
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+            width: 0%;
+            transition: width 0.3s;
+        }
+        .summary {
+            padding: 20px 30px;
+            background: #f8f9fa;
+            border-bottom: 1px solid #e0e0e0;
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 15px;
+        }
+        .summary-card {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .summary-card .label {
+            font-size: 12px;
+            color: #6c757d;
+            margin-bottom: 5px;
+        }
+        .summary-card .value {
+            font-size: 24px;
+            font-weight: 700;
+        }
+        .summary-card.total .value { color: #667eea; }
+        .summary-card.passed .value { color: #28a745; }
+        .summary-card.failed .value { color: #dc3545; }
+        .summary-card.warnings .value { color: #ffc107; }
+        .results {
+            padding: 30px;
+            max-height: 600px;
+            overflow-y: auto;
+        }
+        .test-group {
+            margin-bottom: 30px;
+        }
+        .test-group-header {
+            font-size: 18px;
+            font-weight: 700;
+            color: #333;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #667eea;
+        }
+        .test-case {
+            background: #f8f9fa;
+            border-left: 4px solid #e0e0e0;
+            padding: 15px;
+            margin-bottom: 10px;
+            border-radius: 4px;
+            transition: all 0.3s;
+        }
+        .test-case.running {
+            border-left-color: #ffc107;
+            background: #fff3cd;
+        }
+        .test-case.pass {
+            border-left-color: #28a745;
+            background: #d4edda;
+        }
+        .test-case.fail {
+            border-left-color: #dc3545;
+            background: #f8d7da;
+        }
+        .test-name {
+            font-weight: 600;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .test-status {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+        .test-status.running { background: #ffc107; color: #000; }
+        .test-status.pass { background: #28a745; color: white; }
+        .test-status.fail { background: #dc3545; color: white; }
+        .test-details {
+            font-size: 13px;
+            color: #495057;
+            margin-top: 8px;
+        }
+        .test-details div {
+            margin: 4px 0;
+            padding: 4px 8px;
+            background: white;
+            border-radius: 4px;
+        }
+        .test-details .expected { color: #28a745; }
+        .test-details .actual { color: #dc3545; }
+        .toggle-details {
+            cursor: pointer;
+            color: #667eea;
+            font-size: 12px;
+            margin-top: 8px;
+            text-decoration: underline;
+        }
+        .details-content {
+            display: none;
+            margin-top: 10px;
+            padding: 10px;
+            background: white;
+            border-radius: 4px;
+            font-size: 12px;
+            font-family: 'Courier New', monospace;
+            white-space: pre-wrap;
+            word-break: break-all;
+        }
+        .details-content.show { display: block; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔤 Step 4: Context-Aware Abbreviation Expansion</h1>
+            <p>Testing abbreviation disambiguation, pathology-aware expansion, and integration</p>
+        </div>
+
+        <div class="controls">
+            <button class="btn btn-primary" onclick="runAllTests()">▶️ Run All Tests</button>
+            <button class="btn btn-secondary" onclick="clearResults()">🗑️ Clear Results</button>
+            <div class="progress-bar">
+                <div class="progress-fill" id="progressBar"></div>
+            </div>
+            <span id="progressText">0%</span>
+        </div>
+
+        <div class="summary">
+            <div class="summary-card total">
+                <div class="label">Total Tests</div>
+                <div class="value" id="totalTests">15</div>
+            </div>
+            <div class="summary-card passed">
+                <div class="label">Passed</div>
+                <div class="value" id="passedTests">0</div>
+            </div>
+            <div class="summary-card failed">
+                <div class="label">Failed</div>
+                <div class="value" id="failedTests">0</div>
+            </div>
+            <div class="summary-card warnings">
+                <div class="label">Warnings</div>
+                <div class="value" id="warningTests">0</div>
+            </div>
+        </div>
+
+        <div class="results" id="results">
+            <p style="text-align: center; color: #6c757d;">Click "Run All Tests" to begin testing...</p>
+        </div>
+    </div>
+
+    <script type="module">
+        import { 
+            expandAbbreviationWithContext,
+            expandAbbreviationsInText,
+            isAmbiguousAbbreviation,
+            getAbbreviationMeanings,
+            AMBIGUOUS_ABBREVIATIONS,
+            INSTITUTION_SPECIFIC_ABBREVIATIONS,
+            PATHOLOGY_SPECIFIC_ABBREVIATIONS
+        } from './src/utils/medicalAbbreviations.js';
+
+        let allTests = [];
+        let currentTestIndex = 0;
+
+        window.runAllTests = async function() {
+            allTests = [];
+            currentTestIndex = 0;
+            document.getElementById('results').innerHTML = '';
+            updateSummary(0, 0, 0);
+            updateProgress(0);
+
+            console.log('🧪 Starting Step 4: Abbreviation Expansion Tests');
+
+            // Test Group 1: Context-Aware Disambiguation
+            await testGroup1_ContextDisambiguation();
+
+            // Test Group 2: Pathology-Aware Expansion
+            await testGroup2_PathologyAware();
+
+            // Test Group 3: Institution-Specific
+            await testGroup3_InstitutionSpecific();
+
+            // Test Group 4: Integration
+            await testGroup4_Integration();
+
+            // Test Group 5: Utility Functions
+            await testGroup5_UtilityFunctions();
+
+            displayResults();
+        };
+
+        async function testGroup1_ContextDisambiguation() {
+            const tests = [];
+
+            // Test 1.1: MS → mental status
+            tests.push(await testContextDisambiguation(
+                'MS Disambiguation - Mental Status',
+                'MS',
+                'Patient is alert and oriented, MS intact',
+                null,
+                'mental status'
+            ));
+
+            // Test 1.2: MS → motor strength
+            tests.push(await testContextDisambiguation(
+                'MS Disambiguation - Motor Strength',
+                'MS',
+                'Motor exam: MS 5/5 in all extremities',
+                null,
+                'motor strength'
+            ));
+
+            // Test 1.3: DC → decompressive craniectomy
+            tests.push(await testContextDisambiguation(
+                'DC Disambiguation - Craniectomy',
+                'DC',
+                'Patient underwent DC for malignant edema',
+                null,
+                'decompressive craniectomy'
+            ));
+
+            // Test 1.4: DC → discharge
+            tests.push(await testContextDisambiguation(
+                'DC Disambiguation - Discharge',
+                'DC',
+                'Patient ready for DC to rehab',
+                null,
+                'discharge'
+            ));
+
+            // Test 1.5: PE → physical exam
+            tests.push(await testContextDisambiguation(
+                'PE Disambiguation - Physical Exam',
+                'PE',
+                'PE reveals no focal deficits',
+                null,
+                'physical exam'
+            ));
+
+            allTests.push({ group: 'Context-Aware Disambiguation', tests });
+        }
+
+        async function testGroup2_PathologyAware() {
+            const tests = [];
+
+            // Test 2.1: DC with SAH pathology
+            tests.push(await testPathologyAware(
+                'DC with SAH Pathology',
+                'DC',
+                'SAH',
+                'decompressive craniectomy'
+            ));
+
+            // Test 2.2: DC with TUMORS pathology
+            tests.push(await testPathologyAware(
+                'DC with TUMORS Pathology',
+                'DC',
+                'TUMORS',
+                'discharge'
+            ));
+
+            // Test 2.3: MS with SPINE pathology
+            tests.push(await testPathologyAware(
+                'MS with SPINE Pathology',
+                'MS',
+                'SPINE',
+                'motor strength'
+            ));
+
+            allTests.push({ group: 'Pathology-Aware Expansion', tests });
+        }
+
+        async function testGroup3_InstitutionSpecific() {
+            const tests = [];
+
+            // Test 3.1: NSGY expansion
+            tests.push(await testInstitutionSpecific(
+                'NSGY Expansion',
+                'NSGY',
+                'Neurosurgery'
+            ));
+
+            // Test 3.2: NICU expansion
+            tests.push(await testInstitutionSpecific(
+                'NICU Expansion',
+                'NICU',
+                'Neurological Intensive Care Unit'
+            ));
+
+            allTests.push({ group: 'Institution-Specific Abbreviations', tests });
+        }
+
+        async function testGroup4_Integration() {
+            const tests = [];
+
+            // Test 4.1: Full text expansion
+            tests.push(await testTextExpansion(
+                'Full Text Expansion',
+                '55M with aSAH from ACoA aneurysm',
+                ['aSAH', 'ACoA']
+            ));
+
+            // Test 4.2: Preserve original
+            tests.push(await testPreserveOriginal(
+                'Preserve Original Abbreviation',
+                'Patient has SAH',
+                'SAH (subarachnoid hemorrhage)'
+            ));
+
+            allTests.push({ group: 'Integration Testing', tests });
+        }
+
+        async function testGroup5_UtilityFunctions() {
+            const tests = [];
+
+            // Test 5.1: Is ambiguous
+            tests.push(await testIsAmbiguous(
+                'Detect Ambiguous Abbreviation',
+                'MS',
+                true
+            ));
+
+            // Test 5.2: Get meanings
+            tests.push(await testGetMeanings(
+                'Get Abbreviation Meanings',
+                'MS',
+                ['mental status', 'motor strength', 'multiple sclerosis']
+            ));
+
+            allTests.push({ group: 'Utility Functions', tests });
+        }
+
+        // Test helper functions
+        async function testContextDisambiguation(name, abbrev, context, pathology, expected) {
+            try {
+                const result = expandAbbreviationWithContext(abbrev, context, pathology);
+                const pass = result === expected;
+                return {
+                    name,
+                    pass,
+                    expected: `Expansion: "${expected}"`,
+                    actual: `Expansion: "${result}"`,
+                    details: { abbrev, context, pathology, result }
+                };
+            } catch (error) {
+                return {
+                    name,
+                    pass: false,
+                    expected: `Expansion: "${expected}"`,
+                    actual: `Error: ${error.message}`,
+                    details: { error: error.message }
+                };
+            }
+        }
+
+        async function testPathologyAware(name, abbrev, pathology, expected) {
+            try {
+                const result = expandAbbreviationWithContext(abbrev, '', pathology);
+                const pass = result === expected;
+                return {
+                    name,
+                    pass,
+                    expected: `Expansion: "${expected}"`,
+                    actual: `Expansion: "${result}"`,
+                    details: { abbrev, pathology, result }
+                };
+            } catch (error) {
+                return {
+                    name,
+                    pass: false,
+                    expected: `Expansion: "${expected}"`,
+                    actual: `Error: ${error.message}`,
+                    details: { error: error.message }
+                };
+            }
+        }
+
+        async function testInstitutionSpecific(name, abbrev, expected) {
+            try {
+                const result = INSTITUTION_SPECIFIC_ABBREVIATIONS[abbrev];
+                const pass = result === expected;
+                return {
+                    name,
+                    pass,
+                    expected: `Expansion: "${expected}"`,
+                    actual: `Expansion: "${result}"`,
+                    details: { abbrev, result }
+                };
+            } catch (error) {
+                return {
+                    name,
+                    pass: false,
+                    expected: `Expansion: "${expected}"`,
+                    actual: `Error: ${error.message}`,
+                    details: { error: error.message }
+                };
+            }
+        }
+
+        async function testTextExpansion(name, text, expectedAbbrevs) {
+            try {
+                const result = expandAbbreviationsInText(text, { preserveOriginal: true });
+                const pass = expectedAbbrevs.every(abbrev => result.includes(abbrev));
+                return {
+                    name,
+                    pass,
+                    expected: `Contains: ${expectedAbbrevs.join(', ')}`,
+                    actual: `Result: "${result}"`,
+                    details: { text, result }
+                };
+            } catch (error) {
+                return {
+                    name,
+                    pass: false,
+                    expected: `Contains: ${expectedAbbrevs.join(', ')}`,
+                    actual: `Error: ${error.message}`,
+                    details: { error: error.message }
+                };
+            }
+        }
+
+        async function testPreserveOriginal(name, text, expectedPattern) {
+            try {
+                const result = expandAbbreviationsInText(text, { preserveOriginal: true });
+                const pass = result.includes(expectedPattern);
+                return {
+                    name,
+                    pass,
+                    expected: `Contains: "${expectedPattern}"`,
+                    actual: `Result: "${result}"`,
+                    details: { text, result }
+                };
+            } catch (error) {
+                return {
+                    name,
+                    pass: false,
+                    expected: `Contains: "${expectedPattern}"`,
+                    actual: `Error: ${error.message}`,
+                    details: { error: error.message }
+                };
+            }
+        }
+
+        async function testIsAmbiguous(name, abbrev, expected) {
+            try {
+                const result = isAmbiguousAbbreviation(abbrev);
+                const pass = result === expected;
+                return {
+                    name,
+                    pass,
+                    expected: `Is ambiguous: ${expected}`,
+                    actual: `Is ambiguous: ${result}`,
+                    details: { abbrev, result }
+                };
+            } catch (error) {
+                return {
+                    name,
+                    pass: false,
+                    expected: `Is ambiguous: ${expected}`,
+                    actual: `Error: ${error.message}`,
+                    details: { error: error.message }
+                };
+            }
+        }
+
+        async function testGetMeanings(name, abbrev, expectedMeanings) {
+            try {
+                const result = getAbbreviationMeanings(abbrev);
+                const pass = expectedMeanings.every(m => result.includes(m));
+                return {
+                    name,
+                    pass,
+                    expected: `Meanings: ${expectedMeanings.join(', ')}`,
+                    actual: `Meanings: ${result.join(', ')}`,
+                    details: { abbrev, result }
+                };
+            } catch (error) {
+                return {
+                    name,
+                    pass: false,
+                    expected: `Meanings: ${expectedMeanings.join(', ')}`,
+                    actual: `Error: ${error.message}`,
+                    details: { error: error.message }
+                };
+            }
+        }
+
+        function displayResults() {
+            const resultsDiv = document.getElementById('results');
+            resultsDiv.innerHTML = '';
+
+            let totalPassed = 0;
+            let totalFailed = 0;
+
+            allTests.forEach(group => {
+                const groupDiv = document.createElement('div');
+                groupDiv.className = 'test-group';
+
+                const groupHeader = document.createElement('div');
+                groupHeader.className = 'test-group-header';
+                groupHeader.textContent = group.group;
+                groupDiv.appendChild(groupHeader);
+
+                group.tests.forEach(test => {
+                    const testDiv = document.createElement('div');
+                    testDiv.className = `test-case ${test.pass ? 'pass' : 'fail'}`;
+
+                    const testName = document.createElement('div');
+                    testName.className = 'test-name';
+                    testName.innerHTML = `
+                        <span class="test-status ${test.pass ? 'pass' : 'fail'}">${test.pass ? 'PASS' : 'FAIL'}</span>
+                        <span>${test.name}</span>
+                    `;
+                    testDiv.appendChild(testName);
+
+                    const testDetails = document.createElement('div');
+                    testDetails.className = 'test-details';
+                    testDetails.innerHTML = `
+                        <div class="expected"><strong>Expected:</strong> ${test.expected}</div>
+                        <div class="actual"><strong>Actual:</strong> ${test.actual}</div>
+                    `;
+                    testDiv.appendChild(testDetails);
+
+                    if (test.details) {
+                        const toggleDetails = document.createElement('div');
+                        toggleDetails.className = 'toggle-details';
+                        toggleDetails.textContent = 'View Details';
+                        toggleDetails.onclick = () => {
+                            detailsContent.classList.toggle('show');
+                            toggleDetails.textContent = detailsContent.classList.contains('show') ? 'Hide Details' : 'View Details';
+                        };
+                        testDiv.appendChild(toggleDetails);
+
+                        const detailsContent = document.createElement('div');
+                        detailsContent.className = 'details-content';
+                        detailsContent.textContent = JSON.stringify(test.details, null, 2);
+                        testDiv.appendChild(detailsContent);
+                    }
+
+                    groupDiv.appendChild(testDiv);
+
+                    if (test.pass) totalPassed++;
+                    else totalFailed++;
+                });
+
+                resultsDiv.appendChild(groupDiv);
+            });
+
+            updateSummary(totalPassed + totalFailed, totalPassed, totalFailed);
+            updateProgress(100);
+        }
+
+        function updateSummary(total, passed, failed) {
+            document.getElementById('totalTests').textContent = total;
+            document.getElementById('passedTests').textContent = passed;
+            document.getElementById('failedTests').textContent = failed;
+        }
+
+        function updateProgress(percent) {
+            document.getElementById('progressBar').style.width = percent + '%';
+            document.getElementById('progressText').textContent = Math.round(percent) + '%';
+        }
+
+        window.clearResults = function() {
+            document.getElementById('results').innerHTML = '<p style="text-align: center; color: #6c757d;">Click "Run All Tests" to begin testing...</p>';
+            updateSummary(15, 0, 0);
+            updateProgress(0);
+        };
+    </script>
+</body>
+</html>
+

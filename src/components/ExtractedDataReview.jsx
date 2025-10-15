@@ -5,16 +5,19 @@
  * Allows manual corrections which feed into the ML learning system.
  */
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Check, X, AlertTriangle, Edit2, Save, ChevronDown, ChevronUp,
   Info, Calendar, User, FileText, Activity, Pill, MapPin, Clock
 } from 'lucide-react';
 import { trackCorrection } from '../services/ml/correctionTracker.js';
+import knowledgeBase from '../services/knowledge/knowledgeBase.js';
+import SuggestionPanel from './SuggestionPanel.jsx';
 
 const ExtractedDataReview = ({ extractedData, validation, onDataCorrected, onProceed, onProceedToGenerate, notes = [], metadata = {} }) => {
   const [editingField, setEditingField] = useState(null);
   const [editedData, setEditedData] = useState({ ...extractedData });
+  const [suggestions, setSuggestions] = useState([]);
   const [expandedSections, setExpandedSections] = useState({
     demographics: true,
     dates: true,
@@ -30,6 +33,56 @@ const ExtractedDataReview = ({ extractedData, validation, onDataCorrected, onPro
     followUp: false,
     dischargeDestination: true
   });
+
+  /**
+   * Generate suggestions when data changes
+   */
+  useEffect(() => {
+    const generateSuggestions = () => {
+      try {
+        // Get pathology from metadata or extracted data
+        const pathologyTypes = metadata?.pathologyTypes || [];
+        const primaryPathology = pathologyTypes.length > 0
+          ? pathologyTypes[0]
+          : (editedData.pathology?.type || 'general');
+
+        // Get contextual suggestions from knowledge base
+        const newSuggestions = knowledgeBase.getContextualSuggestions(editedData, primaryPathology);
+
+        console.log(`💡 Generated ${newSuggestions.length} suggestions for ${primaryPathology}`);
+        setSuggestions(newSuggestions);
+      } catch (error) {
+        console.error('Error generating suggestions:', error);
+        setSuggestions([]);
+      }
+    };
+
+    generateSuggestions();
+  }, [editedData, metadata]);
+
+  /**
+   * Handle suggestion acceptance
+   */
+  const handleAcceptSuggestion = (suggestion) => {
+    console.log('Accepted suggestion:', suggestion.field);
+    // Scroll to the relevant section
+    const section = suggestion.field.split('.')[0];
+    if (expandedSections.hasOwnProperty(section)) {
+      setExpandedSections(prev => ({
+        ...prev,
+        [section]: true
+      }));
+    }
+    // Could also highlight the field or auto-focus it
+  };
+
+  /**
+   * Handle suggestion dismissal
+   */
+  const handleDismissSuggestion = (suggestion) => {
+    console.log('Dismissed suggestion:', suggestion.field);
+    // Could track dismissals for learning
+  };
 
   /**
    * Toggle section expansion
@@ -224,6 +277,16 @@ const ExtractedDataReview = ({ extractedData, validation, onDataCorrected, onPro
             </div>
           </div>
         </div>
+      )}
+
+      {/* Knowledge-Based Suggestions */}
+      {suggestions && suggestions.length > 0 && (
+        <SuggestionPanel
+          suggestions={suggestions}
+          onAccept={handleAcceptSuggestion}
+          onDismiss={handleDismissSuggestion}
+          extractedData={editedData}
+        />
       )}
 
       {/* Data Sections */}

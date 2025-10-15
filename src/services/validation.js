@@ -707,7 +707,12 @@ const validateLogicalRelationships = (data) => {
 
   // Validate anticoagulation consistency
   if (data.anticoagulation && data.pathology) {
-    const hasHemorrhage = ['SAH', 'TBI/cSDH', 'ICH'].includes(data.pathology.primaryDiagnosis);
+    // Defensive programming: Ensure primaryDiagnosis is a string
+    const primaryDiagnosis = typeof data.pathology === 'string'
+      ? data.pathology
+      : data.pathology.primaryDiagnosis || '';
+
+    const hasHemorrhage = ['SAH', 'TBI/cSDH', 'ICH'].includes(primaryDiagnosis);
     const onAnticoagulation = data.anticoagulation.current && data.anticoagulation.current.length > 0;
 
     if (hasHemorrhage && onAnticoagulation) {

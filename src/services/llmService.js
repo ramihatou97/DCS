@@ -16,6 +16,8 @@
 
 import { getApiKey, hasApiKey, API_PROVIDERS } from '../utils/apiKeys.js';
 import { getPreferences, TASK_PRIORITIES } from '../utils/llmPreferences.js';
+import knowledgeBase from './knowledge/knowledgeBase.js';
+import contextProvider from './context/contextProvider.js';
 
 /**
  * Configuration: Set to true to use proxy server for Anthropic/OpenAI
@@ -337,7 +339,61 @@ const callGemini = async (prompt, systemPrompt, apiKey, config, options) => {
 export const extractWithLLM = async (notes, options = {}) => {
   const noteText = Array.isArray(notes) ? notes.join('\n\n') : notes;
 
+  // Build context for extraction
+  const context = contextProvider.buildContext(noteText);
+  console.log('🧠 Context built for extraction:', {
+    pathology: context.pathology.primary,
+    consultants: context.consultants.count,
+    hasPTOT: context.consultants.hasPTOT,
+    complexity: context.clinical.complexity
+  });
+
+  // Get relevant knowledge
+  const examProtocol = context.pathology.examProtocol;
+  const gradingScales = context.pathology.gradingScales;
+  const expectedFields = context.pathology.expectedFields;
+
+  // Build knowledge-enhanced prompt
+  let knowledgeContext = '';
+
+  // Add pathology-specific guidance
+  if (context.pathology.primary !== 'general') {
+    knowledgeContext += `\n\n🎯 PATHOLOGY CONTEXT: ${context.pathology.primary}\n`;
+    knowledgeContext += `Expected critical fields: ${expectedFields.join(', ')}\n`;
+
+    // Add grading scale information
+    if (gradingScales) {
+      knowledgeContext += `\nGRADING SCALES:\n`;
+      Object.entries(gradingScales).forEach(([scale, info]) => {
+        if (info.range) {
+          knowledgeContext += `- ${info.name}: Range ${info.range[0]}-${info.range[1]}\n`;
+        }
+      });
+    }
+  }
+
+  // Add consultant context
+  if (context.consultants.present) {
+    knowledgeContext += `\n\n👥 CONSULTANT NOTES PRESENT (${context.consultants.count}):\n`;
+    context.consultants.services.forEach(c => {
+      knowledgeContext += `- ${c.service.toUpperCase()}: Focus on ${c.focus.join(', ')}\n`;
+    });
+    if (context.consultants.hasPTOT) {
+      knowledgeContext += `⚠️ PT/OT notes are GOLD STANDARD for functional status - prioritize their assessments!\n`;
+    }
+  }
+
+  // Add clinical reasoning context
+  if (context.clinical.reasoning.length > 0) {
+    knowledgeContext += `\n\n🔍 CLINICAL REASONING CLUES:\n`;
+    context.clinical.reasoning.forEach(r => {
+      knowledgeContext += `- ${r.observation} → ${r.inference}\n`;
+      knowledgeContext += `  Expected: ${r.expectedFindings.join(', ')}\n`;
+    });
+  }
+
   const prompt = `You are an expert neurosurgery AI with advanced natural language understanding. Your mission is to deeply comprehend the clinical narrative, deduce implicit information, and extract a complete picture of the patient's journey.
+${knowledgeContext}
 
 These notes represent the FULL CLINICAL STORY - formal EMR documentation, informal progress notes, consultant updates (neurology, PT/OT, radiology), and evolving assessments. Use your advanced medical reasoning to create a comprehensive understanding.
 
@@ -527,9 +583,10 @@ CRITICAL INTELLIGENCE REMINDERS:
 ✓ CHRONOLOGICAL DEDUPLICATION: Procedure mentioned 5 times = 1 procedure (find actual date)
 ✓ NATURAL LANGUAGE INFERENCE: Use medical reasoning to deduce implicit information
 ✓ MULTI-SOURCE SYNTHESIS: Integrate attending + resident + PT/OT + consultant notes
-✓ FUNCTIONAL STATUS: Extract mobility/independence from OT/PT descriptions
+✓ CONSULTANT NOTES ARE CRITICAL: When present, consultant notes (neurology, PT/OT, cardiology, etc.) provide specialty expertise and critical recommendations - prioritize their findings and integrate their assessments into the clinical picture
+✓ FUNCTIONAL STATUS: Extract mobility/independence from OT/PT descriptions (these are often ONLY in PT/OT consult notes)
 ✓ CLINICAL EVOLUTION: Capture the narrative arc, not just discrete data points
-✓ CONSULTANT STYLES: Understand neurology (deficit-focused), PT (mobility-focused), etc.
+✓ CONSULTANT STYLES: Understand neurology (deficit-focused), PT (mobility-focused), cardiology (cardiac risk), ID (antibiotic stewardship), etc.
 ✓ TEMPORAL INTELLIGENCE: "POD#3" → actual date, "improving" → better functional scores
 
 EXAMPLE OF CHRONOLOGICAL INTELLIGENCE:
@@ -558,6 +615,27 @@ Return ONLY the JSON object with no markdown formatting, no explanation, no code
     systemPrompt: 'You are an expert neurosurgery AI with advanced natural language understanding and clinical reasoning capabilities. Your mission is to deeply comprehend clinical narratives, intelligently deduce implicit information using medical knowledge, and synthesize multi-source documentation (EMR notes, consultant updates, PT/OT assessments) into a complete clinical picture. Apply chronological intelligence to deduplicate repeated procedure mentions (procedure mentioned 5x = 1 procedure). Use inference to extract functional status from descriptive text. Understand the holistic clinical evolution beyond discrete data points. Handle variable writing styles from different providers seamlessly. Return only valid JSON with comprehensive, medically-reasoned extraction.'
   });
 
+  // Validate extracted data against knowledge base
+  const validation = knowledgeBase.validateExtractedData(result, context.pathology.primary);
+
+  if (!validation.valid) {
+    console.warn('⚠️ Validation errors found:', validation.errors);
+    // Attach validation errors to result for user review
+    result._validationErrors = validation.errors;
+  }
+
+  if (validation.warnings.length > 0) {
+    console.warn('⚠️ Validation warnings:', validation.warnings);
+    result._validationWarnings = validation.warnings;
+  }
+
+  // Suggest missing critical fields
+  const suggestions = knowledgeBase.suggestMissingFields(result, context.pathology.primary);
+  if (suggestions.length > 0) {
+    console.log('💡 Suggested missing fields:', suggestions);
+    result._suggestions = suggestions;
+  }
+
   return result;
 };
 
@@ -566,6 +644,73 @@ Return ONLY the JSON object with no markdown formatting, no explanation, no code
  * Optimized for Claude Sonnet 3.5 > GPT-4o > Gemini Pro for natural medical language
  */
 export const generateSummaryWithLLM = async (extractedData, sourceNotes, options = {}) => {
+  // Get pathology type for pathology-specific prompts
+  // Defensive programming: Handle different pathology data structures
+  let pathologyType = 'general';
+
+  if (extractedData.pathology) {
+    if (typeof extractedData.pathology === 'string') {
+      pathologyType = extractedData.pathology;
+    } else if (typeof extractedData.pathology === 'object') {
+      pathologyType = extractedData.pathology.type || extractedData.pathology.primaryDiagnosis || 'general';
+    }
+  }
+
+  // Ensure pathologyType is a string
+  if (typeof pathologyType !== 'string') {
+    console.warn('⚠️ pathologyType is not a string:', typeof pathologyType, pathologyType);
+    pathologyType = 'general';
+  }
+
+  // Build context for summary generation
+  const context = contextProvider.buildContext(sourceNotes, extractedData);
+  console.log('🧠 Context built for summary generation:', {
+    pathology: context.pathology.primary,
+    consultants: context.consultants.count,
+    complexity: context.clinical.complexity
+  });
+
+  // Get relevant knowledge
+  const redFlags = knowledgeBase.getRedFlags(pathologyType);
+  const followUpProtocol = knowledgeBase.getFollowUpProtocol(pathologyType);
+
+  // Get learned patterns if provided
+  const learnedPatterns = options.learnedPatterns || {};
+
+  // Build pathology-specific guidance
+  const pathologyGuidance = getPathologySpecificGuidance(pathologyType);
+
+  // Build learned patterns guidance
+  const learnedPatternsGuidance = buildLearnedPatternsGuidance(learnedPatterns);
+
+  // Build knowledge-enhanced guidance
+  let knowledgeGuidance = '';
+
+  if (redFlags && redFlags.length > 0) {
+    knowledgeGuidance += `\n\n🚨 RED FLAGS TO INCLUDE IN DISCHARGE INSTRUCTIONS:\n`;
+    redFlags.forEach(flag => {
+      knowledgeGuidance += `- ${flag}\n`;
+    });
+  }
+
+  if (followUpProtocol) {
+    knowledgeGuidance += `\n\n📅 FOLLOW-UP PROTOCOL FOR ${pathologyType.toUpperCase()}:\n`;
+    if (followUpProtocol.clinic) {
+      knowledgeGuidance += `Clinic visits: ${followUpProtocol.clinic.join(', ')}\n`;
+    }
+    if (followUpProtocol.imaging) {
+      knowledgeGuidance += `Imaging: ${JSON.stringify(followUpProtocol.imaging)}\n`;
+    }
+  }
+
+  // Add consultant context
+  if (context.consultants.present) {
+    knowledgeGuidance += `\n\n👥 CONSULTANT EXPERTISE AVAILABLE:\n`;
+    context.consultants.services.forEach(c => {
+      knowledgeGuidance += `- ${c.service.toUpperCase()}: Integrate their ${c.focus.join(', ')} assessments\n`;
+    });
+  }
+
   const prompt = `You are an expert neurosurgery attending physician with exceptional clinical narrative writing skills. Your task is to craft a comprehensive discharge summary that tells the complete CLINICAL STORY - synthesizing structured data, multiple note types, and your medical understanding into a coherent, insightful narrative.
 
 STRUCTURED DATA (Extracted by AI):
@@ -573,6 +718,12 @@ ${JSON.stringify(extractedData, null, 2)}
 
 ORIGINAL CLINICAL NOTES (All Sources - Attending, Resident, Consultant, PT/OT):
 ${sourceNotes}
+
+${pathologyGuidance}
+
+${learnedPatternsGuidance}
+
+${knowledgeGuidance}
 
 ADVANCED WRITING PRINCIPLES:
 
@@ -585,10 +736,12 @@ ADVANCED WRITING PRINCIPLES:
 
 2. DEEP NATURAL LANGUAGE SYNTHESIS:
    - Synthesize insights from MULTIPLE sources: formal attending notes, brief resident updates, PT/OT functional assessments, consultant recommendations
+   - **PRIORITIZE CONSULTANT NOTES**: When present, consultant notes (neurology, PT/OT, cardiology, ID, etc.) provide critical specialty expertise - integrate their findings, recommendations, and assessments prominently into the narrative
    - Extract the "signal" from repetitive notes: mentioned "coiling" 5x = describe once with clinical context
-   - Understand consultant perspectives: Neurology (neurological deficits), PT (mobility/transfers), OT (ADL independence)
-   - Infer functional status evolution: "Initially required maximal assist, progressed to modified independence"
-   - Connect clinical events to functional outcomes: "Following EVD removal, patient's mental status cleared significantly"
+   - Understand consultant perspectives: Neurology (neurological deficits, seizure risk), PT (mobility/transfers/gait), OT (ADL independence/cognition), Cardiology (cardiac risk), ID (antibiotic selection), Endocrine (glucose management)
+   - **PT/OT assessments are GOLD STANDARD for functional status** - use their specific descriptions ("requires moderate assist for transfers", "wheelchair level mobility", "modified independent for ADLs")
+   - Infer functional status evolution: "Initially required maximal assist, progressed to modified independence per PT/OT"
+   - Connect clinical events to functional outcomes: "Following EVD removal, patient's mental status cleared significantly per neurology consult"
 
 3. CHRONOLOGICAL INTELLIGENCE:
    - Present events in clear temporal flow with specific dates when available
@@ -709,6 +862,155 @@ export const testApiKey = async (provider) => {
       error: error.message
     };
   }
+};
+
+/**
+ * Get pathology-specific guidance for LLM narrative generation
+ * @param {string} pathologyType - Pathology type
+ * @returns {string} Pathology-specific guidance
+ */
+const getPathologySpecificGuidance = (pathologyType) => {
+  // Defensive programming: Ensure pathologyType is a string
+  if (typeof pathologyType !== 'string') {
+    console.warn('⚠️ getPathologySpecificGuidance received non-string:', typeof pathologyType, pathologyType);
+    return getPathologySpecificGuidance('general');
+  }
+
+  const pathologyLower = pathologyType.toLowerCase();
+
+  if (pathologyLower.includes('sah') || pathologyLower.includes('subarachnoid')) {
+    return `
+PATHOLOGY-SPECIFIC GUIDANCE (Subarachnoid Hemorrhage):
+- Emphasize Hunt-Hess and Fisher grades in presentation
+- Detail vasospasm monitoring and management (TCDs, angiography, interventions)
+- Highlight nimodipine therapy and blood pressure management
+- Describe aneurysm securing method (coiling vs clipping) with specific details
+- Track neurological status evolution (GCS, focal deficits)
+- Mention hydrocephalus development and EVD management if applicable
+- Include follow-up angiography plans
+- Specify antiplatelet/anticoagulation status and resumption plans`;
+  }
+
+  if (pathologyLower.includes('tumor') || pathologyLower.includes('glioma') || pathologyLower.includes('meningioma')) {
+    return `
+PATHOLOGY-SPECIFIC GUIDANCE (Brain Tumor):
+- Specify tumor location, size, and imaging characteristics
+- Detail extent of resection (gross total, subtotal, biopsy only)
+- Mention histopathology results if available
+- Describe neurological deficits and their evolution
+- Highlight steroid therapy (dexamethasone dosing and taper plan)
+- Include seizure prophylaxis details (Keppra, etc.)
+- Specify adjuvant therapy plans (radiation, chemotherapy)
+- Detail follow-up imaging schedule
+- Mention functional status and rehabilitation needs`;
+  }
+
+  if (pathologyLower.includes('ich') || pathologyLower.includes('hemorrhage')) {
+    return `
+PATHOLOGY-SPECIFIC GUIDANCE (Intracerebral Hemorrhage):
+- Specify hemorrhage location, volume, and mass effect
+- Detail blood pressure management targets
+- Describe anticoagulation reversal if applicable (agents, timing)
+- Mention surgical evacuation vs medical management rationale
+- Track neurological status and GCS evolution
+- Highlight ICP management if applicable
+- Include imaging evolution (hematoma stability, resorption)
+- Specify anticoagulation resumption plans and timing
+- Detail rehabilitation needs and discharge disposition`;
+  }
+
+  if (pathologyLower.includes('trauma') || pathologyLower.includes('tbi')) {
+    return `
+PATHOLOGY-SPECIFIC GUIDANCE (Traumatic Brain Injury):
+- Describe mechanism of injury and initial GCS
+- Detail CT findings (skull fractures, contusions, SDH, EDH, SAH)
+- Specify ICP monitoring and management if applicable
+- Mention surgical interventions (craniotomy, craniectomy, ICP monitor)
+- Track GCS trajectory and neurological recovery
+- Highlight seizure prophylaxis
+- Include rehabilitation assessment and needs
+- Specify follow-up imaging plans
+- Detail restrictions (driving, contact sports, etc.)`;
+  }
+
+  if (pathologyLower.includes('spine') || pathologyLower.includes('cervical') || pathologyLower.includes('lumbar')) {
+    return `
+PATHOLOGY-SPECIFIC GUIDANCE (Spine Surgery):
+- Specify levels operated, approach (anterior/posterior), and instrumentation
+- Detail preoperative neurological status (motor/sensory levels, bowel/bladder)
+- Describe surgical procedure and any complications
+- Track postoperative neurological status and changes
+- Mention steroid use if applicable (spinal cord injury)
+- Include mobilization status and brace requirements
+- Specify activity restrictions and lifting precautions
+- Detail pain management plan
+- Include follow-up imaging and clinic visit schedule`;
+  }
+
+  // Default neurosurgical guidance
+  return `
+PATHOLOGY-SPECIFIC GUIDANCE (General Neurosurgery):
+- Provide detailed neurological examination findings
+- Track GCS and focal deficits over time
+- Describe imaging findings and evolution
+- Detail surgical interventions with specific techniques
+- Mention ICP management if applicable
+- Include medication management (steroids, antiepileptics, etc.)
+- Specify rehabilitation needs and functional status
+- Detail follow-up plans and imaging schedule`;
+};
+
+/**
+ * Build guidance from learned narrative patterns
+ */
+const buildLearnedPatternsGuidance = (learnedPatterns) => {
+  if (!learnedPatterns || Object.keys(learnedPatterns).length === 0) {
+    return '';
+  }
+
+  const guidance = ['LEARNED PREFERENCES (Apply these patterns based on user corrections):'];
+
+  for (const [section, patterns] of Object.entries(learnedPatterns)) {
+    const sectionGuidance = [];
+
+    for (const pattern of patterns) {
+      if (pattern.patternType === 'style') {
+        if (pattern.preference === 'concise') {
+          sectionGuidance.push('- Use concise, direct language (avoid verbose phrasing)');
+        } else if (pattern.preference === 'detailed') {
+          sectionGuidance.push('- Provide detailed, comprehensive descriptions');
+        }
+      }
+
+      if (pattern.patternType === 'terminology') {
+        if (pattern.preference === 'expand_abbreviations') {
+          sectionGuidance.push('- Spell out medical abbreviations on first use, then use abbreviation');
+        } else if (pattern.preference === 'use_abbreviations') {
+          sectionGuidance.push('- Use standard medical abbreviations (SAH, ICH, EVD, etc.)');
+        }
+      }
+
+      if (pattern.patternType === 'transition') {
+        sectionGuidance.push(`- Use transition phrases like "${pattern.metadata?.transitionPhrase}" between sentences`);
+      }
+
+      if (pattern.patternType === 'detail') {
+        if (pattern.preference === 'add_dates') {
+          sectionGuidance.push('- Include specific dates for all events');
+        }
+        if (pattern.preference === 'add_laterality') {
+          sectionGuidance.push('- Always specify laterality (left/right/bilateral)');
+        }
+      }
+    }
+
+    if (sectionGuidance.length > 0) {
+      guidance.push(`\n${section.toUpperCase()}:`);
+      guidance.push(...sectionGuidance);
+    }
+  }
+
+  return guidance.length > 1 ? guidance.join('\n') : '';
 };
 
 export default {
