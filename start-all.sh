@@ -50,7 +50,7 @@ BACKEND_PID=$!
 
 # Wait for backend to start
 echo "⏳ Waiting for backend to initialize..."
-for i in {1..20}; do
+for _ in {1..20}; do
     if curl -s http://localhost:3001/health > /dev/null 2>&1; then
         echo "✅ Backend proxy ready on port 3001"
         break
@@ -62,7 +62,7 @@ done
 if ! curl -s http://localhost:3001/health > /dev/null 2>&1; then
     echo "❌ Backend proxy failed to start!"
     echo "Check logs: tail -f /tmp/dcs-backend.log"
-    kill $BACKEND_PID 2>/dev/null || true
+    kill "$BACKEND_PID" 2>/dev/null || true
     exit 1
 fi
 
@@ -76,7 +76,7 @@ FRONTEND_PID=$!
 
 # Wait for frontend
 echo "⏳ Waiting for frontend to start..."
-for i in {1..20}; do
+for _ in {1..20}; do
     if curl -s http://localhost:5173 > /dev/null 2>&1; then
         echo "✅ Frontend ready on port 5173"
         break
@@ -106,8 +106,8 @@ echo ""
 cleanup() {
     echo ""
     echo "🛑 Stopping servers..."
-    kill $BACKEND_PID 2>/dev/null || true
-    kill $FRONTEND_PID 2>/dev/null || true
+    kill "$BACKEND_PID" 2>/dev/null || true
+    kill "$FRONTEND_PID" 2>/dev/null || true
     echo "✅ Servers stopped"
     exit 0
 }
@@ -116,4 +116,4 @@ cleanup() {
 trap cleanup INT TERM
 
 # Wait for frontend process (keeps script running)
-wait $FRONTEND_PID
+wait "$FRONTEND_PID"

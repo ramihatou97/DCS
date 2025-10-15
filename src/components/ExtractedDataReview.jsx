@@ -12,7 +12,7 @@ import {
 } from 'lucide-react';
 import { trackCorrection } from '../services/ml/correctionTracker.js';
 
-const ExtractedDataReview = ({ extractedData, validation, onDataCorrected, onProceed, notes = [], metadata = {} }) => {
+const ExtractedDataReview = ({ extractedData, validation, onDataCorrected, onProceed, onProceedToGenerate, notes = [], metadata = {} }) => {
   const [editingField, setEditingField] = useState(null);
   const [editedData, setEditedData] = useState({ ...extractedData });
   const [expandedSections, setExpandedSections] = useState({
@@ -167,8 +167,9 @@ const ExtractedDataReview = ({ extractedData, validation, onDataCorrected, onPro
    * Proceed to next step
    */
   const handleProceed = () => {
-    if (onProceed) {
-      onProceed(editedData);
+    const callback = onProceedToGenerate || onProceed;
+    if (callback) {
+      callback(editedData);
     }
   };
 
@@ -376,26 +377,45 @@ const ExtractedDataReview = ({ extractedData, validation, onDataCorrected, onPro
             badge={getConfidenceBadge('hospitalCourse')}
           >
             <div className="text-sm space-y-3">
-              {editedData.hospitalCourse.timeline.map((event, idx) => (
-                <div key={idx} className="border-l-2 border-blue-500 dark:border-blue-400 pl-4 pb-2">
-                  <div className="flex items-start gap-2">
-                    <span className="font-semibold text-blue-600 dark:text-blue-400 min-w-[80px]">
-                      {event.date || `Event ${idx + 1}`}
-                    </span>
-                    <div className="flex-1">
-                      <span className="inline-block px-2 py-0.5 text-xs rounded bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 mr-2">
-                        {event.type}
-                      </span>
-                      <span className="text-gray-700 dark:text-gray-300">{event.description}</span>
-                      {event.details && (
-                        <div className="text-gray-600 dark:text-gray-400 text-xs mt-1 italic">
-                          {event.details}
+              {editedData.hospitalCourse.timeline.map((event, idx) => {
+                // Handle string or object events
+                if (typeof event === 'string') {
+                  return (
+                    <div key={idx} className="border-l-2 border-blue-500 dark:border-blue-400 pl-4 pb-2">
+                      <div className="flex items-start gap-2">
+                        <span className="font-semibold text-blue-600 dark:text-blue-400 min-w-[80px]">
+                          Event {idx + 1}
+                        </span>
+                        <div className="flex-1">
+                          <span className="text-gray-700 dark:text-gray-300">{event}</span>
                         </div>
-                      )}
+                      </div>
+                    </div>
+                  );
+                }
+                return (
+                  <div key={idx} className="border-l-2 border-blue-500 dark:border-blue-400 pl-4 pb-2">
+                    <div className="flex items-start gap-2">
+                      <span className="font-semibold text-blue-600 dark:text-blue-400 min-w-[80px]">
+                        {event.date || `Event ${idx + 1}`}
+                      </span>
+                      <div className="flex-1">
+                        <span className="inline-block px-2 py-0.5 text-xs rounded bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 mr-2">
+                          {event.type}
+                        </span>
+                        <span className="text-gray-700 dark:text-gray-300">
+                          {typeof event.description === 'object' ? event.description.name || JSON.stringify(event.description) : event.description}
+                        </span>
+                        {event.details && (
+                          <div className="text-gray-600 dark:text-gray-400 text-xs mt-1 italic">
+                            {typeof event.details === 'object' ? event.details.name || JSON.stringify(event.details) : event.details}
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
             {editedData.hospitalCourse.summary && (
               <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
@@ -599,19 +619,19 @@ const ExtractedDataReview = ({ extractedData, validation, onDataCorrected, onPro
             {editedData.anticoagulation.current?.length > 0 && (
               <div className="text-sm">
                 <span className="font-medium">Current: </span>
-                {editedData.anticoagulation.current.map(m => m.name).join(', ')}
+                {editedData.anticoagulation.current.map(m => typeof m === 'object' ? m.name : m).join(', ')}
               </div>
             )}
             {editedData.anticoagulation.held?.length > 0 && (
               <div className="text-sm">
                 <span className="font-medium">Held: </span>
-                {editedData.anticoagulation.held.map(m => m.name).join(', ')}
+                {editedData.anticoagulation.held.map(m => typeof m === 'object' ? m.name : m).join(', ')}
               </div>
             )}
             {editedData.anticoagulation.reversed?.length > 0 && (
               <div className="text-sm">
                 <span className="font-medium">Reversed: </span>
-                {editedData.anticoagulation.reversed.map(m => m.name).join(', ')}
+                {editedData.anticoagulation.reversed.map(m => typeof m === 'object' ? m.name : m).join(', ')}
               </div>
             )}
           </DataSection>
@@ -709,14 +729,16 @@ const DataField = ({
   const hasCriticalFlag = flags.some(f => f.severity === 'critical');
   const hasFlag = flags.length > 0;
 
+  const fieldId = `edit-${label.toLowerCase().replace(/\s+/g, '-')}`;
+
   if (editing) {
     return (
       <div className="flex items-center gap-2">
-        <label className="text-sm font-medium min-w-[120px]">{label}:</label>
+        <label htmlFor={fieldId} className="text-sm font-medium min-w-[120px]">{label}:</label>
         {type === 'select' ? (
           <select
-            id={`edit-${label.toLowerCase().replace(/\s+/g, '-')}`}
-            name={`edit-${label.toLowerCase().replace(/\s+/g, '-')}`}
+            id={fieldId}
+            name={fieldId}
             value={editValue}
             onChange={(e) => setEditValue(e.target.value)}
             className="input flex-1"
@@ -729,8 +751,8 @@ const DataField = ({
           </select>
         ) : type === 'date' ? (
           <input
-            id={`edit-${label.toLowerCase().replace(/\s+/g, '-')}`}
-            name={`edit-${label.toLowerCase().replace(/\s+/g, '-')}`}
+            id={fieldId}
+            name={fieldId}
             type="date"
             value={editValue}
             onChange={(e) => setEditValue(e.target.value)}
@@ -739,8 +761,8 @@ const DataField = ({
           />
         ) : type === 'number' ? (
           <input
-            id={`edit-${label.toLowerCase().replace(/\s+/g, '-')}`}
-            name={`edit-${label.toLowerCase().replace(/\s+/g, '-')}`}
+            id={fieldId}
+            name={fieldId}
             type="number"
             value={editValue}
             onChange={(e) => setEditValue(e.target.value)}
@@ -749,8 +771,8 @@ const DataField = ({
           />
         ) : (
           <input
-            id={`edit-${label.toLowerCase().replace(/\s+/g, '-')}`}
-            name={`edit-${label.toLowerCase().replace(/\s+/g, '-')}`}
+            id={fieldId}
+            name={fieldId}
             type="text"
             value={editValue}
             onChange={(e) => setEditValue(e.target.value)}
@@ -770,10 +792,10 @@ const DataField = ({
 
   return (
     <div className="flex items-start gap-2 group">
-      <label className="text-sm font-medium min-w-[120px] flex-shrink-0">
+      <span className="text-sm font-medium min-w-[120px] flex-shrink-0">
         {label}:
         {critical && <span className="text-red-500 ml-1">*</span>}
-      </label>
+      </span>
       <div className="flex-1">
         <div className="flex items-center gap-2">
           <span className="text-sm">

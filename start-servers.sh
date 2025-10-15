@@ -50,7 +50,7 @@ BACKEND_PID=$!
 
 # Wait for backend to start
 echo "⏳ Waiting for backend to initialize..."
-for i in {1..20}; do
+for _ in {1..20}; do
     if curl -s http://localhost:3001/health > /dev/null 2>&1; then
         echo "✅ Backend proxy ready on port 3001"
         break
@@ -76,7 +76,7 @@ FRONTEND_PID=$!
 
 # Wait for frontend
 echo "⏳ Waiting for frontend to start..."
-for i in {1..20}; do
+for _ in {1..20}; do
     if curl -s http://localhost:5173 > /dev/null 2>&1; then
         echo "✅ Frontend ready on port 5173"
         break

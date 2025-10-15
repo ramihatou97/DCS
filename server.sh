@@ -45,7 +45,7 @@ kill_vite_processes() {
     
     # Double check - kill by port if needed
     PORT_PIDS=$(lsof -ti:5173,5174,5175,5176,5177 2>/dev/null)
-    if [ ! -z "$PORT_PIDS" ]; then
+    if [ -n "$PORT_PIDS" ]; then
         echo -e "${YELLOW}🔧 Cleaning up port occupants...${NC}"
         echo "$PORT_PIDS" | while read pid; do
             kill -9 "$pid" 2>/dev/null
@@ -69,7 +69,7 @@ check_server() {
 # Function to start server
 start_server() {
     echo -e "\n${YELLOW}🚀 Starting Vite dev server...${NC}"
-    cd "$PROJECT_DIR"
+    cd "$PROJECT_DIR" || { echo -e "${RED}✗ Failed to change directory to $PROJECT_DIR${NC}"; exit 1; }
     
     # Start server in background with proper signal handling
     npm run dev &
@@ -77,7 +77,7 @@ start_server() {
     
     # Wait for server to start (max 10 seconds)
     echo -e "${YELLOW}⏳ Waiting for server to start...${NC}"
-    for i in {1..20}; do
+    for _ in {1..20}; do
         sleep 0.5
         if check_server; then
             echo -e "${GREEN}✓ Server started successfully!${NC}"

@@ -1,6 +1,6 @@
 /**
  * CORS Proxy Server for Discharge Summary Generator
- * 
+ *
  * Proxies requests to Anthropic and OpenAI APIs to bypass CORS restrictions
  * Keeps API keys secure on the server side
  */
@@ -9,8 +9,17 @@ import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import fetch from 'node-fetch';
+import { fileURLToPath } from 'url';
+import { dirname, join } from 'path';
+import rateLimit from 'express-rate-limit';
+import extractionRoutes from './routes/extraction.js';
+import { sanitizeRequest, validateLLMRequest } from './middleware/validation.js';
 
-dotenv.config();
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
+// Load environment variables from backend/.env
+dotenv.config({ path: join(__dirname, '.env') });
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -24,6 +33,24 @@ app.use(cors({
 }));
 
 app.use(express.json({ limit: '10mb' }));
+
+// Rate limiting - prevents abuse
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100, // Limit each IP to 100 requests per windowMs
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: 'Too many requests from this IP, please try again later.',
+});
+
+// Apply rate limiting to all API routes
+app.use('/api', limiter);
+
+// Apply input sanitization to all requests
+app.use(sanitizeRequest);
+
+// Mount extraction routes
+app.use('/api', extractionRoutes);
 
 // Health check endpoint
 app.get('/health', (req, res) => {
@@ -39,7 +66,7 @@ app.get('/health', (req, res) => {
 });
 
 // Anthropic Claude API proxy
-app.post('/api/anthropic', async (req, res) => {
+app.post('/api/anthropic', validateLLMRequest, async (req, res) => {
   console.log('📨 Anthropic API request received');
   
   try {
@@ -83,7 +110,7 @@ app.post('/api/anthropic', async (req, res) => {
 });
 
 // OpenAI GPT API proxy
-app.post('/api/openai', async (req, res) => {
+app.post('/api/openai', validateLLMRequest, async (req, res) => {
   console.log('📨 OpenAI API request received');
   
   try {
@@ -126,7 +153,7 @@ app.post('/api/openai', async (req, res) => {
 });
 
 // Google Gemini API proxy (optional, for consistency)
-app.post('/api/gemini', async (req, res) => {
+app.post('/api/gemini', validateLLMRequest, async (req, res) => {
   console.log('📨 Gemini API request received');
   
   try {
@@ -268,5 +295,8 @@ app.listen(PORT, () => {
   console.log(`    POST /api/openai    - GPT proxy`);
   console.log(`    POST /api/gemini    - Gemini proxy`);
   console.log(`    POST /api/test/:provider - Test API key`);
+  console.log(`    POST /api/extract - Full extraction (pattern + LLM)`);
+  console.log(`    POST /api/extract-scores - Extract clinical scores`);
+  console.log(`    POST /api/expand-abbreviations - Expand medical abbreviations`);
   console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
 });

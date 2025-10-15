@@ -17,7 +17,7 @@ NC='\033[0m' # No Color
 
 # Check if required tools are installed
 check_tool() {
-    if ! command -v $1 &> /dev/null; then
+    if ! command -v "$1" &> /dev/null; then
         echo -e "${RED}❌ $1 is not installed${NC}"
         echo "Install it with: $2"
         exit 1

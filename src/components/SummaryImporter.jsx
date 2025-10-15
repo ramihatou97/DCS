@@ -392,7 +392,7 @@ const SummaryImporter = () => {
           <>
             {/* Summary Input */}
             <div className="mb-6">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label htmlFor="summary-text-input" className="block text-sm font-medium text-gray-700 mb-2">
                 Discharge Summary *
               </label>
               <p className="text-xs text-gray-500 mb-3">
@@ -400,6 +400,7 @@ const SummaryImporter = () => {
               </p>
 
               <textarea
+                id="summary-text-input"
                 value={summaryText}
                 onChange={(e) => setSummaryText(e.target.value)}
                 placeholder="Paste discharge summary here...&#10;&#10;Include section headers like:&#10;- Clinical Presentation:&#10;- Hospital Course:&#10;- Discharge Status:&#10;- Follow-Up:"
@@ -447,7 +448,7 @@ const SummaryImporter = () => {
             {/* Source Notes Input */}
             {hasSourceNotes && (
               <div className="mb-6">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label htmlFor="source-notes-input" className="block text-sm font-medium text-gray-700 mb-2">
                   Source Clinical Notes
                 </label>
                 <p className="text-xs text-gray-500 mb-3">
@@ -455,6 +456,7 @@ const SummaryImporter = () => {
                 </p>
 
                 <textarea
+                  id="source-notes-input"
                   value={sourceNotes}
                   onChange={(e) => setSourceNotes(e.target.value)}
                   placeholder="Paste source clinical notes here...&#10;&#10;Include all notes: admission, progress, operative, consultant notes, etc."

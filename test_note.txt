@@ -1,0 +1,51 @@
+DISCHARGE SUMMARY
+
+Patient: John Doe
+MRN: 123456
+DOB: 01/15/1960
+Admission Date: 11/20/2024
+Discharge Date: 11/25/2024
+
+DISCHARGE DIAGNOSES:
+1. Subarachnoid hemorrhage, Hunt and Hess Grade 3
+2. Cerebral vasospasm - resolved
+3. Hydrocephalus requiring EVD placement
+
+PROCEDURES:
+1. Endovascular coiling of anterior communicating artery aneurysm (11/21/2024)
+2. External ventricular drain placement (11/20/2024)
+
+HOSPITAL COURSE:
+The patient is a 64-year-old male who presented to the emergency department on 11/20/2024 with sudden onset severe headache, described as "worst headache of life". Initial CT showed diffuse subarachnoid hemorrhage with blood in the basal cisterns. CTA revealed a 7mm anterior communicating artery aneurysm.
+
+The patient was admitted to the Neurosurgical ICU. An external ventricular drain was placed emergently for management of hydrocephalus. The patient underwent successful endovascular coiling of the aneurysm on 11/21/2024 without complications.
+
+Post-operatively, the patient developed mild vasospasm on post-bleed day 4, which was managed with hypertensive therapy and resolved by day 7. The EVD was successfully weaned and removed on 11/24/2024.
+
+NEUROLOGICAL EXAMINATION AT DISCHARGE:
+- Alert and oriented x3
+- Speech clear and fluent
+- Cranial nerves II-XII intact
+- Motor strength 5/5 throughout
+- Sensation intact
+- No pronator drift
+- Modified Rankin Scale: 1
+
+MEDICATIONS ON DISCHARGE:
+1. Nimodipine 60mg PO q4h x 21 days total (to complete on 12/11/2024)
+2. Levetiracetam 500mg PO BID
+3. Acetaminophen 650mg PO q6h PRN headache
+4. Docusate 100mg PO BID
+
+FOLLOW-UP:
+1. Neurosurgery clinic in 2 weeks
+2. Cerebral angiogram in 6 months
+3. MRI brain in 3 months
+
+DISCHARGE DISPOSITION: Home with family
+
+ACTIVITY: Progressive ambulation as tolerated, no heavy lifting >10 lbs for 6 weeks
+
+DIET: Regular diet, encourage hydration
+
+Electronically signed by: Dr. Jane Smith, Attending Neurosurgeon

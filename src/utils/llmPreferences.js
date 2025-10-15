@@ -10,8 +10,8 @@ const PREFERENCES_KEY = 'dsg_llm_preferences';
  * Provider priority order for different tasks
  */
 export const TASK_PRIORITIES = {
-  EXTRACTION: ['anthropic', 'openai', 'gemini'], // Claude best for structured extraction
-  SUMMARIZATION: ['anthropic', 'openai', 'gemini'] // Claude best for natural language
+  EXTRACTION: ['anthropic'], // Anthropic only - will fall back to patterns if quota exceeded
+  SUMMARIZATION: ['anthropic'] // Anthropic only - will fall back to patterns if quota exceeded
 };
 
 /**

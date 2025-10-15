@@ -32,7 +32,8 @@ import { extractAnticoagulation } from '../utils/anticoagulationTracker.js';
 import { extractDischargeDestination } from '../utils/dischargeDestinations.js';
 import { isLLMAvailable, extractWithLLM } from './llmService.js';
 import { deduplicateNotes } from './deduplication.js';
-import enhancedMLService from './ml/enhancedML.js';
+// ML services temporarily disabled - models not available
+// import enhancedMLService from './ml/enhancedML.js';
 import {
   extractPhysicalExam,
   extractNeurologicalExam,
@@ -67,8 +68,8 @@ export const extractMedicalEntities = async (notes, options = {}) => {
     usePatterns = false,
     enableDeduplication = true,
     enablePreprocessing = true,
-    useBioBERT = true, // NEW: Enable BioBERT entity extraction
-    useVectorSearch = false // NEW: Enable vector-based semantic search
+    useBioBERT = false, // Disabled - models not available
+    useVectorSearch = false // Disabled - models not available
   } = options;
 
   // Normalize input
@@ -84,31 +85,15 @@ export const extractMedicalEntities = async (notes, options = {}) => {
   if (enableDeduplication && noteArray.length > 1) {
     console.log('Deduplicating repetitive content across notes...');
     
-    try {
-      // Try semantic deduplication first
-      if (useVectorSearch) {
-        noteArray = await enhancedMLService.semanticDeduplication(noteArray, 0.85);
-        console.log(`  Semantic deduplication: reduced to ${noteArray.length} notes`);
-      } else {
-        // Fallback to standard deduplication
-        const dedupResult = deduplicateNotes(noteArray, {
-          similarityThreshold: 0.85,
-          preserveChronology: true,
-          mergeComplementary: true
-        });
-        
-        noteArray = dedupResult.deduplicated;
-        console.log(`  Deduplication: ${dedupResult.metadata.original} notes → ${dedupResult.metadata.final} notes (${dedupResult.metadata.reductionPercent}% reduction)`);
-      }
-    } catch (error) {
-      console.warn('Enhanced deduplication failed, using standard method:', error);
-      const dedupResult = deduplicateNotes(noteArray, {
-        similarityThreshold: 0.85,
-        preserveChronology: true,
-        mergeComplementary: true
-      });
-      noteArray = dedupResult.deduplicated;
-    }
+    // Use standard deduplication only (ML models not available)
+    const dedupResult = deduplicateNotes(noteArray, {
+      similarityThreshold: 0.85,
+      preserveChronology: true,
+      mergeComplementary: true
+    });
+    
+    noteArray = dedupResult.deduplicated;
+    console.log(`  Deduplication: ${dedupResult.metadata.original} notes → ${dedupResult.metadata.final} notes (${dedupResult.metadata.reductionPercent}% reduction)`);
   }
   
   const combinedText = noteArray.join('\n\n');
@@ -126,26 +111,8 @@ export const extractMedicalEntities = async (notes, options = {}) => {
   // Detect pathology types early (needed for both LLM and pattern extraction)
   const pathologyTypes = detectPathology(combinedText);
   
-  // **NEW**: Try BioBERT entity extraction for enhanced accuracy
+  // BioBERT entity extraction disabled (models not available)
   let biobertEntities = null;
-  if (useBioBERT) {
-    try {
-      console.log('Attempting BioBERT entity extraction...');
-      const mlResult = await enhancedMLService.processNote(combinedText, {
-        storeInVectorDb: useVectorSearch,
-        extractEntities: true,
-        findSimilarNotes: false,
-        pathology: pathologyTypes[0] || null
-      });
-      
-      if (mlResult.entities && mlResult.entities.length > 0) {
-        biobertEntities = mlResult.entities;
-        console.log(`  BioBERT extracted ${biobertEntities.length} entities`);
-      }
-    } catch (error) {
-      console.warn('BioBERT extraction failed, continuing with standard extraction:', error);
-    }
-  }
 
   // Try LLM extraction first if available
   if (shouldUseLLM) {

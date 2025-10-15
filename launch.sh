@@ -25,16 +25,18 @@ echo ""
 
 # Function to check if port is in use
 check_port() {
-    lsof -ti:$1 > /dev/null 2>&1
+    lsof -ti "$1" > /dev/null 2>&1
 }
 
 # Function to kill process on port
 kill_port() {
     local port=$1
-    local pid=$(lsof -ti:$port 2>/dev/null)
-    if [ ! -z "$pid" ]; then
+    local pid
+    # declare and assign separately so the command's exit status is not masked
+    pid=$(lsof -ti "$port" 2>/dev/null)
+    if [ -n "$pid" ]; then
         echo -e "${YELLOW}  Killing existing process on port $port (PID: $pid)${NC}"
-        kill -9 $pid 2>/dev/null || true
+        kill -9 "$pid" 2>/dev/null || true
         sleep 1
     fi
 }
