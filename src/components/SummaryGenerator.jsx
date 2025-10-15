@@ -32,10 +32,20 @@ const SummaryGeneratorComponent = ({ extractedData, notes }) => {
     setError(null);
 
     try {
-      const result = await generateDischargeSummary(notes, {
-        validateData: true,
+      // Extract note contents from note objects
+      // notes is an array of objects: [{filename, content, source}, ...]
+      // We need to extract just the content strings
+      const noteContents = Array.isArray(notes)
+        ? notes.map(note => typeof note === 'string' ? note : note.content)
+        : [typeof notes === 'string' ? notes : notes.content];
+
+      // Use the already-extracted and corrected data instead of re-extracting
+      // This avoids re-validation of uncorrected data
+      const result = await generateDischargeSummary(noteContents, {
+        validateData: false, // Skip validation - data already validated and corrected
         format: 'structured',
-        style: 'formal'
+        style: 'formal',
+        extractedData // Pass the corrected extracted data
       });
 
       if (result.success) {

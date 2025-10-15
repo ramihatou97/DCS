@@ -325,22 +325,32 @@ export const escapeRegExp = (string) => {
  */
 export const preprocessClinicalNote = (text) => {
   if (!text) return '';
-  
+
+  // Ensure text is a string (handle objects with content property)
+  if (typeof text !== 'string') {
+    if (text.content && typeof text.content === 'string') {
+      text = text.content;
+    } else {
+      console.warn('preprocessClinicalNote received non-string input:', typeof text);
+      return '';
+    }
+  }
+
   let processed = text;
-  
+
   // 1. Normalize line endings
   processed = processed.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
   
   // 2. Normalize timestamps (various formats to YYYY-MM-DD HH:MM)
   // Handle formats like: 10/10/24 0847, 10/10/2024 08:47, Oct 10 2024 8:47am
-  processed = processed.replace(/(\d{1,2})\/(\d{1,2})\/(\d{2,4})\s+(\d{1,2}):?(\d{2})/g, (match, m, d, y, h, min) => {
+  processed = processed.replace(/(\d{1,2})\/(\d{1,2})\/(\d{2,4})\s+(\d{1,2}):?(\d{2})/g, (_match, m, d, y, h, min) => {
     const year = y.length === 2 ? '20' + y : y;
     return `${year}-${m.padStart(2, '0')}-${d.padStart(2, '0')} ${h.padStart(2, '0')}:${min}`;
   });
-  
+
   // 3. Normalize section headers (various styles)
   // e.g., "NEURO EXAM:", "Neuro Exam -", "**NEURO EXAM**", "===NEURO EXAM==="
-  processed = processed.replace(/^[\s*=\-]*([A-Z][A-Z\s&/]+?)[\s*:=\-]*$/gm, (match, header) => {
+  processed = processed.replace(/^[\s*=\-]*([A-Z][A-Z\s&/]+?)[\s*:=\-]*$/gm, (_match, header) => {
     return '\n' + header.trim() + ':\n';
   });
   

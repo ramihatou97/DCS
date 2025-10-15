@@ -33,7 +33,8 @@ export const generateDischargeSummary = async (notes, options = {}) => {
     includeMetadata = true,
     format = 'structured', // 'structured', 'text', 'template'
     template = null,
-    learnedPatterns = []
+    learnedPatterns = [],
+    extractedData = null // Pre-extracted and corrected data (optional)
   } = options;
 
   const result = {
@@ -54,13 +55,31 @@ export const generateDischargeSummary = async (notes, options = {}) => {
   const startTime = Date.now();
 
   try {
-    // Step 1: Extract data from notes (with preprocessing and deduplication)
-    const extraction = await extractMedicalEntities(notes, {
-      learnedPatterns,
-      includeConfidence: true,
-      enableDeduplication: true,
-      enablePreprocessing: true
-    });
+    // Step 1: Extract data from notes (or use pre-extracted data)
+    let extraction;
+
+    if (extractedData) {
+      // Use pre-extracted and corrected data
+      console.log('Using pre-extracted and corrected data');
+      extraction = {
+        extracted: extractedData,
+        pathologyTypes: extractedData.pathology?.types || [],
+        metadata: {
+          extractionMethod: 'pre-extracted',
+          preprocessed: true,
+          deduplicated: true
+        }
+      };
+    } else {
+      // Extract data from notes (with preprocessing and deduplication)
+      console.log('Extracting data from notes');
+      extraction = await extractMedicalEntities(notes, {
+        learnedPatterns,
+        includeConfidence: true,
+        enableDeduplication: true,
+        enablePreprocessing: true
+      });
+    }
 
     result.extractedData = extraction.extracted;
     result.metadata.pathologyTypes = extraction.pathologyTypes;
@@ -84,25 +103,25 @@ export const generateDischargeSummary = async (notes, options = {}) => {
     result.timeline = timeline;
     result.metadata.timelineCompleteness = timeline.metadata.completeness;
 
-    // Step 3: Validate extracted data
-    if (validateData) {
+    // Step 3: Validate extracted data (only if not pre-extracted)
+    if (validateData && !extractedData) {
       const validation = validateExtraction(
         extraction.extracted,
         notes,
-        { strictMode: true }
+        { strictMode: false } // Use lenient mode - user can correct in review
       );
 
       result.validation = getValidationSummary(validation);
-      
+
       // Use validated data (with corrections)
       result.extractedData = validation.validatedData;
       result.warnings = validation.warnings;
       result.errors = validation.errors;
 
-      // Check if validation passed
-      if (!validation.isValid) {
+      // Only fail on critical errors, not warnings or low confidence
+      if (validation.errors && validation.errors.length > 0) {
         result.success = false;
-        result.metadata.error = 'Validation failed';
+        result.metadata.error = 'Validation failed with critical errors';
         return result;
       }
     }

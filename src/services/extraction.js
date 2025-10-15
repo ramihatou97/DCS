@@ -19,19 +19,13 @@
 import { PATHOLOGY_PATTERNS, detectPathology } from '../config/pathologyPatterns.js';
 import { EXTRACTION_TARGETS, CONFIDENCE } from '../config/constants.js';
 import { parseFlexibleDate, normalizeDate } from '../utils/dateUtils.js';
-import { 
-  cleanText, 
-  extractTextBetween, 
-  countOccurrences, 
-  preprocessClinicalNote,
-  segmentClinicalNote,
-  deduplicateContent
+import {
+  cleanText,
+  preprocessClinicalNote
 } from '../utils/textUtils.js';
-import { MEDICAL_ABBREVIATIONS, expandAbbreviation } from '../utils/medicalAbbreviations.js';
 import { extractAnticoagulation } from '../utils/anticoagulationTracker.js';
 import { extractDischargeDestination } from '../utils/dischargeDestinations.js';
 import { isLLMAvailable, extractWithLLM } from './llmService.js';
-import { deduplicateNotes } from './deduplication.js';
 // ML services temporarily disabled - models not available
 // import enhancedMLService from './ml/enhancedML.js';
 import {
@@ -116,9 +110,7 @@ export const extractMedicalEntities = async (notes, options = {}) => {
     useLLM = null, // null = auto, true = force LLM, false = force patterns
     usePatterns = false,
     enableDeduplication = true,
-    enablePreprocessing = true,
-    useBioBERT = false, // Disabled - models not available
-    useVectorSearch = false // Disabled - models not available
+    enablePreprocessing = true
   } = options;
 
   // Normalize input
@@ -172,9 +164,6 @@ export const extractMedicalEntities = async (notes, options = {}) => {
 
   // Detect pathology types early (needed for both LLM and pattern extraction)
   const pathologyTypes = detectPathology(combinedText);
-  
-  // BioBERT entity extraction disabled (models not available)
-  let biobertEntities = null;
 
   // Try LLM extraction first if available
   if (shouldUseLLM) {
@@ -1003,7 +992,7 @@ const extractComplications = (text, pathologyTypes) => {
 /**
  * Extract imaging findings
  */
-const extractImaging = (text, pathologyTypes) => {
+const extractImaging = (text) => {
   const data = {
     findings: []
   };
@@ -1271,24 +1260,17 @@ const estimateMRSFromDisability = (text) => {
  * Extract medications
  * Enhanced with dose and frequency pattern matching
  */
-const extractMedications = (text, pathologyTypes) => {
+const extractMedications = (text) => {
   const data = {
     medications: []
   };
-  
+
   let confidence = CONFIDENCE.MEDIUM;
-  
-  // Get medication patterns for detected pathologies
-  const medicationPatterns = [];
-  for (const pathType of pathologyTypes) {
-    const patterns = PATHOLOGY_PATTERNS[pathType]?.medicationPatterns || [];
-    medicationPatterns.push(...patterns);
-  }
-  
+
   // Enhanced medication extraction with drug+dose pattern
   // Format: Drug name followed by dose (e.g., "Keppra 1000mg", "aspirin 81 mg")
   const medicationWithDosePattern = /\b([A-Z][a-z]+(?:ra|pam|lol|pine|sin|xin)?)\s+(\d+(?:\.\d+)?\s*(?:mg|mcg|g|units?))\s*(?:(daily|BID|TID|QID|Q\d+H|PRN|once|twice))?\b/gi;
-  
+
   let match;
   while ((match = medicationWithDosePattern.exec(text)) !== null) {
     const medication = {
@@ -1296,19 +1278,29 @@ const extractMedications = (text, pathologyTypes) => {
       dose: match[2],
       frequency: match[3] || null
     };
-    
+
     // Check if already added (deduplication)
-    const isDuplicate = data.medications.some(m => 
+    const isDuplicate = data.medications.some(m =>
       m.name.toLowerCase() === medication.name.toLowerCase() &&
       m.dose === medication.dose
     );
-    
+
     if (!isDuplicate) {
       data.medications.push(medication);
       confidence = CONFIDENCE.HIGH;
     }
   }
-  
+
+  // Common medication patterns (without explicit dose)
+  const medicationPatterns = [
+    /\b(Keppra|Levetiracetam)\b/gi,
+    /\b(Aspirin|ASA)\b/gi,
+    /\b(Nimodipine)\b/gi,
+    /\b(Dexamethasone|Decadron)\b/gi,
+    /\b(Mannitol)\b/gi,
+    /\b(Phenytoin|Dilantin)\b/gi
+  ];
+
   // Extract medications from patterns (without explicit dose)
   for (const pattern of medicationPatterns) {
     const regex = new RegExp(pattern, 'gi');
