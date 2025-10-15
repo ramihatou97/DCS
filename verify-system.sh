@@ -29,12 +29,12 @@ else
 fi
 echo ""
 
-# Check backend .env
+# Check root .env
 echo "4️⃣  Backend Configuration:"
-if [ -f "backend/.env" ]; then
+if [ -f ".env" ]; then
   echo "   ✅ .env file exists"
   echo "   API Keys configured:"
-  grep -E "^(ANTHROPIC|OPENAI|GEMINI)_API_KEY=" backend/.env 2>/dev/null | sed 's/=.*/=***/' | sed 's/^/      /'
+  grep -E "^(ANTHROPIC|OPENAI|GEMINI)_API_KEY=" .env 2>/dev/null | sed 's/=.*/=***/' | sed 's/^/      /'
 else
   echo "   ❌ .env file missing"
 fi
@@ -92,7 +92,7 @@ CONFIG_OK=0
 
 lsof -ti:3001 > /dev/null 2>&1 && BACKEND_OK=1
 lsof -ti:5173 > /dev/null 2>&1 && FRONTEND_OK=1
-[ -f "backend/.env" ] && CONFIG_OK=1
+[ -f ".env" ] && CONFIG_OK=1
 
 if [ $BACKEND_OK -eq 1 ] && [ $FRONTEND_OK -eq 1 ] && [ $CONFIG_OK -eq 1 ]; then
   echo "✅ ALL SYSTEMS OPERATIONAL"
