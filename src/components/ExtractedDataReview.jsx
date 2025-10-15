@@ -70,40 +70,43 @@ const ExtractedDataReview = ({ extractedData, validation, onDataCorrected, onPro
     setEditingField(null);
 
     // Track correction for ML learning (async, non-blocking)
-    try {
-      // Construct field path
-      const fieldPath = field ? `${section}.${field}` : section;
+    // Only track if original value exists and is different from new value
+    if (originalValue !== undefined && originalValue !== value) {
+      try {
+        // Construct field path
+        const fieldPath = field ? `${section}.${field}` : section;
 
-      // Get source context from notes (if available)
-      const sourceText = notes && notes.length > 0
-        ? notes.map(n => n.content || n).join('\n\n')
-        : '';
+        // Get source context from notes (if available)
+        const sourceText = notes && notes.length > 0
+          ? notes.map(n => n.content || n).join('\n\n')
+          : '';
 
-      // Get confidence score for this field
-      const fieldConfidence = validation?.confidence?.[fieldPath] || validation?.confidence || 0;
+        // Get confidence score for this field
+        const fieldConfidence = validation?.confidence?.[fieldPath] || validation?.confidence || 0;
 
-      // Get pathology type
-      const pathologyTypes = metadata?.pathologyTypes || [];
-      const primaryPathology = pathologyTypes.length > 0 ? pathologyTypes[0] : 'unknown';
+        // Get pathology type
+        const pathologyTypes = metadata?.pathologyTypes || [];
+        const primaryPathology = pathologyTypes.length > 0 ? pathologyTypes[0] : 'unknown';
 
-      // Track the correction (don't await - let it run in background)
-      trackCorrection({
-        field: fieldPath,
-        originalValue,
-        correctedValue: value,
-        sourceText,
-        originalConfidence: fieldConfidence,
-        pathology: primaryPathology,
-        extractionMethod: metadata?.extractionMethod || 'unknown',
-      }).then(() => {
-        console.log(`✅ Correction tracked: ${fieldPath}`);
-      }).catch(error => {
-        console.error('Failed to track correction:', error);
+        // Track the correction (don't await - let it run in background)
+        trackCorrection({
+          field: fieldPath,
+          originalValue: originalValue === null ? '' : originalValue,
+          correctedValue: value === null ? '' : value,
+          sourceText,
+          originalConfidence: fieldConfidence,
+          pathology: primaryPathology,
+          extractionMethod: metadata?.extractionMethod || 'unknown',
+        }).then(() => {
+          console.log(`✅ Correction tracked: ${fieldPath}`);
+        }).catch(error => {
+          console.error('Failed to track correction:', error);
+          // Don't block user if tracking fails
+        });
+      } catch (error) {
+        console.error('Correction tracking error:', error);
         // Don't block user if tracking fails
-      });
-    } catch (error) {
-      console.error('Correction tracking error:', error);
-      // Don't block user if tracking fails
+      }
     }
 
     // Notify parent of correction

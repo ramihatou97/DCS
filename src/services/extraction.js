@@ -48,6 +48,55 @@ import {
 } from './comprehensiveExtraction.js';
 
 /**
+ * Async wrapper for deduplication using Web Worker
+ * Runs deduplication on separate thread to avoid UI freezing
+ *
+ * @param {string[]} notes - Array of clinical notes
+ * @param {Object} options - Deduplication options
+ * @returns {Promise<Object>} Deduplicated result with metadata
+ */
+const deduplicateNotesAsync = (notes, options = {}) => {
+  return new Promise((resolve, reject) => {
+    // Create Web Worker
+    const worker = new Worker(
+      new URL('../workers/deduplicationWorker.js', import.meta.url),
+      { type: 'module' }
+    );
+
+    // Set up timeout (5 minutes max for large note sets)
+    const timeout = setTimeout(() => {
+      worker.terminate();
+      reject(new Error('Deduplication timed out after 5 minutes'));
+    }, 300000);
+
+    // Listen for results
+    worker.onmessage = (event) => {
+      clearTimeout(timeout);
+      worker.terminate();
+
+      const { success, result, error, duration } = event.data;
+
+      if (success) {
+        console.log(`✓ Deduplication completed in ${duration}ms (Web Worker)`);
+        resolve(result);
+      } else {
+        reject(new Error(`Deduplication failed: ${error}`));
+      }
+    };
+
+    // Handle errors
+    worker.onerror = (error) => {
+      clearTimeout(timeout);
+      worker.terminate();
+      reject(new Error(`Worker error: ${error.message}`));
+    };
+
+    // Send data to worker
+    worker.postMessage({ notes, options });
+  });
+};
+
+/**
  * Extract all medical entities from clinical notes
  * 
  * @param {string|string[]} notes - Single note or array of notes
@@ -78,22 +127,35 @@ export const extractMedicalEntities = async (notes, options = {}) => {
   // Enhanced preprocessing for variable-style clinical notes
   if (enablePreprocessing) {
     console.log('Preprocessing clinical notes for variable styles and formats...');
-    noteArray = noteArray.map(note => preprocessClinicalNote(note));
+    try {
+      noteArray = noteArray.map(note => preprocessClinicalNote(note));
+      console.log('✓ Preprocessing complete');
+    } catch (error) {
+      console.error('Preprocessing failed:', error);
+      // Continue with unprocessed notes
+    }
   }
-  
-  // **NEW**: Enhanced deduplication using vector embeddings if available
+
+  // **ENABLED**: Deduplication using Web Worker for non-blocking processing
+  // Maintains chronological intelligence and natural language coherence
   if (enableDeduplication && noteArray.length > 1) {
-    console.log('Deduplicating repetitive content across notes...');
-    
-    // Use standard deduplication only (ML models not available)
-    const dedupResult = deduplicateNotes(noteArray, {
-      similarityThreshold: 0.85,
-      preserveChronology: true,
-      mergeComplementary: true
-    });
-    
-    noteArray = dedupResult.deduplicated;
-    console.log(`  Deduplication: ${dedupResult.metadata.original} notes → ${dedupResult.metadata.final} notes (${dedupResult.metadata.reductionPercent}% reduction)`);
+    console.log('Deduplicating repetitive content across notes (Web Worker)...');
+
+    try {
+      // Use Web Worker for non-blocking deduplication
+      const dedupResult = await deduplicateNotesAsync(noteArray, {
+        similarityThreshold: 0.85,
+        preserveChronology: true,
+        mergeComplementary: true
+      });
+
+      noteArray = dedupResult.deduplicated;
+      console.log(`  Deduplication: ${dedupResult.metadata.original} notes → ${dedupResult.metadata.final} notes (${dedupResult.metadata.reductionPercent}% reduction)`);
+    } catch (error) {
+      console.error('Deduplication failed:', error);
+      console.log('  Continuing with non-deduplicated notes');
+      // Continue with non-deduplicated notes
+    }
   }
   
   const combinedText = noteArray.join('\n\n');

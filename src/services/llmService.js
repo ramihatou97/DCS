@@ -112,16 +112,29 @@ export const getAvailableProviders = () => {
 };
 
 /**
+ * Timeout wrapper for promises
+ */
+function withTimeout(promise, timeoutMs = 120000, operation = 'Operation') {
+  return Promise.race([
+    promise,
+    new Promise((_, reject) =>
+      setTimeout(() => reject(new Error(`${operation} timed out after ${timeoutMs}ms`)), timeoutMs)
+    )
+  ]);
+}
+
+/**
  * Call LLM with unified interface
  */
 export const callLLM = async (prompt, options = {}) => {
   const {
     provider = null, // Will auto-select if null
     task = null, // 'extraction' or 'summarization' for smart selection
-    systemPrompt = 'You are a medical AI assistant specializing in neurosurgery clinical documentation. Extract information accurately and only from the provided text. Never extrapolate or infer information not explicitly stated.',
+    systemPrompt = 'You are an expert medical AI assistant specializing in neurosurgery clinical documentation with advanced natural language understanding. Use your medical knowledge and reasoning to deeply comprehend clinical narratives, intelligently deduce information from context, and synthesize multi-source documentation. Apply chronological intelligence and understand the holistic clinical picture beyond discrete data points.',
     maxTokens = 4000,
     temperature = 0.1,
-    responseFormat = 'text' // 'text' or 'json'
+    responseFormat = 'text', // 'text' or 'json'
+    timeout = 120000 // 2 minutes default timeout
   } = options;
 
   // Select provider based on task priority if not specified
@@ -138,27 +151,33 @@ export const callLLM = async (prompt, options = {}) => {
   const config = LLM_CONFIG[selectedProvider];
   
   console.log(`Using ${config.name} for ${task || 'general'} task`);
-  
+
   try {
     let response;
-    
-    switch (selectedProvider) {
-      case API_PROVIDERS.OPENAI:
-        response = await callOpenAI(prompt, systemPrompt, apiKey, config, { maxTokens, temperature, responseFormat });
-        break;
-      case API_PROVIDERS.ANTHROPIC:
-        response = await callAnthropic(prompt, systemPrompt, apiKey, config, { maxTokens, temperature });
-        break;
-      case API_PROVIDERS.GEMINI:
-        response = await callGemini(prompt, systemPrompt, apiKey, config, { maxTokens, temperature });
-        break;
-      default:
-        throw new Error(`Unsupported provider: ${selectedProvider}`);
-    }
+
+    // Wrap LLM call with timeout
+    const llmCall = async () => {
+      switch (selectedProvider) {
+        case API_PROVIDERS.OPENAI:
+          return await callOpenAI(prompt, systemPrompt, apiKey, config, { maxTokens, temperature, responseFormat });
+        case API_PROVIDERS.ANTHROPIC:
+          return await callAnthropic(prompt, systemPrompt, apiKey, config, { maxTokens, temperature });
+        case API_PROVIDERS.GEMINI:
+          return await callGemini(prompt, systemPrompt, apiKey, config, { maxTokens, temperature });
+        default:
+          throw new Error(`Unsupported provider: ${selectedProvider}`);
+      }
+    };
+
+    response = await withTimeout(
+      llmCall(),
+      timeout,
+      `${config.name} API call`
+    );
 
     return response;
   } catch (error) {
-    console.error(`LLM call failed (${provider}):`, error);
+    console.error(`LLM call failed (${selectedProvider}):`, error);
     throw error;
   }
 };
@@ -318,28 +337,111 @@ const callGemini = async (prompt, systemPrompt, apiKey, config, options) => {
 export const extractWithLLM = async (notes, options = {}) => {
   const noteText = Array.isArray(notes) ? notes.join('\n\n') : notes;
 
-  const prompt = `You are analyzing neurosurgery clinical notes to extract structured medical data. Your task is to create a comprehensive, accurate JSON representation of the patient's case.
+  const prompt = `You are an expert neurosurgery AI with advanced natural language understanding. Your mission is to deeply comprehend the clinical narrative, deduce implicit information, and extract a complete picture of the patient's journey.
 
-These notes may have VARIABLE STYLES (formal/informal), UNSTRUCTURED formats, and REPETITIVE content across multiple entries. Your extraction must be IMPECCABLY ACCURATE by:
+These notes represent the FULL CLINICAL STORY - formal EMR documentation, informal progress notes, consultant updates (neurology, PT/OT, radiology), and evolving assessments. Use your advanced medical reasoning to create a comprehensive understanding.
 
-EXTRACTION PRINCIPLES:
-1. CHRONOLOGICAL ACCURACY: Pay careful attention to the timeline of events - distinguish initial presentation from complications from follow-up
-2. EXPLICIT ONLY: Extract ONLY information explicitly stated - NEVER guess, infer, or extrapolate
-3. NULL VALUES: Use null for any missing information - do not fill gaps with assumptions
-4. DATE FORMAT: Use YYYY-MM-DD for all dates (extract exact dates when available, convert MM/DD/YY format)
-5. CLINICAL PRECISION: Maintain medical accuracy and terminology exactly as stated
-6. SAFETY CRITICAL: Special attention to anticoagulation status (bleeding risk) - note when medications are HELD vs ACTIVE
-7. DEDUPLICATION: If same information appears multiple times, extract only once with earliest/most specific date
-8. CONTEXT AWARENESS: Distinguish between history (past events) and current presentation
-9. VARIABLE STYLES: Handle informal abbreviations (C/O, S/P, W/, POD, HD) and formal language equally
-10. STRUCTURED PARSING: Recognize common note sections (HPI, exam, imaging, assessment, plan) even without headers
+CORE INTELLIGENCE PRINCIPLES:
 
-HANDLING UNSTRUCTURED NOTES:
-- Extract from progress notes even when formal sections absent
-- Recognize procedures mentioned casually ("EVD placed today", "underwent coiling")
-- Track temporal markers (POD#3, "3 days ago", "this morning", timestamps)
-- Parse vital changes and exam findings embedded in narrative text
-- Identify complications mentioned anywhere (not just in "complications" section)
+1. DEEP NATURAL LANGUAGE UNDERSTANDING:
+   - Understand medical context beyond literal text - deduce implicit information from clinical reasoning
+   - Recognize when "patient improving neurologically" implies better GCS/motor function
+   - Infer functional status from OT/PT notes ("ambulating 50 feet" = improving mobility)
+   - Understand causality: "started nimodipine for vasospasm prevention" implies aSAH risk
+   - Parse consultant-specific language (neurology focuses on deficits, PT on mobility, radiology on imaging evolution)
+
+2. CHRONOLOGICAL INTELLIGENCE & DEDUPLICATION:
+   - CRITICAL: If "coiling" or any procedure is mentioned in 5 daily notes, this is ONE procedure, not five
+   - Identify the ACTUAL procedure date (usually first mention or with explicit date/operator)
+   - Subsequent mentions are follow-up references ("s/p coiling", "post-coiling day 3")
+   - Same principle for complications: "vasospasm" mentioned daily = one complication with ongoing management
+   - Track temporal evolution: initial presentation → intervention → complications → recovery trajectory
+   - Convert relative dates ("POD#3", "HD#5", "3 days ago") to absolute dates using note timestamps
+
+3. INFERENCE & DEDUCTION (Use Medical Reasoning):
+   - Deduce Hunt-Hess grade from clinical description if not explicitly stated
+   - Infer mRS/functional status from discharge destination and support level
+   - Understand medication implications (aspirin held → bleeding concern, nimodipine started → vasospasm risk)
+   - Connect symptoms to diagnosis (sudden headache + SAH = likely aneurysmal bleed)
+   - Recognize implied procedures (EVD mentioned → EVD placement occurred)
+
+4. HOLISTIC CLINICAL COURSE UNDERSTANDING:
+   - Go beyond discrete data points - understand the NARRATIVE ARC of hospitalization
+   - Capture clinical evolution: initial severity → intervention response → trajectory
+   - Synthesize information across multiple note types into coherent story
+   - Identify turning points (clinical improvement, complications, change in management)
+   - Understand overall prognosis indicators embedded in notes
+
+5. MULTI-SOURCE INTEGRATION:
+   - Synthesize formal attending notes + brief resident updates + consultant recommendations
+   - Extract functional status from OT notes ("requires moderate assist", "wheelchair level")
+   - Parse PT assessments for mobility and independence levels
+   - Integrate imaging reports (radiologist impressions) with clinical correlation
+   - Recognize different writing styles: attendings (comprehensive), residents (brief), consultants (specialty-focused)
+
+6. VARIABLE STYLE MASTERY:
+   - Handle telegraphic notes: "63F aSAH H&H3 s/p coiling POD#2 stable"
+   - Parse formal discharge summaries with complete sentences
+   - Understand abbreviations in context (C/O, S/P, W/, POD, HD, NT/ND, PERRL, MAE)
+   - Recognize section headers OR parse unstructured narrative equally well
+
+7. SAFETY-CRITICAL AWARENESS:
+   - Track anticoagulation status meticulously (held vs discontinued vs active)
+   - Note bleeding risk factors and reversal agents
+   - Identify critical complications requiring urgent intervention
+
+8. CLINICAL PRECISION:
+   - Maintain medical accuracy and exact terminology
+   - Use null only when information truly cannot be determined
+   - Date format: YYYY-MM-DD (infer year from context if needed)
+   - Distinguish between past medical history and current presentation
+
+FOUNDATIONAL EXTRACTION PRINCIPLES (Essential Accuracy):
+
+9. CHRONOLOGICAL ACCURACY:
+   - Distinguish initial presentation from complications from follow-up events
+   - Track temporal markers precisely (POD#3, HD#5, "3 days ago", timestamps)
+   - Recognize timeline transitions (admission → ICU → floor → discharge)
+
+10. NULL VALUE DISCIPLINE:
+    - Use null for missing information - NEVER fill gaps with assumptions
+    - Only extract what can be determined from the notes (explicitly stated OR reasonably deduced)
+    - Empty fields remain null unless medical reasoning provides clear inference
+
+11. DATE FORMAT STANDARDIZATION:
+    - Always use YYYY-MM-DD format for all dates
+    - Convert MM/DD/YY to YYYY-MM-DD when needed
+    - Extract exact dates when available, use null if truly unknown
+
+12. CLINICAL PRECISION:
+    - Maintain medical accuracy and terminology exactly as stated
+    - Preserve specific values (GCS 13, mRS 2, Hunt-Hess 3)
+    - Keep medication names, doses, and frequencies accurate
+
+13. CONTEXT AWARENESS:
+    - Distinguish between past medical history (PMH) and current presentation
+    - Separate chronic conditions from acute events
+    - Recognize "history of stroke" (past) vs "presented with stroke" (current)
+
+14. VARIABLE STYLE MASTERY (Already covered above, ensuring completeness):
+    - Handle informal abbreviations: C/O (complains of), S/P (status post), W/ (with), POD (post-op day), HD (hospital day)
+    - Parse telegraphic notes and formal documentation equally well
+
+15. STRUCTURED & UNSTRUCTURED PARSING:
+    - Recognize common note sections (HPI, PE, Imaging, Assessment, Plan) even without headers
+    - Extract from progress notes when formal sections absent
+    - Recognize procedures mentioned casually ("EVD placed today", "underwent coiling", "s/p craniotomy")
+    - Parse vital changes and exam findings embedded in narrative text
+    - Identify complications mentioned anywhere (not just in dedicated sections)
+
+EXTRACTION WORKFLOW:
+Step 1: Read ALL notes chronologically to understand the complete story
+Step 2: Identify the PRIMARY EVENT (admission reason, ictus)
+Step 3: Track INTERVENTIONS (procedures with actual dates, not repeated mentions)
+Step 4: Monitor COMPLICATIONS (new events vs ongoing management)
+Step 5: Assess FUNCTIONAL EVOLUTION (initial status → discharge status)
+Step 6: Synthesize NARRATIVE ARC (clinical trajectory)
+Step 7: Apply NULL discipline - missing data stays null unless deducible
 
 REQUIRED JSON STRUCTURE:
 {
@@ -420,12 +522,29 @@ REQUIRED JSON STRUCTURE:
   }
 }
 
-IMPORTANT REMINDERS:
-- Handle variable note styles: formal EMR notes, brief progress notes, informal updates
-- Deduplicate: if same finding appears in multiple notes, extract once
-- Parse temporal context: convert POD#3, "3 days ago", relative dates to absolute when possible
-- Recognize procedures in any context: "EVD placed", "underwent coiling", "s/p craniotomy"
-- Track anticoagulation changes carefully (held vs discontinued vs active)
+CRITICAL INTELLIGENCE REMINDERS:
+
+✓ CHRONOLOGICAL DEDUPLICATION: Procedure mentioned 5 times = 1 procedure (find actual date)
+✓ NATURAL LANGUAGE INFERENCE: Use medical reasoning to deduce implicit information
+✓ MULTI-SOURCE SYNTHESIS: Integrate attending + resident + PT/OT + consultant notes
+✓ FUNCTIONAL STATUS: Extract mobility/independence from OT/PT descriptions
+✓ CLINICAL EVOLUTION: Capture the narrative arc, not just discrete data points
+✓ CONSULTANT STYLES: Understand neurology (deficit-focused), PT (mobility-focused), etc.
+✓ TEMPORAL INTELLIGENCE: "POD#3" → actual date, "improving" → better functional scores
+
+EXAMPLE OF CHRONOLOGICAL INTELLIGENCE:
+Note 1 (Oct 1): "Underwent coiling of PCOM aneurysm by Dr. Smith"  → EXTRACT THIS as procedure with date
+Note 2 (Oct 2): "S/P coiling, monitoring for vasospasm"  → Reference only, NOT a new procedure
+Note 3 (Oct 3): "Post-coiling day 2, stable"  → Reference only, NOT a new procedure
+Note 4 (Oct 4): "Continues to do well post-coiling"  → Reference only, NOT a new procedure
+Result: ONE procedure on Oct 1, not four procedures
+
+EXAMPLE OF NATURAL LANGUAGE INFERENCE:
+"Patient discharged home with family support, ambulating independently"
+→ Deduce: mRS likely 0-2, KPS likely 80-90, good functional outcome
+
+"Requires moderate assist for transfers, wheelchair level mobility"
+→ Deduce: mRS likely 4-5, KPS likely 40-50, significant disability
 
 CLINICAL NOTES:
 ${noteText}
@@ -436,7 +555,7 @@ Return ONLY the JSON object with no markdown formatting, no explanation, no code
     ...options,
     task: 'extraction',
     responseFormat: 'json',
-    systemPrompt: 'You are a medical AI assistant specialized in neurosurgery clinical documentation. Extract structured data with perfect accuracy from variable-style, unstructured, and repetitive clinical notes. Handle formal EMR notes, informal progress notes, and brief updates equally well. Return only valid JSON. Extract only explicitly stated information - never infer or extrapolate. Deduplicate repetitive content intelligently.'
+    systemPrompt: 'You are an expert neurosurgery AI with advanced natural language understanding and clinical reasoning capabilities. Your mission is to deeply comprehend clinical narratives, intelligently deduce implicit information using medical knowledge, and synthesize multi-source documentation (EMR notes, consultant updates, PT/OT assessments) into a complete clinical picture. Apply chronological intelligence to deduplicate repeated procedure mentions (procedure mentioned 5x = 1 procedure). Use inference to extract functional status from descriptive text. Understand the holistic clinical evolution beyond discrete data points. Handle variable writing styles from different providers seamlessly. Return only valid JSON with comprehensive, medically-reasoned extraction.'
   });
 
   return result;
@@ -447,42 +566,61 @@ Return ONLY the JSON object with no markdown formatting, no explanation, no code
  * Optimized for Claude Sonnet 3.5 > GPT-4o > Gemini Pro for natural medical language
  */
 export const generateSummaryWithLLM = async (extractedData, sourceNotes, options = {}) => {
-  const prompt = `You are a neurosurgery attending physician writing a comprehensive discharge summary. Using the structured data and original clinical notes provided, create a professional, chronologically coherent narrative discharge summary.
+  const prompt = `You are an expert neurosurgery attending physician with exceptional clinical narrative writing skills. Your task is to craft a comprehensive discharge summary that tells the complete CLINICAL STORY - synthesizing structured data, multiple note types, and your medical understanding into a coherent, insightful narrative.
 
-STRUCTURED DATA:
+STRUCTURED DATA (Extracted by AI):
 ${JSON.stringify(extractedData, null, 2)}
 
-ORIGINAL CLINICAL NOTES:
+ORIGINAL CLINICAL NOTES (All Sources - Attending, Resident, Consultant, PT/OT):
 ${sourceNotes}
 
-WRITING REQUIREMENTS:
+ADVANCED WRITING PRINCIPLES:
 
-1. CHRONOLOGICAL COHERENCE:
-   - Present events in clear temporal sequence from admission to discharge
-   - Use specific dates when available (e.g., "On October 13, 2025...")
-   - Show progression: initial presentation → workup → intervention → complications → resolution → discharge
-   - Connect cause and effect relationships clearly
-   - Handle repetitive information by using the FIRST/MOST SPECIFIC occurrence
+1. CLINICAL NARRATIVE ARC (Tell the Story):
+   - This is not just a data dump - it's the patient's JOURNEY through their neurosurgical event
+   - Capture the narrative: ictus → presentation → diagnosis → intervention → evolution → outcome
+   - Show cause-effect relationships: "Given persistent vasospasm, nimodipine was escalated..."
+   - Highlight turning points: "Clinical course complicated by...", "Patient showed marked improvement after..."
+   - Convey the overall trajectory: deterioration → stabilization → recovery OR stable → discharge
 
-2. NATURAL MEDICAL LANGUAGE:
-   - Write in past tense for completed events, present tense for discharge status
-   - Use professional but readable prose - write for human physicians
-   - Avoid bullet points - use flowing narrative paragraphs
-   - Spell out abbreviations on first use (e.g., "External ventricular drain (EVD)")
-   - Use proper medical terminology with clarity
-   - Handle both formal and informal note styles seamlessly
+2. DEEP NATURAL LANGUAGE SYNTHESIS:
+   - Synthesize insights from MULTIPLE sources: formal attending notes, brief resident updates, PT/OT functional assessments, consultant recommendations
+   - Extract the "signal" from repetitive notes: mentioned "coiling" 5x = describe once with clinical context
+   - Understand consultant perspectives: Neurology (neurological deficits), PT (mobility/transfers), OT (ADL independence)
+   - Infer functional status evolution: "Initially required maximal assist, progressed to modified independence"
+   - Connect clinical events to functional outcomes: "Following EVD removal, patient's mental status cleared significantly"
 
-3. COMPREHENSIVE BUT CONCISE:
-   - Include all clinically significant information from ANY note style
-   - Omit redundant or trivial details (deduplicate repetitive content)
-   - Each sentence should add meaningful information
-   - Maintain professional tone throughout
-   - Synthesize information from multiple unstructured sources into coherent narrative
+3. CHRONOLOGICAL INTELLIGENCE:
+   - Present events in clear temporal flow with specific dates when available
+   - Use medical time markers naturally: "On hospital day 3...", "Post-operative day 5...", "By discharge..."
+   - Deduplicate repetitive content - if procedure mentioned daily, describe ONCE at actual occurrence
+   - Track evolution over time: initial exam → post-intervention exam → discharge exam
+   - Show temporal relationships: "Three days following coiling, patient developed symptomatic vasospasm..."
 
-4. SAFETY-CRITICAL INFORMATION:
-   - Prominently mention anticoagulation status if relevant
-   - Highlight bleeding risks or complications
-   - Note any critical medications held or discontinued
+4. HOLISTIC CLINICAL COURSE UNDERSTANDING:
+   - Go beyond discrete events - paint the COMPLETE PICTURE
+   - Integrate imaging evolution with clinical correlation
+   - Connect procedures to indications and outcomes
+   - Describe complication management comprehensively (recognition → intervention → resolution)
+   - Synthesize functional status from multiple sources: formal scores + PT/OT assessments + discharge destination
+
+5. PROFESSIONAL MEDICAL PROSE:
+   - Write for attending-level physicians - sophisticated yet clear
+   - Use flowing narrative paragraphs (not bullet points unless listing procedures/medications)
+   - Past tense for completed events, present tense for current status
+   - Spell out abbreviations on first use, then use standard abbreviations
+   - Natural medical language: "The patient tolerated the procedure well and was extubated on POD#1"
+
+6. COMPREHENSIVE YET FOCUSED:
+   - Include ALL clinically significant information (from any source)
+   - Omit trivial daily vital signs unless clinically relevant
+   - Every sentence should convey meaningful clinical information
+   - Synthesize repetitive content into comprehensive statements
+
+7. SAFETY-CRITICAL EMPHASIS:
+   - Anticoagulation status prominently featured (held, when to resume, rationale)
+   - Bleeding risk factors clearly stated
+   - Critical medication changes explained with clinical context
 
 REQUIRED SECTIONS:
 
@@ -537,7 +675,7 @@ Generate the complete discharge summary:`;
   const narrative = await callLLM(prompt, {
     ...options,
     task: 'summarization',
-    systemPrompt: 'You are an experienced neurosurgery attending physician with expertise in clear, comprehensive medical documentation. Write discharge summaries with impeccable chronological flow and natural medical language. Your writing should be professional, precise, and easily understood by other clinicians.',
+    systemPrompt: 'You are an expert neurosurgery attending physician with exceptional clinical narrative writing skills and advanced natural language understanding. Synthesize multiple note types (attending, resident, PT/OT, consultants) into a coherent clinical story. Apply chronological intelligence to deduplicate repetitive mentions. Use medical reasoning to connect clinical events, functional evolution, and outcomes. Write sophisticated yet clear discharge summaries that capture the complete patient journey - not just discrete data points, but the narrative arc of their hospitalization. Your writing demonstrates deep understanding of neurosurgical pathology, clinical reasoning, and holistic patient care.',
     maxTokens: 4000,
     temperature: 0.2  // Slightly higher for more natural language
   });
