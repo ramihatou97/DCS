@@ -58,9 +58,9 @@ function App() {
 
       console.log('Extraction result:', extractionResult);
 
-      // extractMedicalEntities returns { extracted, confidence, pathologyTypes, metadata }
+      // extractMedicalEntities returns { extracted, confidence, pathologyTypes, metadata, clinicalIntelligence, qualityMetrics }
       // We need to pass just the 'extracted' part to validation and components
-      const { extracted, confidence, pathologyTypes, metadata } = extractionResult;
+      const { extracted, confidence, pathologyTypes, metadata, clinicalIntelligence, qualityMetrics } = extractionResult;
 
       // If LLM extraction was used and pattern extraction is available, merge them
       let finalExtracted = extracted;
@@ -124,7 +124,9 @@ function App() {
         metadata: {
           ...metadata,
           mergeMetadata,
-          timeline
+          timeline,
+          clinicalIntelligence, // PHASE 2: Clinical intelligence
+          qualityMetrics // PHASE 3: Quality metrics
         },
         validation,
         validationResult, // Keep full result for detailed access

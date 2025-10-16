@@ -1,53 +1,320 @@
 /**
  * Summary Generator Service
- * 
+ *
  * Final synthesis service that combines extraction, validation, and narrative
  * generation to produce complete discharge summaries.
- * 
+ *
  * Features:
- * - Complete workflow orchestration
+ * - Complete workflow orchestration (Phase 4: Enhanced with intelligent orchestration)
  * - Quality scoring
  * - Export formatting (PDF, text, HL7, FHIR)
  * - Template customization
  * - Chronological context awareness
  * - Advanced deduplication
+ * - Cross-component feedback loops (Phase 4)
+ *
+ * @module summaryGenerator
  */
 
 import { extractMedicalEntities } from './extraction.js';
 import { validateExtraction, getValidationSummary } from './validation.js';
 import { generateNarrative, formatNarrativeForExport, generateConciseSummary } from './narrativeEngine.js';
-import { buildChronologicalTimeline, generateTimelineNarrative } from './chronologicalContext.js';
-import { getTemplateByPathology, generateFromTemplate } from '../utils/templates.js';
+import { buildChronologicalTimeline } from './chronologicalContext.js';
+import { generateFromTemplate } from '../utils/templates.js';
 import { formatDate } from '../utils/dateUtils.js';
+import { orchestrateSummaryGeneration } from './summaryOrchestrator.js';
+
+// ========================================
+// TYPE DEFINITIONS
+// ========================================
+
+/**
+ * @typedef {Object} PatientDemographics
+ * @property {string} name - Patient name
+ * @property {string} mrn - Medical record number
+ * @property {string} dob - Date of birth
+ * @property {string} age - Patient age
+ * @property {string} sex - Patient sex
+ */
+
+/**
+ * @typedef {Object} ClinicalDates
+ * @property {string|null} ictus - Ictus/symptom onset date
+ * @property {string|null} admission - Hospital admission date
+ * @property {string|null} surgery - Surgery date
+ * @property {string|null} discharge - Discharge date
+ */
+
+/**
+ * @typedef {Object} Pathology
+ * @property {string} type - Primary pathology type
+ * @property {Array<string>} types - All detected pathology types
+ * @property {string|null} location - Anatomical location
+ * @property {string|null} side - Laterality (left/right)
+ * @property {Object|null} subtype - Pathology subtype details
+ */
+
+/**
+ * @typedef {Object} ExtractedMedicalData
+ * @property {PatientDemographics} demographics - Patient demographics
+ * @property {ClinicalDates} dates - Clinical dates
+ * @property {Pathology} pathology - Pathology information
+ * @property {Array<string>} presentingSymptoms - Presenting symptoms
+ * @property {Array<Object>} procedures - Procedures performed
+ * @property {Array<Object>} complications - Complications encountered
+ * @property {Array<Object>} imaging - Imaging studies
+ * @property {Object} functionalScores - Functional assessment scores
+ * @property {Array<Object>} medications - Medications
+ * @property {Object} followUp - Follow-up instructions
+ * @property {string} dischargeDestination - Discharge destination
+ */
+
+/**
+ * @typedef {Object} ExtractionMetadata
+ * @property {string} extractionMethod - Method used (LLM, pattern, hybrid, pre-extracted)
+ * @property {boolean} preprocessed - Whether notes were preprocessed
+ * @property {boolean} deduplicated - Whether deduplication was applied
+ */
+
+/**
+ * @typedef {Object} ExtractionResult
+ * @property {ExtractedMedicalData} extracted - Extracted medical entities
+ * @property {Object} confidence - Confidence scores per field
+ * @property {string[]} pathologyTypes - Detected pathology types
+ * @property {ExtractionMetadata} metadata - Extraction metadata
+ * @property {Object} clinicalIntelligence - Clinical insights
+ * @property {Object} qualityMetrics - Quality metrics
+ */
+
+/**
+ * @typedef {Object} ValidationError
+ * @property {string} field - Field that failed validation
+ * @property {*} value - Invalid value
+ * @property {string} reason - Why validation failed
+ * @property {'critical'|'warning'|'info'} [severity] - Error severity
+ */
+
+/**
+ * @typedef {Object} ValidationResult
+ * @property {boolean} isValid - Overall validation status
+ * @property {number} overallConfidence - Confidence score (0-1)
+ * @property {Array<ValidationError>} warnings - Warning messages
+ * @property {Array<ValidationError>} errors - Error messages
+ * @property {Array<Object>} flags - Validation flags
+ * @property {Object} validatedData - Validated and corrected data
+ * @property {Array<string>} invalidFields - List of invalid field names
+ */
+
+/**
+ * @typedef {Object} ValidationSummary
+ * @property {boolean} isValid - Overall validation status
+ * @property {number} errorCount - Number of errors
+ * @property {number} warningCount - Number of warnings
+ * @property {number} flagCount - Number of flags
+ * @property {number} confidence - Overall confidence score
+ */
+
+/**
+ * @typedef {Object} NarrativeResult
+ * @property {string} chiefComplaint - Chief complaint section
+ * @property {string} historyOfPresentIllness - HPI section
+ * @property {string} hospitalCourse - Hospital course narrative
+ * @property {string} dischargeStatus - Discharge status section
+ * @property {string} procedures - Procedures performed
+ * @property {string} complications - Complications encountered
+ * @property {string} dischargeMedications - Discharge medications
+ * @property {string} followUpPlan - Follow-up instructions
+ * @property {Object} metadata - Narrative generation metadata
+ */
+
+/**
+ * @typedef {Object} QualityMetrics
+ * @property {number} overall - Overall quality score (0-100)
+ * @property {number} extraction - Extraction quality (0-100)
+ * @property {number} validation - Validation quality (0-100)
+ * @property {number} summary - Summary quality (0-100)
+ * @property {Object} details - Detailed metrics breakdown
+ */
+
+/**
+ * @typedef {Object} ClinicalIntelligence
+ * @property {Object} pathology - Pathology analysis
+ * @property {Object} quality - Quality assessment
+ * @property {Object} completeness - Completeness check
+ * @property {Object} consistency - Consistency validation
+ * @property {Array<Object>} learnedPatterns - Learned patterns
+ * @property {Array<Object>} suggestions - Improvement suggestions
+ */
+
+/**
+ * @typedef {Object} OrchestrationMetadata
+ * @property {string} startTime - ISO timestamp of start
+ * @property {number} processingTime - Processing time in milliseconds
+ * @property {string} orchestrationMethod - Orchestration method used
+ */
+
+/**
+ * @typedef {Object} OrchestrationResult
+ * @property {boolean} success - Whether orchestration succeeded
+ * @property {NarrativeResult|null} summary - Generated summary sections
+ * @property {ExtractedMedicalData|null} extractedData - Extracted medical data
+ * @property {ValidationResult|null} validation - Validation results
+ * @property {ClinicalIntelligence|null} intelligence - Clinical intelligence insights
+ * @property {QualityMetrics|null} qualityMetrics - Quality assessment metrics
+ * @property {number} refinementIterations - Number of refinement passes
+ * @property {OrchestrationMetadata} metadata - Generation metadata
+ */
+
+/**
+ * @typedef {Object} SummaryMetadata
+ * @property {string} generatedAt - ISO timestamp of generation
+ * @property {number} noteCount - Number of input notes
+ * @property {string[]} pathologyTypes - Detected pathology types
+ * @property {string} extractionMethod - Extraction method used
+ * @property {boolean} preprocessed - Whether notes were preprocessed
+ * @property {boolean} deduplicated - Whether deduplication was applied
+ * @property {Object|null} timelineCompleteness - Timeline completeness metrics
+ * @property {boolean} useOrchestrator - Whether orchestrator was used
+ * @property {number} refinementIterations - Number of refinement passes
+ * @property {number} processingTime - Processing time in milliseconds
+ * @property {string} [error] - Error message if generation failed
+ */
+
+/**
+ * @typedef {Object} SummaryResult
+ * @property {boolean} success - Whether generation succeeded
+ * @property {NarrativeResult|string|null} summary - Generated summary
+ * @property {ExtractedMedicalData|null} extractedData - Extracted medical data
+ * @property {ValidationSummary|null} validation - Validation results
+ * @property {number} qualityScore - Overall quality score (0-100)
+ * @property {QualityMetrics|null} qualityMetrics - Detailed quality metrics
+ * @property {ClinicalIntelligence|null} intelligence - Clinical intelligence insights
+ * @property {Array<ValidationError>} warnings - Warning messages
+ * @property {Array<ValidationError>} errors - Error messages
+ * @property {Object|null} timeline - Chronological timeline
+ * @property {SummaryMetadata} metadata - Generation metadata
+ */
+
+/**
+ * @typedef {Object} GenerationOptions
+ * @property {boolean} [validateData=true] - Whether to validate extracted data
+ * @property {boolean} [includeMetadata=true] - Include generation metadata
+ * @property {'structured'|'text'|'template'} [format='structured'] - Output format
+ * @property {Object|null} [template=null] - Custom template to use
+ * @property {Array} [learnedPatterns=[]] - ML learned patterns to apply
+ * @property {ExtractedMedicalData|null} [extractedData=null] - Pre-extracted data (skips extraction)
+ * @property {boolean} [useOrchestrator=true] - Use Phase 4 intelligent orchestration
+ * @property {'formal'|'concise'|'detailed'} [style='formal'] - Narrative style
+ */
+
+// ========================================
+// MAIN FUNCTIONS
+// ========================================
 
 /**
  * Generate complete discharge summary from clinical notes
- * 
- * @param {string|string[]} notes - Clinical notes
- * @param {Object} options - Generation options
- * @returns {Object} Complete discharge summary with metadata
+ *
+ * This is the main entry point for discharge summary generation. It supports
+ * both standard extraction and intelligent orchestration (Phase 4).
+ *
+ * @param {string|string[]} notes - Clinical notes (single string or array)
+ * @param {GenerationOptions} [options={}] - Generation options
+ * @returns {Promise<SummaryResult>} Complete discharge summary with metadata
+ *
+ * @example
+ * // Basic usage
+ * const result = await generateDischargeSummary(clinicalNotes);
+ *
+ * @example
+ * // With pre-extracted data (skip extraction)
+ * const result = await generateDischargeSummary(notes, {
+ *   extractedData: reviewedData,
+ *   validateData: false
+ * });
+ *
+ * @example
+ * // With custom options
+ * const result = await generateDischargeSummary(notes, {
+ *   format: 'text',
+ *   style: 'concise',
+ *   useOrchestrator: true
+ * });
  */
 export const generateDischargeSummary = async (notes, options = {}) => {
   const {
     validateData = true,
-    includeMetadata = true,
     format = 'structured', // 'structured', 'text', 'template'
     template = null,
     learnedPatterns = [],
-    extractedData = null // Pre-extracted and corrected data (optional)
+    extractedData = null, // Pre-extracted and corrected data (optional)
+    useOrchestrator = true // PHASE 4: Use intelligent orchestration
   } = options;
 
+  // PHASE 4: Use intelligent orchestrator for better quality
+  if (useOrchestrator) {
+    console.log('[Summary Generator] Using Phase 4 intelligent orchestrator...');
+    try {
+      /** @type {OrchestrationResult} */
+      const orchestratorResult = await orchestrateSummaryGeneration(notes, {
+        extractedData,
+        enableLearning: true,
+        enableFeedbackLoops: true,
+        maxRefinementIterations: 2,
+        qualityThreshold: 0.7
+      });
+
+      if (orchestratorResult.success) {
+        return {
+          success: true,
+          summary: orchestratorResult.summary,
+          extractedData: orchestratorResult.extractedData,
+          validation: orchestratorResult.validation,
+          qualityScore: orchestratorResult.qualityMetrics?.overall || 0,
+          qualityMetrics: orchestratorResult.qualityMetrics,
+          intelligence: orchestratorResult.intelligence,
+          warnings: [],
+          errors: [],
+          metadata: {
+            ...orchestratorResult.metadata,
+            generatedAt: new Date().toISOString(),
+            noteCount: Array.isArray(notes) ? notes.length : 1,
+            useOrchestrator: true,
+            refinementIterations: orchestratorResult.refinementIterations
+          }
+        };
+      } else {
+        console.warn('[Summary Generator] Orchestrator failed, falling back to standard generation');
+      }
+    } catch (error) {
+      console.error('[Summary Generator] Orchestrator error, falling back:', error);
+    }
+  }
+
+  // Standard generation (fallback or explicit)
+  console.log('[Summary Generator] Using standard generation...');
+
+  /** @type {SummaryResult} */
   const result = {
     success: false,
     summary: null,
     extractedData: null,
     validation: null,
     qualityScore: 0,
+    qualityMetrics: null,
+    intelligence: null,
     warnings: [],
     errors: [],
+    timeline: null,
     metadata: {
       generatedAt: new Date().toISOString(),
       noteCount: Array.isArray(notes) ? notes.length : 1,
+      pathologyTypes: [],
+      extractionMethod: '',
+      preprocessed: false,
+      deduplicated: false,
+      timelineCompleteness: null,
+      useOrchestrator: false,
+      refinementIterations: 0,
       processingTime: 0
     }
   };
@@ -56,6 +323,7 @@ export const generateDischargeSummary = async (notes, options = {}) => {
 
   try {
     // Step 1: Extract data from notes (or use pre-extracted data)
+    /** @type {ExtractionResult} */
     let extraction;
 
     if (extractedData) {
@@ -63,12 +331,15 @@ export const generateDischargeSummary = async (notes, options = {}) => {
       console.log('Using pre-extracted and corrected data');
       extraction = {
         extracted: extractedData,
+        confidence: {},
         pathologyTypes: extractedData.pathology?.types || [],
         metadata: {
           extractionMethod: 'pre-extracted',
           preprocessed: true,
           deduplicated: true
-        }
+        },
+        clinicalIntelligence: {},
+        qualityMetrics: {}
       };
     } else {
       // Extract data from notes (with preprocessing and deduplication)
@@ -128,7 +399,8 @@ export const generateDischargeSummary = async (notes, options = {}) => {
 
     // Step 4: Generate narrative with chronological context
     const pathologyType = extraction.pathologyTypes[0] || 'general';
-    
+
+    /** @type {NarrativeResult} */
     let narrative;
     if (format === 'template' && template) {
       // Use specific template
@@ -178,40 +450,63 @@ export const generateDischargeSummary = async (notes, options = {}) => {
 
 /**
  * Calculate quality score for generated summary
- * 
+ *
  * Score based on:
  * - Data completeness (35%)
  * - Validation confidence (25%)
  * - Narrative coherence (25%)
  * - Timeline completeness (15%)
+ *
+ * @param {ExtractedMedicalData} extractedData - Extracted medical data
+ * @param {ValidationSummary|null} validation - Validation results
+ * @param {NarrativeResult} narrative - Generated narrative
+ * @param {Object|null} timeline - Chronological timeline
+ * @returns {number} Quality score (0-100)
+ * @private
  */
 const calculateQualityScore = (extractedData, validation, narrative, timeline) => {
   let score = 0;
 
+  console.log('\n🔍 ===== QUALITY SCORE BREAKDOWN =====');
+
   // Data completeness (35 points)
   const completenessScore = calculateCompletenessScore(extractedData);
-  score += completenessScore * 0.35;
+  const completenessContribution = completenessScore * 0.35;
+  console.log(`📊 Completeness: ${(completenessScore * 100).toFixed(1)}% → ${(completenessContribution * 100).toFixed(1)}% contribution`);
+  score += completenessContribution;
 
   // Validation confidence (25 points)
   if (validation) {
-    score += (validation.confidence / 100) * 0.25;
+    const validationContribution = (validation.confidence / 100) * 0.25;
+    console.log(`✅ Validation: ${validation.confidence}% → ${(validationContribution * 100).toFixed(1)}% contribution`);
+    score += validationContribution;
   } else {
-    score += 0.25; // Assume perfect if no validation
+    console.log(`✅ Validation: No validation (full credit) → 25.0% contribution`);
+    score += 0.25;
   }
 
   // Narrative coherence (25 points)
   const coherenceScore = calculateCoherenceScore(narrative);
-  score += coherenceScore * 0.25;
-  
+  const coherenceContribution = coherenceScore * 0.25;
+  console.log(`📝 Coherence: ${(coherenceScore * 100).toFixed(1)}% → ${(coherenceContribution * 100).toFixed(1)}% contribution`);
+  score += coherenceContribution;
+
   // Timeline completeness (15 points)
   if (timeline && timeline.metadata && timeline.metadata.completeness) {
     const timelineScore = timeline.metadata.completeness.score / 100;
-    score += timelineScore * 0.15;
+    const timelineContribution = timelineScore * 0.15;
+    console.log(`⏱️  Timeline: ${(timelineScore * 100).toFixed(1)}% → ${(timelineContribution * 100).toFixed(1)}% contribution`);
+    score += timelineContribution;
   } else {
-    score += 0.10; // Partial credit if timeline not available
+    console.log(`⏱️  Timeline: Missing/incomplete (partial credit) → 10.0% contribution`);
+    score += 0.10;
   }
 
-  return Math.round(score * 100);
+  const finalScore = Math.round(score * 100);
+  console.log(`\n🎯 TOTAL QUALITY SCORE: ${finalScore}%`);
+  console.log('=====================================\n');
+
+  return finalScore;
 };
 
 /**
@@ -237,24 +532,30 @@ const calculateCompletenessScore = (data) => {
   ];
 
   let score = 0;
-  let totalFields = requiredFields.length + optionalFields.length;
 
+  console.log('  📋 Required Fields (2 pts each):');
   // Required fields (higher weight)
   requiredFields.forEach(field => {
-    if (data[field] && hasContent(data[field])) {
+    const hasData = data[field] && hasContent(data[field]);
+    console.log(`    ${hasData ? '✅' : '❌'} ${field}`);
+    if (hasData) {
       score += 2; // 2 points per required field
     }
   });
 
+  console.log('  📋 Optional Fields (1 pt each):');
   // Optional fields
   optionalFields.forEach(field => {
-    if (data[field] && hasContent(data[field])) {
+    const hasData = data[field] && hasContent(data[field]);
+    console.log(`    ${hasData ? '✅' : '❌'} ${field}`);
+    if (hasData) {
       score += 1; // 1 point per optional field
     }
   });
 
   // Normalize to 0-1
   const maxScore = (requiredFields.length * 2) + optionalFields.length;
+  console.log(`  📊 Score: ${score}/${maxScore} points`);
   return score / maxScore;
 };
 
@@ -281,7 +582,7 @@ const hasContent = (field) => {
  */
 const calculateCoherenceScore = (narrative) => {
   let score = 0;
-  const maxScore = 8; // 8 sections
+  const maxScore = 12; // (4 required × 2) + (4 optional × 1)
 
   const requiredSections = [
     'chiefComplaint',
@@ -297,20 +598,27 @@ const calculateCoherenceScore = (narrative) => {
     'followUpPlan'
   ];
 
+  console.log('  📝 Required Narrative Sections (2 pts each):');
   // Check required sections (higher weight)
   requiredSections.forEach(section => {
-    if (narrative[section] && narrative[section] !== 'Not available.') {
+    const hasData = narrative[section] && narrative[section] !== 'Not available.';
+    console.log(`    ${hasData ? '✅' : '❌'} ${section}`);
+    if (hasData) {
       score += 2;
     }
   });
 
+  console.log('  📝 Optional Narrative Sections (1 pt each):');
   // Check optional sections
   optionalSections.forEach(section => {
-    if (narrative[section] && narrative[section] !== 'Not available.') {
+    const hasData = narrative[section] && narrative[section] !== 'Not available.';
+    console.log(`    ${hasData ? '✅' : '❌'} ${section}`);
+    if (hasData) {
       score += 1;
     }
   });
 
+  console.log(`  📊 Score: ${score}/${maxScore} points`);
   return Math.min(score / maxScore, 1.0);
 };
 

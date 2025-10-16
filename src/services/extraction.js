@@ -1,9 +1,9 @@
 /**
  * Medical Data Extraction Service
- * 
+ *
  * Hybrid extraction engine using LLM (primary) with pattern-based fallback.
  * Implements the 13 critical extraction targets with strict no-extrapolation principle.
- * 
+ *
  * Features:
  * - LLM-enhanced extraction (GPT-4, Claude, Gemini) for 90-98% accuracy
  * - Pattern-based fallback when LLM unavailable
@@ -14,7 +14,112 @@
  * - **NEW**: BioBERT medical NER for entity extraction
  * - **NEW**: Vector database semantic search integration
  * - **NEW**: Enhanced ML-powered deduplication
+ *
+ * @module extraction
  */
+
+// ========================================
+// TYPE DEFINITIONS
+// ========================================
+
+/**
+ * @typedef {Object} PatientDemographics
+ * @property {string} name - Patient name
+ * @property {string} mrn - Medical record number
+ * @property {string} dob - Date of birth
+ * @property {string} age - Patient age
+ * @property {string} sex - Patient sex
+ */
+
+/**
+ * @typedef {Object} ClinicalDates
+ * @property {string|null} ictus - Ictus/symptom onset date
+ * @property {string|null} admission - Hospital admission date
+ * @property {string|null} surgery - Surgery date
+ * @property {string|null} discharge - Discharge date
+ */
+
+/**
+ * @typedef {Object} PathologySubtype
+ * @property {string} category - Subtype category
+ * @property {string} value - Subtype value
+ * @property {number} confidence - Confidence score (0-1)
+ */
+
+/**
+ * @typedef {Object} Pathology
+ * @property {string} type - Primary pathology type
+ * @property {Array<string>} types - All detected pathology types
+ * @property {string|null} location - Anatomical location
+ * @property {string|null} side - Laterality (left/right)
+ * @property {PathologySubtype|null} subtype - Pathology subtype details
+ */
+
+/**
+ * @typedef {Object} ExtractedMedicalData
+ * @property {PatientDemographics} demographics - Patient demographics
+ * @property {ClinicalDates} dates - Clinical dates
+ * @property {Pathology} pathology - Pathology information
+ * @property {Array<string>} presentingSymptoms - Presenting symptoms
+ * @property {Array<Object>} procedures - Procedures performed
+ * @property {Array<Object>} complications - Complications encountered
+ * @property {Array<Object>} imaging - Imaging studies
+ * @property {Object} functionalScores - Functional assessment scores
+ * @property {Array<Object>} medications - Medications
+ * @property {Object} followUp - Follow-up instructions
+ * @property {string} dischargeDestination - Discharge destination
+ */
+
+/**
+ * @typedef {Object} ConfidenceScores
+ * @property {number} demographics - Demographics confidence (0-1)
+ * @property {number} dates - Dates confidence (0-1)
+ * @property {number} pathology - Pathology confidence (0-1)
+ * @property {number} procedures - Procedures confidence (0-1)
+ * @property {number} overall - Overall confidence (0-1)
+ */
+
+/**
+ * @typedef {Object} ExtractionMetadata
+ * @property {string} extractionMethod - Method used (LLM, pattern, hybrid)
+ * @property {boolean} preprocessed - Whether notes were preprocessed
+ * @property {boolean} deduplicated - Whether deduplication was applied
+ * @property {string} [llmProvider] - LLM provider used (if applicable)
+ * @property {number} [processingTime] - Processing time in milliseconds
+ */
+
+/**
+ * @typedef {Object} ClinicalIntelligence
+ * @property {Object} causalTimeline - Causal timeline of events
+ * @property {Object} treatmentResponses - Treatment-outcome pairs
+ * @property {Object} functionalEvolution - Functional status evolution
+ * @property {Array<Object>} relationships - Clinical relationships
+ */
+
+/**
+ * @typedef {Object} ExtractionResult
+ * @property {ExtractedMedicalData} extracted - Extracted medical entities
+ * @property {ConfidenceScores} confidence - Confidence scores per field
+ * @property {string[]} pathologyTypes - Detected pathology types
+ * @property {ExtractionMetadata} metadata - Extraction metadata
+ * @property {ClinicalIntelligence} clinicalIntelligence - Clinical insights
+ * @property {Object} qualityMetrics - Quality metrics
+ */
+
+/**
+ * @typedef {Object} ExtractionOptions
+ * @property {Array} [learnedPatterns=[]] - Learned patterns from ML
+ * @property {boolean} [includeConfidence=true] - Include confidence scores
+ * @property {Array<string>} [targets] - Specific extraction targets
+ * @property {boolean|null} [useLLM=null] - Force LLM usage (null=auto)
+ * @property {boolean} [usePatterns=false] - Force pattern usage
+ * @property {boolean} [enableDeduplication=true] - Enable deduplication
+ * @property {boolean} [enablePreprocessing=true] - Enable preprocessing
+ */
+
+// ========================================
+// IMPORTS
+// ========================================
 
 import { PATHOLOGY_PATTERNS, detectPathology } from '../config/pathologyPatterns.js';
 import { EXTRACTION_TARGETS, CONFIDENCE } from '../config/constants.js';
@@ -39,6 +144,30 @@ import { extractTemporalQualifier } from '../utils/temporalQualifiers.js';
 
 // Phase 1 Enhancement: Source Quality Assessment
 import { assessSourceQuality, calibrateConfidence } from '../utils/sourceQuality.js';
+
+// Phase 1 Step 5: Temporal Context & Semantic Deduplication
+import {
+  detectTemporalContext,
+  associateDateWithEntity,
+  linkReferencesToEvents,
+  resolveRelativeDate
+} from '../utils/temporalExtraction.js';
+import {
+  deduplicateBySemanticSimilarity,
+  getDeduplicationStats
+} from '../utils/semanticDeduplication.js';
+import { calculateCombinedSimilarity } from '../utils/ml/similarityEngine.js';
+
+// Phase 1 Step 6: Pathology Subtypes Detection
+import { detectPathologySubtype } from '../utils/pathologySubtypes.js';
+
+// Phase 2: Clinical Intelligence & Context Enhancement
+import { buildCausalTimeline } from '../utils/causalTimeline.js';
+import { trackTreatmentResponses } from '../utils/treatmentResponse.js';
+import { analyzeFunctionalEvolution } from '../utils/functionalEvolution.js';
+import { extractClinicalRelationships } from '../utils/relationshipExtraction.js';
+import { calculateQualityMetrics } from './qualityMetrics.js';
+
 import {
   extractPhysicalExam,
   extractNeurologicalExam,
@@ -102,16 +231,73 @@ const deduplicateNotesAsync = (notes, options = {}) => {
 };
 
 /**
+ * PHASE 2: Build clinical intelligence from extracted data
+ * Runs causal timeline, treatment response tracking, functional evolution analysis, and relationship extraction
+ * @private
+ */
+const buildClinicalIntelligence = (extractedData, sourceText = '') => {
+  try {
+    // Component 1: Build causal timeline with event relationships
+    const timeline = buildCausalTimeline(extractedData);
+
+    // Component 2: Track treatment responses (pass timeline for temporal context)
+    const treatmentResponses = trackTreatmentResponses(extractedData, timeline);
+
+    // Component 3: Analyze functional evolution (pass timeline and pathology subtype)
+    const functionalEvolution = analyzeFunctionalEvolution(
+      extractedData,
+      timeline,
+      extractedData.pathology?.subtype
+    );
+
+    // Component 4: Extract clinical relationships from source text (Phase 2 Step 4)
+    const relationships = sourceText ? extractClinicalRelationships(sourceText, extractedData) : [];
+
+    return {
+      timeline,
+      treatmentResponses,
+      functionalEvolution,
+      relationships, // Phase 2 Step 4: Clinical relationships
+      metadata: {
+        generated: new Date().toISOString(),
+        components: ['causalTimeline', 'treatmentResponses', 'functionalEvolution', 'relationships']
+      }
+    };
+  } catch (error) {
+    console.error('Clinical intelligence generation failed:', error);
+    return {
+      timeline: { events: [], milestones: {}, relationships: [], metadata: { error: error.message } },
+      treatmentResponses: { responses: [], protocolCompliance: {}, summary: {} },
+      functionalEvolution: { scoreTimeline: [], statusChanges: [], trajectory: null, milestones: {}, prognosticComparison: null, summary: { hasData: false } },
+      relationships: [], // Phase 2 Step 4: Empty relationships on error
+      metadata: {
+        generated: new Date().toISOString(),
+        error: error.message
+      }
+    };
+  }
+};
+
+/**
  * Extract all medical entities from clinical notes
- * 
+ *
+ * Main entry point for medical data extraction. Uses hybrid LLM + pattern-based
+ * approach with intelligent fallback and confidence scoring.
+ *
  * @param {string|string[]} notes - Single note or array of notes
- * @param {Object} options - Extraction options
- * @param {Array} options.learnedPatterns - Additional patterns from ML learning
- * @param {boolean} options.includeConfidence - Include confidence scores
- * @param {string[]} options.targets - Specific targets to extract (default: all)
- * @param {boolean} options.useLLM - Force LLM usage (default: auto-detect)
- * @param {boolean} options.usePatterns - Force pattern usage (default: false)
- * @returns {Object} Extracted data with confidence scores
+ * @param {ExtractionOptions} [options={}] - Extraction options
+ * @returns {Promise<ExtractionResult>} Extracted data with confidence scores and metadata
+ *
+ * @example
+ * // Basic usage
+ * const result = await extractMedicalEntities(clinicalNotes);
+ *
+ * @example
+ * // With learned patterns
+ * const result = await extractMedicalEntities(notes, {
+ *   learnedPatterns: patterns,
+ *   useLLM: true
+ * });
  */
 export const extractMedicalEntities = async (notes, options = {}) => {
   const {
@@ -247,10 +433,21 @@ export const extractMedicalEntities = async (notes, options = {}) => {
 
       console.log('LLM extraction successful with pattern enrichment');
 
+      // PHASE 2: Build clinical intelligence (pass source text for relationship extraction)
+      const clinicalIntelligence = buildClinicalIntelligence(merged, combinedText);
+
+      // PHASE 3: Calculate quality metrics for extraction
+      const qualityMetrics = calculateQualityMetrics(merged, {}, '', {
+        extractionMethod: 'llm+patterns',
+        noteCount: noteArray.length
+      });
+
       return {
         extracted: merged,
         confidence,
         pathologyTypes,
+        clinicalIntelligence, // PHASE 2: Clinical context & intelligence
+        qualityMetrics, // PHASE 3: Quality metrics
         metadata: {
           noteCount: noteArray.length,
           totalLength: combinedText.length,
@@ -281,10 +478,21 @@ export const extractMedicalEntities = async (notes, options = {}) => {
   });
 
   // PHASE 1 ENHANCEMENT: Merge metadata from patternResult (includes sourceQuality)
+  // PHASE 2: Build clinical intelligence (pass source text for relationship extraction)
+  const clinicalIntelligence = buildClinicalIntelligence(patternResult.extracted, combinedText);
+
+  // PHASE 3: Calculate quality metrics for extraction
+  const qualityMetrics = calculateQualityMetrics(patternResult.extracted, {}, '', {
+    extractionMethod: 'pattern',
+    noteCount: noteArray.length
+  });
+
   return {
     extracted: patternResult.extracted,
     confidence: patternResult.confidence,
     pathologyTypes,
+    clinicalIntelligence, // PHASE 2: Clinical context & intelligence
+    qualityMetrics, // PHASE 3: Quality metrics
     metadata: {
       ...patternResult.metadata, // Include source quality and other metadata from pattern extraction
       extractionMethod: 'pattern',
@@ -350,31 +558,50 @@ const extractWithPatterns = async (combinedText, noteArray, pathologyTypes, opti
     extracted.dates = dates.data;
     confidence.dates = dates.confidence;
   }
-  
+
+  // PHASE 1 STEP 5: Build reference dates object for temporal context resolution
+  // This enables POD#X → actual date resolution in procedures, complications, medications
+  const referenceDates = {};
+  if (extracted.dates) {
+    if (extracted.dates.ictus) referenceDates.ictus = extracted.dates.ictus;
+    if (extracted.dates.admission) referenceDates.admission = extracted.dates.admission;
+    if (extracted.dates.discharge) referenceDates.discharge = extracted.dates.discharge;
+    if (extracted.dates.surgeryDates && Array.isArray(extracted.dates.surgeryDates)) {
+      referenceDates.surgeryDates = extracted.dates.surgeryDates;
+    }
+    if (extracted.dates.procedures && Array.isArray(extracted.dates.procedures)) {
+      // First procedure date as reference for POD calculations
+      if (extracted.dates.procedures.length > 0 && extracted.dates.procedures[0].date) {
+        referenceDates.firstProcedure = extracted.dates.procedures[0].date;
+      }
+    }
+    console.log('[Phase 1 Step 5] Reference dates for temporal resolution:', referenceDates);
+  }
+
   // Pathology (diagnosis)
   if (targets.includes('pathology')) {
     const pathology = extractPathology(combinedText, pathologyTypes);
     extracted.pathology = pathology.data;
     confidence.pathology = pathology.confidence;
   }
-  
+
   // Presenting symptoms
   if (targets.includes('presentingSymptoms')) {
     const symptoms = extractPresentingSymptoms(combinedText, pathologyTypes);
     extracted.presentingSymptoms = symptoms.data;
     confidence.presentingSymptoms = symptoms.confidence;
   }
-  
-  // Procedures
+
+  // Procedures (ENHANCED: Phase 1 Step 5 with temporal context)
   if (targets.includes('procedures')) {
-    const procedures = extractProcedures(combinedText, pathologyTypes);
+    const procedures = extractProcedures(combinedText, pathologyTypes, referenceDates);
     extracted.procedures = procedures.data;
     confidence.procedures = procedures.confidence;
   }
-  
-  // Complications
+
+  // Complications (ENHANCED: Phase 1 Step 5 with onset dates)
   if (targets.includes('complications')) {
-    const complications = extractComplications(combinedText, pathologyTypes);
+    const complications = extractComplications(combinedText, pathologyTypes, referenceDates);
     extracted.complications = complications.data;
     confidence.complications = complications.confidence;
   }
@@ -400,9 +627,9 @@ const extractWithPatterns = async (combinedText, noteArray, pathologyTypes, opti
     confidence.functionalScores = scores.confidence;
   }
   
-  // Medications
+  // Medications (ENHANCED: Phase 1 Step 5 with timeline tracking)
   if (targets.includes('medications')) {
-    const meds = extractMedications(combinedText, pathologyTypes);
+    const meds = extractMedications(combinedText, referenceDates);
     extracted.medications = meds.data;
     confidence.medications = meds.confidence;
   }
@@ -811,6 +1038,7 @@ const extractDates = (text, pathologyTypes) => {
 
 /**
  * Extract pathology/diagnosis information
+ * PHASE 1 STEP 6: Enhanced with subtype detection, prognosis, and clinical intelligence
  */
 const extractPathology = (text, pathologyTypes) => {
   const data = {
@@ -818,7 +1046,8 @@ const extractPathology = (text, pathologyTypes) => {
     primaryDiagnosis: null,
     secondaryDiagnoses: [],
     grades: {},
-    location: null
+    location: null,
+    subtype: null // PHASE 1 STEP 6: Add subtype field
   };
 
   let confidence = CONFIDENCE.MEDIUM;
@@ -918,7 +1147,7 @@ const extractPathology = (text, pathologyTypes) => {
     // Generic "in the X" patterns
     /(?:hemorrhage|bleeding|mass|lesion)\s+in\s+(?:the\s+)?([^\n.;,]+)/i
   ];
-  
+
   for (const pattern of locationPatterns) {
     const match = text.match(pattern);
     if (match && match[1]) {
@@ -929,7 +1158,45 @@ const extractPathology = (text, pathologyTypes) => {
       }
     }
   }
-  
+
+  // PHASE 1 STEP 6: Detect pathology subtypes with clinical intelligence
+  if (pathologyTypes.length > 0) {
+    console.log('[Phase 1 Step 6] Detecting pathology subtypes...');
+
+    // For each detected pathology, extract detailed subtype information
+    for (const pathType of pathologyTypes) {
+      try {
+        const subtype = detectPathologySubtype(text, pathType, data);
+
+        // Use the most specific subtype (prioritize based on pathology hierarchy)
+        if (subtype && Object.keys(subtype.details).length > 0) {
+          data.subtype = subtype;
+          console.log(`[Phase 1 Step 6] Detected ${pathType} subtype:`, subtype.details);
+
+          // Increase confidence if subtype detected with high specificity
+          if (subtype.riskLevel && subtype.prognosis) {
+            confidence = Math.max(confidence, CONFIDENCE.HIGH);
+          }
+
+          break; // Use first detailed subtype found
+        }
+      } catch (error) {
+        console.error(`[Phase 1 Step 6] Error detecting subtype for ${pathType}:`, error.message);
+      }
+    }
+
+    // Log subtype detection results
+    if (data.subtype) {
+      console.log(`[Phase 1 Step 6] Subtype detection complete:
+        - Type: ${data.subtype.type}
+        - Risk Level: ${data.subtype.riskLevel}
+        - Details: ${JSON.stringify(data.subtype.details, null, 2)}
+        - Prognosis: ${JSON.stringify(data.subtype.prognosis, null, 2)}`);
+    } else {
+      console.log('[Phase 1 Step 6] No detailed subtype detected (using basic pathology info)');
+    }
+  }
+
   return { data, confidence };
 };
 
@@ -984,22 +1251,41 @@ const extractPresentingSymptoms = (text, pathologyTypes) => {
 
 /**
  * Extract procedures (surgeries, interventions)
- * Enhanced with comprehensive procedure keywords and patterns
+ * PHASE 1 STEP 5: Enhanced with temporal context detection and semantic deduplication
+ *
+ * New capabilities:
+ * - Detects references ("s/p coiling POD#3") vs. new events ("underwent coiling on 10/1")
+ * - Semantic deduplication: "coiling" = "endovascular coiling" = "coil embolization"
+ * - Multi-value date tracking: preserves all dates for same procedure
+ * - Links references to actual procedure events
+ * - Resolves relative dates (POD#3 → actual date)
+ *
+ * Example:
+ * Input:
+ *   - "Patient underwent coiling on 10/1"
+ *   - "s/p endovascular coiling POD#2"
+ *   - "coil embolization performed on 10/1"
+ *   - "status post coiling"
+ *
+ * Output:
+ *   - "aneurysm coiling on 10/1" (merged 3 mentions, linked 1 reference)
  */
-const extractProcedures = (text, pathologyTypes) => {
+const extractProcedures = (text, pathologyTypes, referenceDates = {}) => {
+  console.log('[Phase 1 Step 5] Enhanced procedure extraction started...');
+
   const data = {
     procedures: []
   };
-  
+
   let confidence = CONFIDENCE.MEDIUM;
-  
+
   // Get procedure patterns for detected pathologies
   const procedurePatterns = [];
   for (const pathType of pathologyTypes) {
     const patterns = PATHOLOGY_PATTERNS[pathType]?.procedurePatterns || [];
     procedurePatterns.push(...patterns);
   }
-  
+
   // Enhanced comprehensive procedure keywords (25+ procedures)
   const comprehensiveProcedureKeywords = [
     // Cranial procedures
@@ -1014,7 +1300,7 @@ const extractProcedures = (text, pathologyTypes) => {
     'coiling', 'coil embolization', 'endovascular coiling',
     'clipping', 'aneurysm clipping', 'microsurgical clipping',
     'embolization', 'AVM embolization',
-    // PHASE 1 FIX: Add combined angiogram procedures
+    // Combined angiogram procedures
     'cerebral angiogram with coiling', 'angiogram with coiling',
     'cerebral angiogram', 'angiogram and coiling',
 
@@ -1035,8 +1321,8 @@ const extractProcedures = (text, pathologyTypes) => {
     // Other procedures
     'tracheostomy', 'PEG placement', 'ICP monitor placement'
   ];
-  
-  // PHASE 1 FIX: Add explicit "underwent/received" patterns first (higher priority)
+
+  // Add explicit "underwent/received" patterns first (higher priority)
   const explicitProcedurePatterns = [
     /(?:underwent|received|had|performed)\s+([^.;]+?(?:angiogram|coiling|craniotomy|clipping|embolization|resection|biopsy|drain|shunt|laminectomy)[^.;]*)/gi,
     /(?:procedure|surgery|operation)\s*:?\s*([^.;\n]+)/gi
@@ -1050,61 +1336,193 @@ const extractProcedures = (text, pathologyTypes) => {
     procedurePatterns.push(new RegExp(`\\b${keyword}\\b`, 'i'));
   }
 
-  // Extract procedures
+  // STEP 1: Extract all procedure mentions with temporal context
+  const allProcedures = [];
+
   for (const pattern of procedurePatterns) {
     const regex = new RegExp(pattern, 'gi');
     let match;
     while ((match = regex.exec(text)) !== null) {
+      const procedureName = (match[1] || match[0]).trim();
+
+      // PHASE 1 STEP 5: Detect temporal context
+      const temporalContext = detectTemporalContext(text, procedureName, match.index);
+
+      // Associate date with procedure
+      const dateInfo = associateDateWithEntity(
+        text,
+        { index: match.index, value: match[0] },
+        referenceDates
+      );
+
       const procedure = {
-        name: match[1] || match[0],
-        date: null,
-        details: null
+        name: procedureName,
+        date: dateInfo?.date || null,
+        dateSource: dateInfo?.source || 'not_found',
+        confidence: dateInfo?.confidence || 0,
+        details: null,
+        temporalContext: temporalContext,
+        position: match.index
       };
-      
-      // Try to find date nearby
-      const context = text.substring(Math.max(0, match.index - 100), Math.min(text.length, match.index + 100));
-      const dateMatch = context.match(/\d{1,2}\/\d{1,2}\/\d{2,4}/);
-      if (dateMatch) {
-        const parsed = parseFlexibleDate(dateMatch[0]);
-        if (parsed) {
-          procedure.date = normalizeDate(parsed);
+
+      // If this is a reference with POD, try to resolve to actual date
+      if (temporalContext.isReference && temporalContext.pod) {
+        const resolvedDate = resolveRelativeDate(
+          { type: 'pod', value: temporalContext.pod },
+          referenceDates
+        );
+        if (resolvedDate) {
+          procedure.date = resolvedDate;
+          procedure.dateSource = 'pod_resolved';
+          console.log(`[Temporal] Resolved POD#${temporalContext.pod} → ${resolvedDate}`);
         }
       }
-      
-      // Check if already added (deduplication)
-      const isDuplicate = data.procedures.some(p => 
-        p.name.toLowerCase() === procedure.name.toLowerCase() &&
-        p.date === procedure.date
-      );
-      
-      if (!isDuplicate) {
-        data.procedures.push(procedure);
-        confidence = CONFIDENCE.HIGH;
-      }
+
+      allProcedures.push(procedure);
     }
   }
-  
+
+  console.log(`[Extraction] Found ${allProcedures.length} procedure mentions (before deduplication)`);
+
+  // STEP 2: Separate references from new events
+  const references = allProcedures.filter(p => p.temporalContext?.isReference);
+  const newEvents = allProcedures.filter(p => !p.temporalContext?.isReference);
+
+  console.log(`[Temporal] Separated: ${newEvents.length} new events, ${references.length} references`);
+
+  // STEP 3: Apply semantic deduplication to new events only
+  let deduplicatedEvents = [];
+  if (newEvents.length > 0) {
+    deduplicatedEvents = deduplicateBySemanticSimilarity(newEvents, {
+      type: 'procedure',
+      threshold: 0.75,
+      mergeSameDate: true,
+      preserveReferences: false // We already separated references
+    });
+
+    const stats = getDeduplicationStats(newEvents, deduplicatedEvents);
+    console.log(`[Semantic Dedup] Procedures: ${stats.original} → ${stats.deduplicated} (${stats.reductionPercent}% reduction)`);
+    if (stats.merged > 0) {
+      console.log(`[Semantic Dedup] Merged ${stats.merged} procedure groups (avg ${stats.avgMergeCount} per group)`);
+    }
+  }
+
+  // STEP 4: Link references to actual procedure events
+  const linkedReferences = linkReferencesToEvents(
+    references,
+    deduplicatedEvents,
+    (ref, event) => {
+      // Custom similarity function for procedures
+      try {
+        // Safety check for undefined names
+        if (!ref?.name || !event?.name) {
+          console.warn('[Reference Linking] Undefined name:', { ref: ref?.name, event: event?.name });
+          return 0;
+        }
+
+        const nameSimilarity = calculateCombinedSimilarity(
+          ref.name.toLowerCase(),
+          event.name.toLowerCase()
+        );
+
+        // If dates match and names are similar, very likely the same procedure
+        if (ref.date && event.date && ref.date === event.date && nameSimilarity > 0.6) {
+          return 0.95;
+        }
+
+        // If names are very similar but dates different, might be follow-up
+        if (nameSimilarity > 0.8) {
+          return nameSimilarity * 0.9;
+        }
+
+        return nameSimilarity;
+      } catch (error) {
+        console.warn('Similarity calculation failed:', error);
+        return 0;
+      }
+    }
+  );
+
+  console.log(`[Reference Linking] Linked ${linkedReferences?.linked?.length || 0} of ${references?.length || 0} references`);
+
+  // STEP 5: Combine deduplicated events with unlinked references
+  // Linked references are attached to their events, so we only add unlinked references
+  const finalProcedures = [
+    ...deduplicatedEvents,
+    ...(linkedReferences?.unlinked || [])
+  ];
+
+  // STEP 6: Clean up procedure names (remove extra whitespace, normalize)
+  for (const procedure of finalProcedures) {
+    if (procedure?.name) {
+      procedure.name = procedure.name
+        .replace(/\s+/g, ' ')
+        .replace(/[:\-,]\s*$/, '')
+        .trim();
+    }
+
+    // If procedure has linked references, add them to metadata
+    if (procedure.linkedReferences && procedure.linkedReferences.length > 0) {
+      procedure.referenceCount = procedure.linkedReferences.length;
+      console.log(`[Reference Linking] "${procedure.name}" has ${procedure.referenceCount} references`);
+    }
+  }
+
+  // STEP 7: Sort by date (earliest first)
+  finalProcedures.sort((a, b) => {
+    if (!a.date && !b.date) return 0;
+    if (!a.date) return 1;
+    if (!b.date) return -1;
+    return new Date(a.date) - new Date(b.date);
+  });
+
+  data.procedures = finalProcedures;
+
+  if (finalProcedures.length > 0) {
+    confidence = CONFIDENCE.HIGH;
+  }
+
+  console.log(`[Phase 1 Step 5] Procedure extraction complete: ${finalProcedures.length} procedures`);
+
   return { data, confidence };
 };
 
 /**
  * Extract complications
- * Enhanced with comprehensive complication detection patterns (14+ types)
+ * PHASE 1 STEP 5: Enhanced with onset dates, temporal context, and semantic deduplication
+ *
+ * New capabilities:
+ * - Tracks onset date for each complication
+ * - Detects references vs. new occurrences
+ * - Semantic deduplication: "vasospasm" = "cerebral vasospasm"
+ * - Preserves negation detection from Phase 1 Step 3
+ * - Multi-value tracking for recurring complications
+ *
+ * Example:
+ * Input:
+ *   - "Developed vasospasm on POD#3"
+ *   - "Cerebral vasospasm noted on 10/4"
+ *   - "No evidence of rebleeding"
+ *
+ * Output:
+ *   - "vasospasm" (onset: 10/4, merged semantic variants, negation filtered)
  */
-const extractComplications = (text, pathologyTypes) => {
+const extractComplications = (text, pathologyTypes, referenceDates = {}) => {
+  console.log('[Phase 1 Step 5] Enhanced complication extraction started...');
+
   const data = {
     complications: []
   };
-  
+
   let confidence = CONFIDENCE.MEDIUM;
-  
+
   // Get complication patterns for detected pathologies
   const complicationPatterns = [];
   for (const pathType of pathologyTypes) {
     const patterns = PATHOLOGY_PATTERNS[pathType]?.complicationPatterns || [];
     complicationPatterns.push(...patterns);
   }
-  
+
   // Comprehensive complication categories (14 types)
   const comprehensiveComplications = {
     vascular: [
@@ -1113,7 +1531,7 @@ const extractComplications = (text, pathologyTypes) => {
       'rebleeding', 'rebleed',
       'DVT', 'deep vein thrombosis', 'PE', 'pulmonary embolism'
     ],
-    
+
     neurological: [
       'seizure', 'seizures',
       'hydrocephalus', 'acute hydrocephalus',
@@ -1122,61 +1540,57 @@ const extractComplications = (text, pathologyTypes) => {
       'herniation', 'brain herniation',
       'deficit', 'neurological deficit', 'weakness', 'hemiparesis'
     ],
-    
+
     infectious: [
       'infection', 'wound infection',
       'meningitis', 'ventriculitis',
       'pneumonia', 'UTI', 'urinary tract infection',
       'sepsis'
     ],
-    
+
     metabolic: [
       'SIADH', 'hyponatremia', 'hypernatremia',
       'diabetes insipidus', 'DI',
       'fever', 'hyperthermia'
     ],
-    
+
     surgical: [
       'CSF leak', 'cerebrospinal fluid leak',
       'pseudomeningocele',
       'hardware failure', 'shunt malfunction',
       'hemorrhage', 'post-op hemorrhage', 'postoperative hemorrhage'
     ],
-    
+
     respiratory: [
       'respiratory failure', 'aspiration',
       'pneumothorax', 'pleural effusion',
       'ARDS'
     ],
-    
+
     cardiac: [
       'arrhythmia', 'atrial fibrillation', 'afib',
       'myocardial infarction', 'MI',
       'cardiac arrest'
     ]
   };
-  
+
   // Add comprehensive complications to patterns
   for (const category of Object.values(comprehensiveComplications)) {
     for (const comp of category) {
       complicationPatterns.push(new RegExp(`\\b${comp}\\b`, 'i'));
     }
   }
-  
-  // Extract complications with context detection
-  // PHASE 1 ENHANCEMENT: Integrated negation detection for improved accuracy
+
+  // STEP 1: Extract all complication mentions with temporal context
+  const allComplications = [];
+
   for (const pattern of complicationPatterns) {
     const regex = new RegExp(pattern, 'gi');
     let match;
     while ((match = regex.exec(text)) !== null) {
-      const complication = match[1] || match[0];
+      const complicationName = (match[1] || match[0]).trim();
 
-      // Skip if already extracted (avoid duplicates)
-      if (data.complications.includes(complication)) {
-        continue;
-      }
-
-      // Get context to determine if it's a complication or just mentioned
+      // Get context for validation
       const context = text.substring(Math.max(0, match.index - 50), Math.min(text.length, match.index + 100));
       const lowerContext = context.toLowerCase();
 
@@ -1184,7 +1598,7 @@ const extractComplications = (text, pathologyTypes) => {
       const complicationIndicators = [
         'developed', 'complicated by', 'experienced', 'suffered',
         'noted', 'developed', 'presented with', 'course complicated',
-        'post-op', 'postoperative', 'following surgery'
+        'post-op', 'postoperative', 'following surgery', 'onset'
       ];
 
       // Exclusion indicators (not a complication, just preventive mention)
@@ -1196,40 +1610,152 @@ const extractComplications = (text, pathologyTypes) => {
       const hasIndicator = complicationIndicators.some(ind => lowerContext.includes(ind));
       const hasExclusion = exclusionIndicators.some(exc => lowerContext.includes(exc));
 
-      // PHASE 1 ENHANCEMENT: Use negation detection utility for more accurate filtering
-      // This replaces the simple exclusion check with sophisticated NegEx algorithm
+      // PHASE 1 ENHANCEMENT: Use negation detection utility
       let shouldInclude = false;
 
       try {
-        // Validate using negation detection
-        const validation = validateComplicationExtraction(complication, text);
+        const validation = validateComplicationExtraction(complicationName, text);
 
         if (validation.valid) {
-          // Negation detection says it's valid (not negated)
           shouldInclude = hasIndicator || !hasExclusion;
         } else {
-          // Negation detection found negation
-          // Only include if there's a strong positive indicator
           shouldInclude = hasIndicator && !hasExclusion;
 
-          // Log for debugging
           if (validation.reason) {
-            console.log(`⚠️ Complication "${complication}" filtered: ${validation.reason}`);
+            console.log(`⚠️ Complication "${complicationName}" filtered: ${validation.reason}`);
           }
         }
       } catch (error) {
-        // Fallback to original logic if negation detection fails
         console.warn('Negation detection failed, using fallback logic:', error.message);
         shouldInclude = (hasIndicator || !hasExclusion);
       }
 
-      // Add if validation passed
-      if (shouldInclude) {
-        data.complications.push(complication);
-        confidence = CONFIDENCE.HIGH;
+      // Skip if validation failed
+      if (!shouldInclude) {
+        continue;
       }
+
+      // PHASE 1 STEP 5: Detect temporal context
+      const temporalContext = detectTemporalContext(text, complicationName, match.index);
+
+      // Associate onset date
+      const dateInfo = associateDateWithEntity(
+        text,
+        { index: match.index, value: match[0] },
+        referenceDates
+      );
+
+      // If this is a reference with POD, try to resolve to actual date
+      let onsetDate = dateInfo?.date || null;
+      if (temporalContext.isReference && temporalContext.pod) {
+        const resolvedDate = resolveRelativeDate(
+          { type: 'pod', value: temporalContext.pod },
+          referenceDates
+        );
+        if (resolvedDate) {
+          onsetDate = resolvedDate;
+          console.log(`[Temporal] Resolved complication POD#${temporalContext.pod} → ${resolvedDate}`);
+        }
+      }
+
+      const complication = {
+        name: complicationName,
+        onsetDate: onsetDate,
+        dateSource: dateInfo.source,
+        confidence: dateInfo.confidence,
+        temporalContext: temporalContext,
+        position: match.index
+      };
+
+      allComplications.push(complication);
     }
   }
+
+  console.log(`[Extraction] Found ${allComplications.length} complication mentions (before deduplication)`);
+
+  // STEP 2: Separate references from new events
+  const references = allComplications.filter(c => c.temporalContext?.isReference);
+  const newEvents = allComplications.filter(c => !c.temporalContext?.isReference);
+
+  console.log(`[Temporal] Separated: ${newEvents.length} new complications, ${references.length} references`);
+
+  // STEP 3: Apply semantic deduplication to new events
+  let deduplicatedComplications = [];
+  if (newEvents.length > 0) {
+    deduplicatedComplications = deduplicateBySemanticSimilarity(newEvents, {
+      type: 'complication',
+      threshold: 0.75,
+      mergeSameDate: true,
+      preserveReferences: false
+    });
+
+    const stats = getDeduplicationStats(newEvents, deduplicatedComplications);
+    console.log(`[Semantic Dedup] Complications: ${stats.original} → ${stats.deduplicated} (${stats.reductionPercent}% reduction)`);
+  }
+
+  // STEP 4: Link references to actual complication events
+  const linkedReferences = linkReferencesToEvents(
+    references,
+    deduplicatedComplications,
+    (ref, event) => {
+      try {
+        const nameSimilarity = calculateCombinedSimilarity(
+          ref.name.toLowerCase(),
+          event.name.toLowerCase()
+        );
+
+        if (ref.onsetDate && event.onsetDate && ref.onsetDate === event.onsetDate && nameSimilarity > 0.6) {
+          return 0.95;
+        }
+
+        if (nameSimilarity > 0.8) {
+          return nameSimilarity * 0.9;
+        }
+
+        return nameSimilarity;
+      } catch (error) {
+        console.warn('Similarity calculation failed:', error);
+        return 0;
+      }
+    }
+  );
+
+  console.log(`[Reference Linking] Linked ${linkedReferences.linked.length} of ${references.length} complication references`);
+
+  // STEP 5: Combine deduplicated events with unlinked references
+  const finalComplications = [
+    ...deduplicatedComplications,
+    ...linkedReferences.unlinked
+  ];
+
+  // STEP 6: Clean up complication names
+  for (const complication of finalComplications) {
+    complication.name = complication.name
+      .replace(/\s+/g, ' ')
+      .replace(/[:\-,]\s*$/, '')
+      .trim();
+
+    if (complication.linkedReferences && complication.linkedReferences.length > 0) {
+      complication.referenceCount = complication.linkedReferences.length;
+      console.log(`[Reference Linking] "${complication.name}" has ${complication.referenceCount} references`);
+    }
+  }
+
+  // STEP 7: Sort by onset date (earliest first)
+  finalComplications.sort((a, b) => {
+    if (!a.onsetDate && !b.onsetDate) return 0;
+    if (!a.onsetDate) return 1;
+    if (!b.onsetDate) return -1;
+    return new Date(a.onsetDate) - new Date(b.onsetDate);
+  });
+
+  data.complications = finalComplications;
+
+  if (finalComplications.length > 0) {
+    confidence = CONFIDENCE.HIGH;
+  }
+
+  console.log(`[Phase 1 Step 5] Complication extraction complete: ${finalComplications.length} complications`);
 
   return { data, confidence };
 };
@@ -1503,9 +2029,29 @@ const estimateMRSFromDisability = (text) => {
 
 /**
  * Extract medications
- * Enhanced with dose and frequency pattern matching
+ * PHASE 1 STEP 5: Enhanced with timeline tracking and temporal context
+ *
+ * New capabilities:
+ * - Tracks start/stop dates for each medication
+ * - Detects status: "started", "continued", "discontinued"
+ * - Semantic deduplication: "aspirin" = "ASA" = "acetylsalicylic acid"
+ * - Timeline reconstruction for medication changes
+ * - Multi-value tracking for dose changes over time
+ *
+ * Example:
+ * Input:
+ *   - "Started Keppra 1000mg BID on 10/1"
+ *   - "Continued on ASA 81mg daily"
+ *   - "Discontinued nimodipine on POD#14"
+ *
+ * Output:
+ *   - "levetiracetam 1000mg BID" (started: 10/1, status: active)
+ *   - "aspirin 81mg daily" (status: continued)
+ *   - "nimodipine" (discontinued: 10/15)
  */
-const extractMedications = (text) => {
+const extractMedications = (text, referenceDates = {}) => {
+  console.log('[Phase 1 Step 5] Enhanced medication extraction started...');
+
   const data = {
     medications: []
   };
@@ -1513,75 +2059,260 @@ const extractMedications = (text) => {
   let confidence = CONFIDENCE.MEDIUM;
 
   // Enhanced medication extraction with drug+dose pattern
-  // Format: Drug name followed by dose (e.g., "Keppra 1000mg", "aspirin 81 mg")
   const medicationWithDosePattern = /\b([A-Z][a-z]+(?:ra|pam|lol|pine|sin|xin)?)\s+(\d+(?:\.\d+)?\s*(?:mg|mcg|g|units?))\s*(?:(daily|BID|TID|QID|Q\d+H|PRN|once|twice))?\b/gi;
 
-  let match;
-  while ((match = medicationWithDosePattern.exec(text)) !== null) {
-    const medication = {
-      name: match[1],
-      dose: match[2],
-      frequency: match[3] || null
-    };
-
-    // Check if already added (deduplication)
-    const isDuplicate = data.medications.some(m =>
-      m.name.toLowerCase() === medication.name.toLowerCase() &&
-      m.dose === medication.dose
-    );
-
-    if (!isDuplicate) {
-      data.medications.push(medication);
-      confidence = CONFIDENCE.HIGH;
-    }
-  }
-
-  // Common medication patterns (without explicit dose)
+  // Common medication patterns (comprehensive neurosurgical medications)
   const medicationPatterns = [
-    /\b(Keppra|Levetiracetam)\b/gi,
-    /\b(Aspirin|ASA)\b/gi,
-    /\b(Nimodipine)\b/gi,
-    /\b(Dexamethasone|Decadron)\b/gi,
+    // Antiepileptics
+    /\b(Keppra|Levetiracetam|LEV)\b/gi,
+    /\b(Phenytoin|Dilantin|PHT)\b/gi,
+    /\b(Valproic acid|Depakote|VPA)\b/gi,
+
+    // Anticoagulation
+    /\b(Aspirin|ASA|acetylsalicylic acid)\b/gi,
+    /\b(Clopidogrel|Plavix)\b/gi,
+    /\b(Warfarin|Coumadin)\b/gi,
+    /\b(Apixaban|Eliquis)\b/gi,
+    /\b(Rivaroxaban|Xarelto)\b/gi,
+
+    // Vasospasm prevention
+    /\b(Nimodipine|Nimotop)\b/gi,
+
+    // Steroids
+    /\b(Dexamethasone|Decadron|Dex)\b/gi,
+
+    // Osmotic therapy
     /\b(Mannitol)\b/gi,
-    /\b(Phenytoin|Dilantin)\b/gi
+    /\b(Hypertonic saline|3% saline)\b/gi,
+
+    // Blood pressure
+    /\b(Labetalol|Trandate)\b/gi,
+    /\b(Nicardipine|Cardene)\b/gi,
+    /\b(Metoprolol|Lopressor)\b/gi,
+
+    // GI prophylaxis
+    /\b(Pantoprazole|Protonix|PPI)\b/gi,
+
+    // Statins
+    /\b(Atorvastatin|Lipitor)\b/gi
   ];
 
-  // Extract medications from patterns (without explicit dose)
+  // STEP 1: Extract all medication mentions with temporal context
+  const allMedications = [];
+
+  // Extract from dose patterns
+  let match;
+  while ((match = medicationWithDosePattern.exec(text)) !== null) {
+    const medicationName = match[1].trim();
+    const dose = match[2];
+    const frequency = match[3] || null;
+
+    // Detect temporal context and status
+    const temporalContext = detectTemporalContext(text, medicationName, match.index);
+    const statusInfo = extractMedicationStatus(text, match.index);
+
+    // Associate dates
+    const dateInfo = associateDateWithEntity(
+      text,
+      { index: match.index, value: match[0] },
+      referenceDates
+    );
+
+    // Resolve POD if present
+    let actionDate = dateInfo?.date || null;
+    if (temporalContext.pod) {
+      const resolvedDate = resolveRelativeDate(
+        { type: 'pod', value: temporalContext.pod },
+        referenceDates
+      );
+      if (resolvedDate) {
+        actionDate = resolvedDate;
+        console.log(`[Temporal] Resolved medication POD#${temporalContext.pod} → ${resolvedDate}`);
+      }
+    }
+
+    const medication = {
+      name: medicationName,
+      dose: dose,
+      frequency: frequency,
+      status: statusInfo.status,
+      startDate: statusInfo.status === 'started' ? actionDate : null,
+      stopDate: statusInfo.status === 'discontinued' ? actionDate : null,
+      dateSource: dateInfo.source,
+      temporalContext: temporalContext,
+      position: match.index
+    };
+
+    allMedications.push(medication);
+  }
+
+  // Extract from medication patterns
   for (const pattern of medicationPatterns) {
     const regex = new RegExp(pattern, 'gi');
     let match;
     while ((match = regex.exec(text)) !== null) {
-      const medication = {
-        name: match[1] || match[0],
-        dose: null,
-        frequency: null
-      };
-      
-      // Try to extract dose and frequency from context
+      const medicationName = (match[1] || match[0]).trim();
+
+      // Get context for dose and frequency
       const context = text.substring(match.index, Math.min(text.length, match.index + 100));
       const doseMatch = context.match(/(\d+(?:\.\d+)?\s*(?:mg|mcg|g|units?))/i);
-      if (doseMatch) {
-        medication.dose = doseMatch[1];
-      }
-      
       const freqMatch = context.match(/(daily|BID|TID|QID|Q\d+H|PRN|once daily|twice daily|three times daily)/i);
-      if (freqMatch) {
-        medication.frequency = freqMatch[1];
-      }
-      
-      // Check if already added
-      const isDuplicate = data.medications.some(m => 
-        m.name.toLowerCase() === medication.name.toLowerCase()
+
+      // Detect temporal context and status
+      const temporalContext = detectTemporalContext(text, medicationName, match.index);
+      const statusInfo = extractMedicationStatus(text, match.index);
+
+      // Associate dates
+      const dateInfo = associateDateWithEntity(
+        text,
+        { index: match.index, value: match[0] },
+        referenceDates
       );
-      
-      if (!isDuplicate) {
-        data.medications.push(medication);
-        confidence = CONFIDENCE.HIGH;
+
+      // Resolve POD if present
+      let actionDate = dateInfo?.date || null;
+      if (temporalContext.pod) {
+        const resolvedDate = resolveRelativeDate(
+          { type: 'pod', value: temporalContext.pod },
+          referenceDates
+        );
+        if (resolvedDate) {
+          actionDate = resolvedDate;
+        }
       }
+
+      const medication = {
+        name: medicationName,
+        dose: doseMatch ? doseMatch[1] : null,
+        frequency: freqMatch ? freqMatch[1] : null,
+        status: statusInfo.status,
+        startDate: statusInfo.status === 'started' ? actionDate : null,
+        stopDate: statusInfo.status === 'discontinued' ? actionDate : null,
+        dateSource: dateInfo.source,
+        temporalContext: temporalContext,
+        position: match.index
+      };
+
+      allMedications.push(medication);
     }
   }
-  
+
+  console.log(`[Extraction] Found ${allMedications.length} medication mentions (before deduplication)`);
+
+  // STEP 2: Separate by status
+  const references = allMedications.filter(m => m.temporalContext?.isReference);
+  const newPrescriptions = allMedications.filter(m => !m.temporalContext?.isReference);
+
+  console.log(`[Temporal] Separated: ${newPrescriptions.length} new prescriptions, ${references.length} references`);
+
+  // STEP 3: Apply semantic deduplication
+  let deduplicatedMedications = [];
+  if (newPrescriptions.length > 0) {
+    deduplicatedMedications = deduplicateBySemanticSimilarity(newPrescriptions, {
+      type: 'medication',
+      threshold: 0.75,
+      mergeSameDate: false, // Different dates may indicate dose changes
+      preserveReferences: false
+    });
+
+    const stats = getDeduplicationStats(newPrescriptions, deduplicatedMedications);
+    console.log(`[Semantic Dedup] Medications: ${stats.original} → ${stats.deduplicated} (${stats.reductionPercent}% reduction)`);
+  }
+
+  // STEP 4: Link references to prescriptions
+  const linkedReferences = linkReferencesToEvents(
+    references,
+    deduplicatedMedications,
+    (ref, event) => {
+      try {
+        const nameSimilarity = calculateCombinedSimilarity(
+          ref.name.toLowerCase(),
+          event.name.toLowerCase()
+        );
+
+        // Same name + same dose = very likely same medication
+        if (ref.dose && event.dose && ref.dose === event.dose && nameSimilarity > 0.6) {
+          return 0.95;
+        }
+
+        if (nameSimilarity > 0.8) {
+          return nameSimilarity * 0.9;
+        }
+
+        return nameSimilarity;
+      } catch (error) {
+        console.warn('Similarity calculation failed:', error);
+        return 0;
+      }
+    }
+  );
+
+  console.log(`[Reference Linking] Linked ${linkedReferences.linked.length} of ${references.length} medication references`);
+
+  // STEP 5: Combine deduplicated medications with unlinked references
+  const finalMedications = [
+    ...deduplicatedMedications,
+    ...linkedReferences.unlinked
+  ];
+
+  // STEP 6: Clean up medication names
+  for (const medication of finalMedications) {
+    medication.name = medication.name
+      .replace(/\s+/g, ' ')
+      .replace(/[:\-,]\s*$/, '')
+      .trim();
+
+    if (medication.linkedReferences && medication.linkedReferences.length > 0) {
+      medication.referenceCount = medication.linkedReferences.length;
+      console.log(`[Reference Linking] "${medication.name}" has ${medication.referenceCount} references`);
+    }
+  }
+
+  // STEP 7: Sort by start date (earliest first)
+  finalMedications.sort((a, b) => {
+    const dateA = a.startDate || a.stopDate;
+    const dateB = b.startDate || b.stopDate;
+
+    if (!dateA && !dateB) return 0;
+    if (!dateA) return 1;
+    if (!dateB) return -1;
+    return new Date(dateA) - new Date(dateB);
+  });
+
+  data.medications = finalMedications;
+
+  if (finalMedications.length > 0) {
+    confidence = CONFIDENCE.HIGH;
+  }
+
+  console.log(`[Phase 1 Step 5] Medication extraction complete: ${finalMedications.length} medications`);
+
   return { data, confidence };
+};
+
+/**
+ * Helper function: Extract medication status from context
+ * Detects: "started", "continued", "discontinued", "changed"
+ */
+const extractMedicationStatus = (text, position) => {
+  const context = text.substring(Math.max(0, position - 50), Math.min(text.length, position + 50));
+  const lowerContext = context.toLowerCase();
+
+  // Status indicators
+  const statusPatterns = {
+    started: /\b(start|began|initiat|add|new)\w*\b/i,
+    discontinued: /\b(discontinu|stop|held|d\/c)\w*\b/i,
+    continued: /\b(continu|maintain|ongoing)\w*\b/i,
+    changed: /\b(increas|decreas|adjust|chang)\w*\b/i
+  };
+
+  for (const [status, pattern] of Object.entries(statusPatterns)) {
+    if (pattern.test(lowerContext)) {
+      return { status, confidence: 0.8 };
+    }
+  }
+
+  return { status: 'active', confidence: 0.5 };
 };
 
 /**

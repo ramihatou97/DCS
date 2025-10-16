@@ -1,10 +1,10 @@
 /**
  * Narrative Engine Service
- * 
+ *
  * Generates chronological medical narratives from extracted structured data.
  * Uses LLM (primary) with template-based fallback for generating professional
  * discharge summaries.
- * 
+ *
  * Features:
  * - LLM-powered natural narrative generation (90-98% quality)
  * - Template-based fallback when LLM unavailable
@@ -13,7 +13,47 @@
  * - Pathology-specific narrative templates
  * - Context-aware sentence generation
  * - Professional medical writing style
+ *
+ * @module narrativeEngine
  */
+
+// ========================================
+// TYPE DEFINITIONS
+// ========================================
+
+/**
+ * @typedef {Object} NarrativeMetadata
+ * @property {string} generationMethod - Method used (LLM, template, hybrid)
+ * @property {string} [llmProvider] - LLM provider if used
+ * @property {number} processingTime - Processing time in milliseconds
+ * @property {Object} qualityMetrics - Quality assessment metrics
+ */
+
+/**
+ * @typedef {Object} NarrativeResult
+ * @property {string} chiefComplaint - Chief complaint section
+ * @property {string} historyOfPresentIllness - HPI section
+ * @property {string} hospitalCourse - Hospital course narrative
+ * @property {string} dischargeStatus - Discharge status section
+ * @property {string} procedures - Procedures performed
+ * @property {string} complications - Complications encountered
+ * @property {string} dischargeMedications - Discharge medications
+ * @property {string} followUpPlan - Follow-up instructions
+ * @property {NarrativeMetadata} metadata - Narrative generation metadata
+ */
+
+/**
+ * @typedef {Object} NarrativeOptions
+ * @property {string} [pathologyType='general'] - Pathology type for template selection
+ * @property {'formal'|'concise'|'detailed'} [style='formal'] - Narrative style
+ * @property {boolean} [expandAbbreviations=false] - Expand medical abbreviations
+ * @property {boolean|null} [useLLM=null] - Force LLM usage (null=auto)
+ * @property {boolean} [applyLearnedPatterns=true] - Apply ML learned patterns
+ */
+
+// ========================================
+// IMPORTS
+// ========================================
 
 import { getTemplateByPathology } from '../utils/templates.js';
 import { MEDICAL_ABBREVIATIONS, expandAbbreviation } from '../utils/medicalAbbreviations.js';
@@ -22,13 +62,33 @@ import { cleanText } from '../utils/textUtils.js';
 import { isLLMAvailable, generateSummaryWithLLM } from './llmService.js';
 import { getNarrativePatterns } from './ml/learningEngine.js';
 
+// Phase 3: Narrative Quality Enhancements
+import { synthesizeMultiSourceNarrative } from '../utils/narrativeSynthesis.js';
+import { applyMedicalWritingStyle, validateMedicalWritingStyle } from '../utils/medicalWritingStyle.js';
+import { buildNarrativeWithTransitions, selectTransition } from '../utils/narrativeTransitions.js';
+import { calculateQualityMetrics } from './qualityMetrics.js';
+
+// ========================================
+// MAIN FUNCTIONS
+// ========================================
+
 /**
  * Generate complete narrative from extracted data
- * 
+ *
+ * Main entry point for narrative generation. Uses LLM when available with
+ * intelligent fallback to template-based generation.
+ *
  * @param {Object} extractedData - Validated extracted data
- * @param {string|array} sourceNotes - Original clinical notes
- * @param {Object} options - Narrative options
- * @returns {Object} Generated narrative sections
+ * @param {string|string[]} [sourceNotes=''] - Original clinical notes
+ * @param {NarrativeOptions} [options={}] - Narrative options
+ * @returns {Promise<NarrativeResult>} Generated narrative sections
+ *
+ * @example
+ * const narrative = await generateNarrative(extractedData, sourceNotes, {
+ *   pathologyType: 'SAH',
+ *   style: 'formal',
+ *   useLLM: true
+ * });
  */
 export const generateNarrative = async (extractedData, sourceNotes = '', options = {}) => {
   const {
@@ -84,14 +144,52 @@ export const generateNarrative = async (extractedData, sourceNotes = '', options
       const parsedNarrative = parseLLMNarrative(llmNarrative);
 
       // Apply learned patterns to parsed narrative
-      const enhancedNarrative = applyLearnedPatterns ?
+      let enhancedNarrative = applyLearnedPatterns ?
         applyNarrativePatternsToSections(parsedNarrative, learnedPatterns) :
         parsedNarrative;
 
+      // PHASE 3: Apply narrative quality enhancements to LLM output
+      console.log('[Phase 3] Applying narrative quality enhancements to LLM output...');
+
+      // Apply medical writing style to each section
+      if (enhancedNarrative.chiefComplaint) {
+        enhancedNarrative.chiefComplaint = applyMedicalWritingStyle(enhancedNarrative.chiefComplaint, 'presentation');
+      }
+      if (enhancedNarrative.historyOfPresentIllness) {
+        enhancedNarrative.historyOfPresentIllness = applyMedicalWritingStyle(enhancedNarrative.historyOfPresentIllness, 'history');
+      }
+      if (enhancedNarrative.hospitalCourse) {
+        enhancedNarrative.hospitalCourse = applyMedicalWritingStyle(enhancedNarrative.hospitalCourse, 'hospitalCourse');
+      }
+      if (enhancedNarrative.procedures) {
+        enhancedNarrative.procedures = applyMedicalWritingStyle(enhancedNarrative.procedures, 'procedures');
+      }
+      if (enhancedNarrative.complications) {
+        enhancedNarrative.complications = applyMedicalWritingStyle(enhancedNarrative.complications, 'complications');
+      }
+      if (enhancedNarrative.dischargeStatus) {
+        enhancedNarrative.dischargeStatus = applyMedicalWritingStyle(enhancedNarrative.dischargeStatus, 'dischargeStatus');
+      }
+      if (enhancedNarrative.dischargeMedications) {
+        enhancedNarrative.dischargeMedications = applyMedicalWritingStyle(enhancedNarrative.dischargeMedications, 'dischargeMedications');
+      }
+      if (enhancedNarrative.followUpPlan) {
+        enhancedNarrative.followUpPlan = applyMedicalWritingStyle(enhancedNarrative.followUpPlan, 'followUp');
+      }
+
+      // Calculate quality metrics
+      const fullSummary = Object.values(enhancedNarrative).filter(v => typeof v === 'string').join('\n\n');
+      const qualityMetrics = calculateQualityMetrics(extractedData, {}, fullSummary, {
+        extractionMethod: 'llm',
+        noteCount: Array.isArray(sourceNotes) ? sourceNotes.length : 1
+      });
+
+      console.log(`[Phase 3] Quality score: ${(qualityMetrics.overall * 100).toFixed(1)}%`);
       console.log('LLM narrative generation successful');
 
       return {
         ...enhancedNarrative,
+        qualityMetrics,
         metadata: {
           generatedAt: new Date().toISOString(),
           pathologyType,
@@ -130,6 +228,30 @@ export const generateNarrative = async (extractedData, sourceNotes = '', options
   if (expandAbbreviations) {
     narrative = expandAllAbbreviations(narrative);
   }
+
+  // PHASE 3: Apply narrative quality enhancements
+  console.log('[Phase 3] Applying narrative quality enhancements...');
+
+  // Step 1: Apply medical writing style to each section
+  narrative.chiefComplaint = applyMedicalWritingStyle(narrative.chiefComplaint, 'presentation');
+  narrative.historyOfPresentIllness = applyMedicalWritingStyle(narrative.historyOfPresentIllness, 'history');
+  narrative.hospitalCourse = applyMedicalWritingStyle(narrative.hospitalCourse, 'hospitalCourse');
+  narrative.procedures = applyMedicalWritingStyle(narrative.procedures, 'procedures');
+  narrative.complications = applyMedicalWritingStyle(narrative.complications, 'complications');
+  narrative.dischargeStatus = applyMedicalWritingStyle(narrative.dischargeStatus, 'dischargeStatus');
+  narrative.dischargeMedications = applyMedicalWritingStyle(narrative.dischargeMedications, 'dischargeMedications');
+  narrative.followUpPlan = applyMedicalWritingStyle(narrative.followUpPlan, 'followUp');
+
+  // Step 2: Calculate quality metrics
+  const fullSummary = Object.values(narrative).filter(v => typeof v === 'string').join('\n\n');
+  const qualityMetrics = calculateQualityMetrics(extractedData, {}, fullSummary, {
+    extractionMethod: 'template',
+    noteCount: Array.isArray(sourceNotes) ? sourceNotes.length : 1
+  });
+
+  narrative.qualityMetrics = qualityMetrics;
+
+  console.log(`[Phase 3] Quality score: ${(qualityMetrics.overall * 100).toFixed(1)}%`);
 
   return narrative;
 };

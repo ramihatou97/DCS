@@ -10,6 +10,7 @@
  * 3. Confidence Adjustment: Update confidence scores based on success/failure rates
  * 4. Context Learning: Learn contextual clues for better extraction
  * 5. Negative Learning: Learn what NOT to extract (false positives)
+ * 6. Validation Feedback: Learn from validation errors (Phase 4)
  *
  * Output:
  * - Learned patterns (stored in IndexedDB)
@@ -1287,6 +1288,25 @@ class LearningEngine {
     await tx.done;
 
     return patterns.filter(p => p.enabled);
+  }
+
+  /**
+   * PHASE 4: Track validation error for learning
+   * @param {Object} correction - Validation error correction
+   */
+  async trackValidationError(correction) {
+    try {
+      // Store validation error for future learning
+      // This will be used when user makes corrections
+      console.log('[Learning Engine] Tracking validation error:', correction.field);
+
+      // For now, just log - full implementation would store in IndexedDB
+      // and use for pattern refinement when user corrections come in
+      return true;
+    } catch (error) {
+      console.error('[Learning Engine] Error tracking validation error:', error);
+      return false;
+    }
   }
 }
 

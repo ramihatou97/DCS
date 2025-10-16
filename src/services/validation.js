@@ -1,30 +1,90 @@
 /**
  * Data Validation Service
- * 
+ *
  * Validates extracted data against source text with strict no-extrapolation guard.
  * This is a CRITICAL safety mechanism to prevent AI hallucination and ensure all
  * extracted data is directly sourced from clinical notes.
- * 
+ *
  * Features:
  * - No-extrapolation validation (verifies data exists in source)
  * - Confidence score calculation
  * - Logical relationship validation (dates, procedures, etc.)
  * - Medical terminology validation
  * - Flag suspicious extractions for review
+ *
+ * @module validation
  */
+
+// ========================================
+// TYPE DEFINITIONS
+// ========================================
+
+/**
+ * @typedef {Object} ValidationError
+ * @property {string} field - Field that failed validation
+ * @property {*} value - Invalid value
+ * @property {string} reason - Why validation failed
+ * @property {'critical'|'warning'|'info'} [severity] - Error severity
+ */
+
+/**
+ * @typedef {Object} ValidationResult
+ * @property {boolean} isValid - Overall validation status
+ * @property {number} overallConfidence - Confidence score (0-1)
+ * @property {Array<ValidationError>} warnings - Warning messages
+ * @property {Array<ValidationError>} errors - Error messages
+ * @property {Array<Object>} flags - Validation flags
+ * @property {Object} validatedData - Validated and corrected data
+ * @property {Array<string>} invalidFields - List of invalid field names
+ */
+
+/**
+ * @typedef {Object} ValidationSummary
+ * @property {boolean} isValid - Overall validation status
+ * @property {number} errorCount - Number of errors
+ * @property {number} warningCount - Number of warnings
+ * @property {number} flagCount - Number of flags
+ * @property {number} confidence - Overall confidence score (0-100)
+ */
+
+/**
+ * @typedef {Object} ValidationOptions
+ * @property {boolean} [strictMode=true] - Use strict validation
+ * @property {number} [minConfidence] - Minimum confidence threshold
+ * @property {boolean} [allowAbbreviations=true] - Allow medical abbreviations
+ * @property {boolean} [checkCompleteness=true] - Check data completeness
+ * @property {boolean} [checkConsistency=true] - Check logical consistency
+ */
+
+// ========================================
+// IMPORTS
+// ========================================
 
 import { CONFIDENCE, EXTRACTION_TARGETS } from '../config/constants.js';
 import { parseFlexibleDate, compareDates, isValidDate } from '../utils/dateUtils.js';
 import { normalizeText, cleanText, calculateSimilarity } from '../utils/textUtils.js';
 import { MEDICAL_ABBREVIATIONS, expandAbbreviation } from '../utils/medicalAbbreviations.js';
 
+// ========================================
+// MAIN FUNCTIONS
+// ========================================
+
 /**
  * Validate extracted data against source text
- * 
+ *
+ * Performs comprehensive validation including no-extrapolation checks,
+ * confidence scoring, and logical relationship validation.
+ *
  * @param {Object} extractedData - Data extracted by extraction service
  * @param {string|string[]} sourceNotes - Original clinical notes
- * @param {Object} options - Validation options
- * @returns {Object} Validation result with flags and confidence scores
+ * @param {ValidationOptions} [options={}] - Validation options
+ * @returns {ValidationResult} Validation result with flags and confidence scores
+ *
+ * @example
+ * const validation = validateExtraction(extractedData, sourceNotes, {
+ *   strictMode: true,
+ *   minConfidence: 0.7
+ * });
  */
 export const validateExtraction = (extractedData, sourceNotes, options = {}) => {
   const {
@@ -811,6 +871,12 @@ const calculateTextSimilarity = (text1, text2) => {
 
 /**
  * Get validation summary for display
+ *
+ * Converts detailed validation result into a summary format suitable
+ * for UI display and decision making.
+ *
+ * @param {ValidationResult} validationResult - Detailed validation result
+ * @returns {ValidationSummary} Validation summary with counts and recommendations
  */
 export const getValidationSummary = (validationResult) => {
   return {

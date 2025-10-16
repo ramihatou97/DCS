@@ -13,6 +13,9 @@ import {
 import { trackCorrection } from '../services/ml/correctionTracker.js';
 import knowledgeBase from '../services/knowledge/knowledgeBase.js';
 import SuggestionPanel from './SuggestionPanel.jsx';
+import PathologySubtypePanel from './PathologySubtypePanel.jsx';
+import ClinicalTimelinePanel from './ClinicalTimelinePanel.jsx';
+import QualityDashboard from './QualityDashboard.jsx';
 
 const ExtractedDataReview = ({ extractedData, validation, onDataCorrected, onProceed, onProceedToGenerate, notes = [], metadata = {} }) => {
   const [editingField, setEditingField] = useState(null);
@@ -400,6 +403,21 @@ const ExtractedDataReview = ({ extractedData, validation, onDataCorrected, onPro
             </div>
           )}
         </DataSection>
+
+        {/* Pathology Subtype Intelligence Panel - Phase 1 Step 6 */}
+        {editedData.pathology?.subtype && (
+          <PathologySubtypePanel subtype={editedData.pathology.subtype} />
+        )}
+
+        {/* Clinical Timeline & Intelligence Panel - Phase 2 */}
+        {metadata.clinicalIntelligence && (
+          <ClinicalTimelinePanel clinicalIntelligence={metadata.clinicalIntelligence} />
+        )}
+
+        {/* Quality Metrics Dashboard - Phase 3 Step 4 */}
+        {metadata.qualityMetrics && (
+          <QualityDashboard metrics={metadata.qualityMetrics} />
+        )}
 
         {/* Presenting Symptoms */}
         {editedData.presentingSymptoms && editedData.presentingSymptoms.symptoms?.length > 0 && (
