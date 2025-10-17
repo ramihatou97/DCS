@@ -684,6 +684,13 @@ const extractWithPatterns = async (combinedText, noteArray, pathologyTypes, opti
     extracted.functionalScores = scores.data;
     confidence.functionalScores = scores.confidence;
   }
+
+  // Phase 0 Day 3: Late recovery detection
+  if (targets.includes('lateRecovery')) {
+    const lateRecovery = extractLateRecovery(combinedText, extracted.dates || {});
+    extracted.lateRecovery = lateRecovery;
+    confidence.lateRecovery = lateRecovery.hasLateRecovery ? CONFIDENCE.HIGH : CONFIDENCE.LOW;
+  }
   
   // Medications (ENHANCED: Phase 1 Step 5 with timeline tracking)
   if (targets.includes('medications')) {
@@ -1806,6 +1813,80 @@ const extractProcedures = (text, pathologyTypes, referenceDates = {}) => {
 };
 
 /**
+ * Grade complication severity
+ * Phase 0 Day 3: Determine severity level of complications
+ */
+const gradeComplicationSeverity = (complicationName, context = '') => {
+  const lowerName = complicationName.toLowerCase();
+  const lowerContext = context.toLowerCase();
+
+  // Critical/life-threatening complications
+  const criticalComplications = [
+    'death', 'expired', 'cardiac arrest', 'code blue', 'anoxic brain injury',
+    'brain death', 'multi-organ failure', 'septic shock', 'hemorrhagic shock',
+    'malignant cerebral edema', 'herniation', 'status epilepticus'
+  ];
+
+  // High severity complications
+  const highSeverityComplications = [
+    'stroke', 'cva', 'hemorrhage', 'rebleeding', 'hematoma expansion',
+    'vasospasm', 'hydrocephalus', 'seizure', 'meningitis', 'ventriculitis',
+    'pneumonia', 'ards', 'pulmonary embolism', 'dvt', 'mi', 'myocardial infarction',
+    'renal failure', 'acute kidney injury', 'respiratory failure', 'sepsis'
+  ];
+
+  // Moderate severity complications
+  const moderateSeverityComplications = [
+    'uti', 'urinary tract infection', 'wound infection', 'csf leak',
+    'pseudomeningocele', 'hyponatremia', 'siadh', 'diabetes insipidus',
+    'fever', 'ileus', 'delirium', 'confusion', 'agitation'
+  ];
+
+  // Check for severity modifiers in context
+  const severityModifiers = {
+    increase: ['severe', 'significant', 'major', 'profound', 'refractory', 'persistent'],
+    decrease: ['mild', 'minor', 'slight', 'resolved', 'improving', 'transient']
+  };
+
+  // Determine base severity
+  let severity = 'low'; // Default
+
+  if (criticalComplications.some(comp => lowerName.includes(comp))) {
+    severity = 'critical';
+  } else if (highSeverityComplications.some(comp => lowerName.includes(comp))) {
+    severity = 'high';
+  } else if (moderateSeverityComplications.some(comp => lowerName.includes(comp))) {
+    severity = 'moderate';
+  }
+
+  // Apply modifiers from context
+  if (severity !== 'critical') { // Don't modify critical complications
+    const hasIncreaseModifier = severityModifiers.increase.some(mod => lowerContext.includes(mod));
+    const hasDecreaseModifier = severityModifiers.decrease.some(mod => lowerContext.includes(mod));
+
+    if (hasIncreaseModifier && !hasDecreaseModifier) {
+      // Upgrade severity
+      if (severity === 'low') severity = 'moderate';
+      else if (severity === 'moderate') severity = 'high';
+    } else if (hasDecreaseModifier && !hasIncreaseModifier) {
+      // Downgrade severity
+      if (severity === 'high') severity = 'moderate';
+      else if (severity === 'moderate') severity = 'low';
+    }
+  }
+
+  // Check if resolved
+  const resolvedIndicators = ['resolved', 'improved', 'treated', 'managed', 'stable'];
+  const isResolved = resolvedIndicators.some(ind => lowerContext.includes(ind));
+
+  return {
+    level: severity,
+    resolved: isResolved,
+    confidence: CONFIDENCE.MEDIUM
+  };
+};
+
+/**
  * Extract complications
  * PHASE 1 STEP 5: Enhanced with onset dates, temporal context, and semantic deduplication
  *
@@ -1976,11 +2057,15 @@ const extractComplications = (text, pathologyTypes, referenceDates = {}) => {
         }
       }
 
+      // Phase 0 Day 3: Add severity grading to complications
+      const severity = gradeComplicationSeverity(complicationName, context);
+
       const complication = {
         name: complicationName,
         onsetDate: onsetDate,
         dateSource: dateInfo.source,
         confidence: dateInfo.confidence,
+        severity: severity,
         temporalContext: temporalContext,
         position: match.index
       };
@@ -2123,7 +2208,8 @@ const extractFunctionalScores = (text) => {
   let confidence = CONFIDENCE.MEDIUM;
   
   // KPS (Karnofsky Performance Status) 0-100
-  const kpsPattern = /KPS\s*:?\s*(\d{1,3})/i;
+  // Phase 0 Day 3: Enhanced pattern to match "Karnofsky Performance Score: 70" format
+  const kpsPattern = /(?:KPS|Karnofsky\s+Performance\s+(?:Status|Score))\s*:?\s*(\d{1,3})/i;
   const kpsMatch = text.match(kpsPattern);
   if (kpsMatch) {
     const score = parseInt(kpsMatch[1]);
@@ -2143,7 +2229,8 @@ const extractFunctionalScores = (text) => {
   }
   
   // ECOG (Eastern Cooperative Oncology Group) 0-5
-  const ecogPattern = /ECOG\s*:?\s*([0-5])/i;
+  // Phase 0 Day 3: Enhanced pattern to match "ECOG Performance Status: 2" format
+  const ecogPattern = /ECOG\s*(?:Performance\s+Status)?\s*:?\s*([0-5])/i;
   const ecogMatch = text.match(ecogPattern);
   if (ecogMatch) {
     data.ecog = parseInt(ecogMatch[1]);
@@ -2160,7 +2247,8 @@ const extractFunctionalScores = (text) => {
   }
   
   // mRS (modified Rankin Scale) 0-6
-  const mrsPattern = /mRS\s*:?\s*([0-6])/i;
+  // Phase 0 Day 3: Enhanced pattern to match "Modified Rankin Scale: 3" format
+  const mrsPattern = /(?:mRS|modified\s+Rankin\s+Scale)\s*:?\s*([0-6])/i;
   const mrsMatch = text.match(mrsPattern);
   if (mrsMatch) {
     data.mRS = parseInt(mrsMatch[1]);
@@ -2449,15 +2537,13 @@ const extractMedications = (text, referenceDates = {}) => {
   let confidence = CONFIDENCE.MEDIUM;
 
   // Phase 0 Day 2: Check for discharge medications section first
+  let dischargeMeds = [];
   if (isFeatureEnabled(FEATURE_FLAGS.DISCHARGE_MEDICATIONS)) {
-    const dischargeMedsSection = extractDischargeMedicationsSection(text);
-    if (dischargeMedsSection && dischargeMedsSection.length > 0) {
-      console.log(`[Phase 0] Found ${dischargeMedsSection.length} discharge medications from dedicated section`);
-      data.medications = dischargeMedsSection;
+    dischargeMeds = extractDischargeMedicationsSection(text);
+    if (dischargeMeds && dischargeMeds.length > 0) {
+      console.log(`[Phase 0] Found ${dischargeMeds.length} discharge medications from dedicated section`);
+      // These will be merged with other medications later
       confidence = CONFIDENCE.HIGH; // High confidence when found in dedicated section
-
-      // Still continue to extract other medications mentioned elsewhere
-      // but the discharge medications will take priority in deduplication
     }
   }
 
@@ -2682,13 +2768,37 @@ const extractMedications = (text, referenceDates = {}) => {
     return new Date(dateA) - new Date(dateB);
   });
 
-  data.medications = finalMedications;
+  // Phase 0 Day 3: Merge discharge medications with extracted medications
+  // Discharge medications take priority (higher confidence)
+  if (dischargeMeds.length > 0) {
+    // Create a map of discharge meds by name for deduplication
+    const dischargeMedNames = new Set(dischargeMeds.map(m => m.name.toLowerCase()));
 
-  if (finalMedications.length > 0) {
+    // Filter out medications from general extraction that are already in discharge section
+    const filteredFinalMeds = finalMedications.filter(med => {
+      const medNameLower = med.name.toLowerCase();
+      // Check if this medication is already in discharge meds
+      for (const dischargeMedName of dischargeMedNames) {
+        if (medNameLower.includes(dischargeMedName) || dischargeMedName.includes(medNameLower)) {
+          console.log(`[Dedup] Removing duplicate: "${med.name}" already in discharge section`);
+          return false;
+        }
+      }
+      return true;
+    });
+
+    // Combine discharge meds (priority) with other extracted meds
+    data.medications = [...dischargeMeds, ...filteredFinalMeds];
+    console.log(`[Phase 0] Merged medications: ${dischargeMeds.length} discharge + ${filteredFinalMeds.length} other = ${data.medications.length} total`);
+  } else {
+    data.medications = finalMedications;
+  }
+
+  if (data.medications.length > 0) {
     confidence = CONFIDENCE.HIGH;
   }
 
-  console.log(`[Phase 1 Step 5] Medication extraction complete: ${finalMedications.length} medications`);
+  console.log(`[Phase 1 Step 5] Medication extraction complete: ${data.medications.length} medications`);
 
   return { data, confidence };
 };
@@ -2716,6 +2826,163 @@ const extractMedicationStatus = (text, position) => {
   }
 
   return { status: 'active', confidence: 0.5 };
+};
+
+/**
+ * Extract late recovery indicators
+ * Phase 0 Day 3: Detect prolonged hospital stays and delayed recovery
+ */
+const extractLateRecovery = (text, dates = {}) => {
+  const indicators = [];
+  let hasLateRecovery = false;
+
+  if (!isFeatureEnabled(FEATURE_FLAGS.LATE_RECOVERY_DETECTION)) {
+    return { hasLateRecovery: false, indicators: [] };
+  }
+
+  // Calculate length of stay if we have admission and discharge dates
+  let lengthOfStay = null;
+  if (dates.admissionDate && dates.dischargeDate) {
+    const admission = new Date(dates.admissionDate);
+    const discharge = new Date(dates.dischargeDate);
+    lengthOfStay = Math.floor((discharge - admission) / (1000 * 60 * 60 * 24));
+
+    // Prolonged stay indicators (depends on procedure type)
+    if (lengthOfStay > 14) {
+      indicators.push({
+        type: 'prolonged_stay',
+        value: `${lengthOfStay} days`,
+        severity: lengthOfStay > 21 ? 'high' : 'moderate',
+        confidence: CONFIDENCE.HIGH
+      });
+      hasLateRecovery = true;
+    }
+  }
+
+  // Late recovery patterns
+  const lateRecoveryPatterns = [
+    // Prolonged intubation/ventilation
+    {
+      pattern: /(?:prolonged|extended|continued)\s+(?:intubation|ventilation|mechanical\s+ventilation)/gi,
+      type: 'prolonged_ventilation',
+      severity: 'high'
+    },
+    // Delayed extubation
+    {
+      pattern: /(?:delayed|difficult|failed)\s+extubation/gi,
+      type: 'delayed_extubation',
+      severity: 'high'
+    },
+    // Tracheostomy (indicates prolonged respiratory support)
+    {
+      pattern: /tracheostomy\s+(?:placement|performed|placed)/gi,
+      type: 'tracheostomy',
+      severity: 'high'
+    },
+    // Prolonged ICU stay
+    {
+      pattern: /(?:prolonged|extended)\s+(?:ICU|intensive\s+care)\s+(?:stay|admission)/gi,
+      type: 'prolonged_icu',
+      severity: 'moderate'
+    },
+    // Multiple returns to OR
+    {
+      pattern: /(?:return|returned|multiple)\s+(?:to\s+)?(?:OR|operating\s+room|surgery)/gi,
+      type: 'multiple_surgeries',
+      severity: 'high'
+    },
+    // Failure to progress
+    {
+      pattern: /(?:failure|failed|unable)\s+to\s+(?:progress|improve|wean)/gi,
+      type: 'failure_to_progress',
+      severity: 'moderate'
+    },
+    // Persistent altered mental status
+    {
+      pattern: /(?:persistent|continued|prolonged)\s+(?:altered\s+mental\s+status|AMS|confusion|encephalopathy)/gi,
+      type: 'persistent_ams',
+      severity: 'moderate'
+    },
+    // Delayed mobilization
+    {
+      pattern: /(?:delayed|slow|poor)\s+(?:mobilization|ambulation|recovery)/gi,
+      type: 'delayed_mobilization',
+      severity: 'low'
+    },
+    // Complex discharge planning
+    {
+      pattern: /(?:complex|complicated|difficult)\s+discharge\s+(?:planning|disposition)/gi,
+      type: 'complex_discharge',
+      severity: 'low'
+    },
+    // Transfer to LTAC or rehab
+    {
+      pattern: /(?:transfer|discharged?)\s+to\s+(?:LTAC|long[-\s]?term\s+acute|rehabilitation|rehab|SNF|skilled\s+nursing)/gi,
+      type: 'institutional_discharge',
+      severity: 'moderate'
+    }
+  ];
+
+  // Search for late recovery patterns
+  for (const item of lateRecoveryPatterns) {
+    const matches = text.match(item.pattern);
+    if (matches) {
+      for (const match of matches) {
+        indicators.push({
+          type: item.type,
+          value: match.trim(),
+          severity: item.severity,
+          confidence: CONFIDENCE.HIGH
+        });
+        hasLateRecovery = true;
+      }
+    }
+  }
+
+  // Check for specific POD indicators
+  const podPattern = /POD[#\s]*(\d+)/gi;
+  let maxPOD = 0;
+  let podMatch;
+  while ((podMatch = podPattern.exec(text)) !== null) {
+    const pod = parseInt(podMatch[1]);
+    if (pod > maxPOD) {
+      maxPOD = pod;
+    }
+  }
+
+  // High POD numbers indicate late recovery
+  if (maxPOD > 10) {
+    indicators.push({
+      type: 'late_pod',
+      value: `POD#${maxPOD}`,
+      severity: maxPOD > 14 ? 'high' : 'moderate',
+      confidence: CONFIDENCE.MEDIUM
+    });
+    hasLateRecovery = true;
+  }
+
+  // Check for ICU days
+  const icuDaysPattern = /(\d+)\s+(?:days?|nights?)\s+in\s+(?:the\s+)?ICU/gi;
+  const icuMatch = icuDaysPattern.exec(text);
+  if (icuMatch) {
+    const icuDays = parseInt(icuMatch[1]);
+    if (icuDays > 3) {
+      indicators.push({
+        type: 'prolonged_icu',
+        value: `${icuDays} days in ICU`,
+        severity: icuDays > 7 ? 'high' : 'moderate',
+        confidence: CONFIDENCE.HIGH
+      });
+      hasLateRecovery = true;
+    }
+  }
+
+  return {
+    hasLateRecovery,
+    indicators,
+    lengthOfStay,
+    maxPOD: maxPOD > 0 ? maxPOD : null
+  };
 };
 
 /**
@@ -3042,6 +3309,7 @@ export default {
   extractImaging,
   extractFunctionalScores,
   extractMedications,
+  extractLateRecovery,
   extractFollowUp,
   extractOncology
 };
