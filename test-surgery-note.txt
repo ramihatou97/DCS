@@ -1,0 +1,62 @@
+DISCHARGE SUMMARY
+
+Patient Name: Robert Chen
+MRN: 123456
+DOB: 03/15/1965
+Age: 58 years
+Gender: Male
+Attending Physician: Dr. Michael Johnson
+
+ADMISSION DATE: 10/14/2023
+DISCHARGE DATE: 10/22/2023
+
+PRIMARY DIAGNOSIS:
+Right frontal glioblastoma multiforme (GBM), WHO Grade IV
+
+SECONDARY DIAGNOSES:
+- Postoperative cerebral edema
+- Steroid-induced hyperglycemia
+- Hypertension
+
+HISTORY OF PRESENT ILLNESS:
+Mr. Chen is a 58-year-old male who presented with a 3-week history of progressive headaches, left-sided weakness, and personality changes. MRI brain revealed a 4.5 cm enhancing mass in the right frontal lobe with significant perilesional edema and midline shift.
+
+HOSPITAL COURSE:
+The patient underwent right frontal craniotomy for tumor resection on 10/15/2023. The procedure was performed under general anesthesia with neuronavigation guidance. Gross total resection was achieved with preservation of motor cortex. Postoperative MRI confirmed >95% tumor resection with expected postoperative changes.
+
+PROCEDURES:
+1. 10/15/2023 - Right frontal craniotomy with tumor resection
+2. 10/16/2023 - EVD placement due to hydrocephalus
+3. 10/19/2023 - EVD removal
+
+COMPLICATIONS:
+Transient left hemiparesis post-operatively, which improved with steroids and physical therapy.
+
+MEDICATIONS ON DISCHARGE:
+1. Keppra 500mg PO BID for seizure prophylaxis
+2. Dexamethasone 4mg PO Q6H with taper schedule
+3. Omeprazole 20mg PO daily
+4. Metformin 500mg PO BID
+5. Lisinopril 10mg PO daily
+6. Oxycodone 5mg PO Q4H PRN pain
+
+FUNCTIONAL STATUS:
+- Ambulating with walker assistance
+- ECOG Performance Status: 2
+- Modified Rankin Scale: 3
+- Karnofsky Performance Score: 70
+
+FOLLOW-UP:
+1. Neurosurgery clinic in 2 weeks for wound check and pathology results
+2. Radiation oncology consultation scheduled for 10/30/2023
+3. Medical oncology for temozolomide initiation after radiation
+4. Physical therapy to continue outpatient 3x/week
+
+DISCHARGE DISPOSITION:
+Home with family assistance and home health services
+
+PROGNOSIS:
+Guarded given diagnosis of GBM. Patient and family counseled regarding diagnosis and treatment options including concurrent chemoradiation.
+
+Electronically signed by: Dr. Michael Johnson
+Date: 10/22/2023

@@ -1154,7 +1154,9 @@ const extractDates = (text, pathologyTypes) => {
   const data = {
     ictusDate: null,
     admissionDate: null,
-    surgeryDates: [],
+    surgeryDate: null,    // Phase 0 Day 2: Single surgery date for backward compatibility
+    surgeryDates: [],     // Phase 0 Day 2: Multiple surgery dates
+    surgeryType: null,    // Phase 0 Day 2: Surgery type for backward compatibility
     dischargeDate: null,
     // PHASE 1 ENHANCEMENT: Add temporal context for dates
     temporalContext: {
@@ -1243,13 +1245,31 @@ const extractDates = (text, pathologyTypes) => {
     }
   }
   
-  // Surgery dates (can be multiple) - more flexible patterns
-  const surgeryPatterns = [
-    // "underwent PROCEDURE on DATE" or "PROCEDURE on DATE"
+  // Phase 0 Day 2: Enhanced surgery date extraction with neurosurgery-specific procedures
+  const enhancedSurgeryDates = isFeatureEnabled(FEATURE_FLAGS.ENHANCED_SURGERY_DATES);
+
+  const surgeryPatterns = enhancedSurgeryDates ? [
+    // Specific neurosurgical procedures with dates (HIGHEST PRIORITY)
+    // Allow for modifiers like "right frontal" before craniotomy
+    /(?:underwent|received|had)\s+(?:a\s+)?(?:right\s+|left\s+|bilateral\s+)?(?:frontal\s+|parietal\s+|temporal\s+|occipital\s+)?(?:craniotomy|craniectomy|EVD\s+placement|VP\s+shunt|coiling|clipping|embolization|laminectomy|ACDF|fusion|discectomy|decompression).*?(?:on\s+)?(\d{1,2}[/-]\d{1,2}[/-]\d{2,4})/gi,
+
+    // Handle "procedure ... on DATE" with flexible content between
+    /(?:craniotomy|craniectomy|EVD|VP\s+shunt|coiling|clipping|embolization|laminectomy|ACDF|fusion|discectomy).*?(?:on\s+)?(\d{1,2}[/-]\d{1,2}[/-]\d{2,4})/gi,
+
+    // Date first patterns
+    /(\d{1,2}[/-]\d{1,2}[/-]\d{2,4})\s*[-:]\s*(?:Right\s+|Left\s+)?(?:frontal\s+|parietal\s+|temporal\s+|occipital\s+)?(?:craniotomy|craniectomy|EVD|VP\s+shunt|coiling|clipping)/gi,
+
+    // Cervical spine specific
+    /(?:C\d-C\d|cervical)\s+(?:ACDF|fusion|laminectomy|discectomy|decompression)\s+(?:on\s+)?(\d{1,2}[/-]\d{1,2}[/-]\d{2,4})/gi,
+
+    // Original patterns as fallback
     /(?:underwent|received)?\s*(?:cerebral\s+)?(?:angiogram|coiling|craniotomy|surgery|operation|procedure)\s+(?:with\s+[\w\s]+\s+)?(?:on\s+)?([A-Za-z]+\s+\d{1,2},?\s+\d{4})/gi,
-    // "DATE: PROCEDURE" format
     /([A-Za-z]+\s+\d{1,2},?\s+\d{4})\s*:?\s*(?:underwent|surgery|craniotomy|coiling|procedure)/gi,
-    // Numeric formats
+    /(\d{1,2}[/-]\d{1,2}[/-]\d{2,4})\s*:?\s*(?:underwent|surgery|craniotomy|coiling)/gi
+  ] : [
+    // Original patterns (if feature flag disabled)
+    /(?:underwent|received)?\s*(?:cerebral\s+)?(?:angiogram|coiling|craniotomy|surgery|operation|procedure)\s+(?:with\s+[\w\s]+\s+)?(?:on\s+)?([A-Za-z]+\s+\d{1,2},?\s+\d{4})/gi,
+    /([A-Za-z]+\s+\d{1,2},?\s+\d{4})\s*:?\s*(?:underwent|surgery|craniotomy|coiling|procedure)/gi,
     /(\d{1,2}[/-]\d{1,2}[/-]\d{2,4})\s*:?\s*(?:underwent|surgery|craniotomy|coiling)/gi
   ];
   
@@ -1322,6 +1342,13 @@ const extractDates = (text, pathologyTypes) => {
         break;
       }
     }
+  }
+
+  // Phase 0 Day 2: Add surgeryDate (singular) for backward compatibility
+  // Use the first surgery date if multiple exist
+  if (data.surgeryDates.length > 0) {
+    data.surgeryDate = data.surgeryDates[0];
+    data.surgeryType = null; // Will be populated from procedures section
   }
 
   return { data, confidence };
@@ -2319,6 +2346,78 @@ const estimateMRSFromDisability = (text) => {
 };
 
 /**
+ * Extract medications from discharge section
+ * Phase 0 Day 2: Parse structured discharge medications section
+ */
+const extractDischargeMedicationsSection = (text) => {
+  const medications = [];
+
+  // Look for "MEDICATIONS ON DISCHARGE" or similar section
+  const dischargeMedsPattern = /(?:MEDICATIONS?\s+(?:ON\s+)?DISCHARGE|DISCHARGE\s+MEDICATIONS?):\s*\n([\s\S]*?)(?=\n\n[A-Z]+:|$)/gi;
+  let match = dischargeMedsPattern.exec(text);
+
+  if (!match) {
+    // Try alternative patterns
+    const altPattern = /(?:Discharge\s+Meds?|Meds?\s+on\s+Discharge):\s*\n([\s\S]*?)(?=\n\n[A-Z]+:|$)/gi;
+    match = altPattern.exec(text);
+    if (!match) {
+      return medications;
+    }
+  }
+
+  const medsSection = match[1];
+
+  // Parse individual medication lines
+  // Format: "1. Drug dose route frequency [indication]"
+  const medLinePattern = /^\s*(?:\d+\.\s*)?([A-Za-z][A-Za-z\s]+?)\s+(\d+(?:\.\d+)?)\s*?(mg|mcg|g|units?|mL)\s+(?:PO|IV|IM|SC|SQ|PR|topical)?\s*(daily|BID|TID|QID|Q\d+H|PRN|once daily|twice daily|three times daily|at bedtime|HS)(?:\s+(?:for|PRN)\s+(.+))?/gim;
+
+  let lineMatch;
+  while ((lineMatch = medLinePattern.exec(medsSection)) !== null) {
+    const medication = {
+      name: lineMatch[1].trim(),
+      dose: lineMatch[2],
+      unit: lineMatch[3],
+      frequency: lineMatch[4],
+      indication: lineMatch[5] ? lineMatch[5].trim() : null,
+      source: 'discharge_section',
+      confidence: CONFIDENCE.HIGH
+    };
+
+    // Combine dose and unit
+    medication.doseWithUnit = `${medication.dose}${medication.unit}`;
+
+    medications.push(medication);
+  }
+
+  // Also try to capture medications in a simpler format
+  if (medications.length === 0) {
+    // Simple line-by-line parsing
+    const lines = medsSection.split('\n');
+    for (const line of lines) {
+      const trimmed = line.trim();
+      if (trimmed && !trimmed.match(/^[A-Z\s]+:/) && trimmed.length > 3) {
+        // Basic medication line parsing
+        const basicMatch = trimmed.match(/^\d*\.?\s*([A-Za-z][A-Za-z\s]+?)(?:\s+(\d+(?:\.\d+)?)\s*?(mg|mcg|g|units?))?/);
+        if (basicMatch) {
+          medications.push({
+            name: basicMatch[1].trim(),
+            dose: basicMatch[2] || null,
+            unit: basicMatch[3] || null,
+            doseWithUnit: basicMatch[2] && basicMatch[3] ? `${basicMatch[2]}${basicMatch[3]}` : null,
+            frequency: null,
+            indication: null,
+            source: 'discharge_section',
+            confidence: CONFIDENCE.MEDIUM
+          });
+        }
+      }
+    }
+  }
+
+  return medications;
+};
+
+/**
  * Extract medications
  * PHASE 1 STEP 5: Enhanced with timeline tracking and temporal context
  *
@@ -2348,6 +2447,19 @@ const extractMedications = (text, referenceDates = {}) => {
   };
 
   let confidence = CONFIDENCE.MEDIUM;
+
+  // Phase 0 Day 2: Check for discharge medications section first
+  if (isFeatureEnabled(FEATURE_FLAGS.DISCHARGE_MEDICATIONS)) {
+    const dischargeMedsSection = extractDischargeMedicationsSection(text);
+    if (dischargeMedsSection && dischargeMedsSection.length > 0) {
+      console.log(`[Phase 0] Found ${dischargeMedsSection.length} discharge medications from dedicated section`);
+      data.medications = dischargeMedsSection;
+      confidence = CONFIDENCE.HIGH; // High confidence when found in dedicated section
+
+      // Still continue to extract other medications mentioned elsewhere
+      // but the discharge medications will take priority in deduplication
+    }
+  }
 
   // Enhanced medication extraction with drug+dose pattern
   const medicationWithDosePattern = /\b([A-Z][a-z]+(?:ra|pam|lol|pine|sin|xin)?)\s+(\d+(?:\.\d+)?\s*(?:mg|mcg|g|units?))\s*(?:(daily|BID|TID|QID|Q\d+H|PRN|once|twice))?\b/gi;
