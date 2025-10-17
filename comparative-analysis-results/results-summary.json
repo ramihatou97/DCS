@@ -1,0 +1,38 @@
+{
+  "testDate": "2025-10-16T21:02:43.055Z",
+  "totalConfigurations": 5,
+  "successfulGenerations": 5,
+  "failedGenerations": 0,
+  "results": [
+    {
+      "config": "Config 1: Claude Sonnet 3.5 (Full Orchestration)",
+      "success": true,
+      "duration": "31.11",
+      "qualityScore": 0.7019090909090909
+    },
+    {
+      "config": "Config 2: GPT-4o (Full Orchestration)",
+      "success": true,
+      "duration": "29.23",
+      "qualityScore": 0.7019090909090909
+    },
+    {
+      "config": "Config 3: Gemini 1.5 Pro (Full Orchestration)",
+      "success": true,
+      "duration": "30.67",
+      "qualityScore": 0.6837272727272727
+    },
+    {
+      "config": "Config 4: Template-Based (No LLM)",
+      "success": true,
+      "duration": "0.02",
+      "qualityScore": 0.6707727272727273
+    },
+    {
+      "config": "Config 5: Hybrid (LLM Extraction + Template Narrative)",
+      "success": true,
+      "duration": "13.04",
+      "qualityScore": 0.6398636363636364
+    }
+  ]
+}

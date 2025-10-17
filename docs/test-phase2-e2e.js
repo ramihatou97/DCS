@@ -10,7 +10,7 @@
  * - Integration with extraction pipeline
  */
 
-import { extractMedicalEntities } from './src/services/extraction.js';
+import { extractMedicalEntities } from '../src/services/extraction.js';
 import fs from 'fs';
 
 // ============================================================================

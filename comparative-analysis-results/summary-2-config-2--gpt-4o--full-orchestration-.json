@@ -1,0 +1,1132 @@
+{
+  "config": "Config 2: GPT-4o (Full Orchestration)",
+  "summary": {
+    "success": true,
+    "summary": {
+      "chiefComplaint": "67-year-old male presenting with incomplete cervical spinal cord injury after an 8-foot fall from ladder.",
+      "historyOfPresentIllness": "Patient suffered ground-level fall from ladder, landing on head/neck. Initial presentation notable for quadriparesis with preserved upper extremity proximal strength but absent lower extremity function. Initial imaging revealed C5-C6 bilateral facet dislocation with >75% canal compromise.",
+      "hospitalCourse": "1. Initial Presentation & Surgery (September 20, 2025): - Presented with incomplete SCI (ASIA C) - Neurogenic shock requiring phenylephrine - Failed closed reduction in ED - Emergent posterior cervical fusion C4-C7 performed - Initial motor exam: UE 5/5 proximal, 0-3/5 distal; LE 0/5 throughout 2. Complications: - POD8: Developed UTI, treated with ceftriaxone - POD10: Bilateral pulmonary emboli despite prophylactic anticoagulation - IVC filter placed - Continued prophylactic-dose anticoagulation - POD14: Deep surgical site infection (MRSA) - Required I&D - Started on IV vancomycin 3. Recovery Course: - Gradual neurological improvement - By discharge: Left quad 1/5, improved UE function to 3/5 at C8/T1 - Spinal shock resolved with return of reflexes - Achieving transfers with min-mod assist - Bowel/bladder program established",
+      "procedures": "1. September 20, 2025: Open reduction and posterior cervical fusion C4-C7 2. October 4, 2025: I&D of surgical site infection 3. September 30, 2025: IVC filter placement",
+      "complications": "- POD8: Developed UTI, treated with ceftriaxone - POD10: Bilateral pulmonary emboli despite prophylactic anticoagulation - IVC filter placed - Continued prophylactic-dose anticoagulation - POD14: Deep surgical site infection (MRSA) - Required I&D - Started on IV vancomycin 3. Recovery Course: - Gradual neurological improvement - By discharge: Left quad 1/5, improved UE function to 3/5 at C8/T1 - Spinal shock resolved with return of reflexes - Achieving transfers with min-mod assist - Bowel/bladder program established",
+      "dischargeStatus": "Neurological Exam: - Alert and oriented x3 - Cranial nerves intact - Motor: UE 5/5 proximal, 3/5 distal; LE: L quad 1/5, otherwise 0/5 - Reflexes: 2+ throughout, now hyperreflexic - Sensory: Intact C3-C5, diminished C6-C7, absent below T1",
+      "followUpPlan": "DISCHARGE INSTRUCTIONS: Medications: - vancomycin for 6 weeks total - lovenox 40mg daily Activity Restrictions: - Resume normal activities as tolerated - Avoid strenuous activity until follow-up Follow-up Care: - Follow up with your physician as directed - Call to schedule appointment within 1-2 weeks Seek Immediate Medical Attention If You Experience: - Severe headache that won't go away - New confusion OR difficulty waking up - New weakness, numbness, OR vision changes - Difficulty breathing OR chest pain - Fever >101°F (38.3°C) - Severe nausea/vomiting - Signs of infection at surgical site (if applicable) - New OR worsening seizures Contact Information: - Emergency: Call 911 - Hospital: Contact your care team if you have questions",
+      "dischargeMedications": "1. Vancomycin IV via PICC (4 more weeks) 2. Lovenox 40mg SQ daily 3. Sertraline 50mg daily 4. Home medications continued 5. Pain/bowel medications as listed",
+      "dischargeInstructions": "DISCHARGE INSTRUCTIONS:\n\nMedications:\n- vancomycin   for 6 weeks total\n- lovenox 40mg daily\n\nActivity Restrictions:\n- Resume normal activities as tolerated\n- Avoid strenuous activity until follow-up\n\nFollow-up Care:\n- Follow up with your physician as directed\n- Call to schedule appointment within 1-2 weeks\n\nSeek Immediate Medical Attention If You Experience:\n- Severe headache that won't go away\n- New confusion or difficulty waking up\n- New weakness, numbness, or vision changes\n- Difficulty breathing or chest pain\n- Fever >101°F (38.3°C)\n- Severe nausea/vomiting\n- Signs of infection at surgical site (if applicable)\n- New or worsening seizures\n\nContact Information:\n- Emergency: Call 911\n- Hospital: Contact your care team if you have questions",
+      "prognosis": "PROGNOSIS:\n\nFair to good prognosis with continued medical management and rehabilitation.\n\nComplications (1 major) may impact recovery timeline.\n\nFollow-up Care:\n- Regular follow-up appointments are essential for optimal recovery\n- Adherence to medication regimen is critical\n- Ongoing surveillance imaging will be necessary\n\nWith appropriate follow-up care and rehabilitation, continued improvement is expected.",
+      "qualityMetrics": {
+        "extraction": {
+          "completeness": 0.8181818181818182,
+          "confidence": 0.7999999999999999,
+          "extractedFields": 9,
+          "totalFields": 11,
+          "missingFields": [
+            "functionalStatus",
+            "discharge"
+          ],
+          "score": 0.8109090909090909
+        },
+        "validation": {
+          "passRate": 0.8,
+          "isValid": false,
+          "errorCount": 0,
+          "warningCount": 0,
+          "criticalErrors": 0,
+          "majorErrors": 0,
+          "minorErrors": 0,
+          "errors": [],
+          "warnings": [],
+          "score": 0.8
+        },
+        "summary": {
+          "readability": 0.2,
+          "completeness": 0.8181818181818182,
+          "coherence": 0.7,
+          "wordCount": 627,
+          "sectionCount": 4,
+          "score": 0.5972727272727273
+        },
+        "overall": 0.7019090909090909,
+        "metadata": {
+          "calculated": "2025-10-16T21:01:59.311Z",
+          "extractionMethod": "llm",
+          "noteCount": 1
+        }
+      },
+      "metadata": {
+        "generatedAt": "2025-10-16T21:01:59.311Z",
+        "pathologyType": "TUMORS",
+        "style": "formal",
+        "generationMethod": "llm",
+        "learnedPatternsApplied": 0
+      }
+    },
+    "extractedData": {
+      "demographics": {
+        "age": 67,
+        "gender": "M"
+      },
+      "dates": {
+        "ictusDate": "2025-09-20",
+        "admissionDate": "2025-09-20",
+        "dischargeDate": "2025-10-13",
+        "surgeryDates": [],
+        "temporalContext": {
+          "ictus": null,
+          "admission": null,
+          "surgeries": [],
+          "discharge": null
+        }
+      },
+      "pathology": {
+        "type": "spinal cord injury",
+        "location": "C5-C6 bilateral facet dislocation",
+        "severity": "ASIA C",
+        "mechanism": "fall from ladder",
+        "primary": "Brain Tumors",
+        "primaryDiagnosis": "Brain Tumors",
+        "secondaryDiagnoses": [],
+        "grades": {},
+        "subtype": {
+          "type": "TUMORS",
+          "details": {
+            "molecularMarkers": []
+          },
+          "riskLevel": "MODERATE",
+          "prognosis": {},
+          "recommendations": {
+            "imaging": [
+              "MRI brain with contrast 24-48h postop (baseline)",
+              "MRI at 3 months post-RT/chemo",
+              "MRI every 2-3 months during treatment",
+              "MRI every 3-6 months after treatment completion"
+            ],
+            "medications": [
+              "Dexamethasone taper over 2-4 weeks",
+              "Levetiracetam 500-1000mg BID (seizure prophylaxis)",
+              "Temozolomide per Stupp protocol (high-grade)",
+              "PPI while on dexamethasone"
+            ],
+            "monitoring": [
+              "Wound check at 10-14 days",
+              "Radiation oncology consultation",
+              "Medical oncology consultation",
+              "Neurocognitive assessment"
+            ]
+          },
+          "complications": [
+            {
+              "name": "Seizures",
+              "risk": "Moderate-High",
+              "timing": "Throughout course",
+              "management": "AED prophylaxis 3-12 months"
+            },
+            {
+              "name": "Edema",
+              "risk": "High",
+              "timing": "Perioperative",
+              "management": "Dexamethasone taper"
+            },
+            {
+              "name": "Recurrence",
+              "risk": "Moderate",
+              "timing": "Months to years",
+              "management": "Re-resection, RT, chemo"
+            },
+            {
+              "name": "Radiation necrosis",
+              "risk": "Low",
+              "timing": "6-24 months post-RT",
+              "management": "Steroids, bevacizumab, surgery"
+            }
+          ]
+        }
+      },
+      "presentingSymptoms": [
+        "quadriparesis",
+        "neck pain",
+        "neurogenic shock",
+        "priapism"
+      ],
+      "procedures": [
+        {
+          "name": "posterior cervical fusion C4-C7",
+          "date": "2025-09-20",
+          "operator": "Dr. Patterson"
+        },
+        {
+          "name": "IVC filter placement",
+          "date": "2025-09-30",
+          "operator": null
+        },
+        {
+          "name": "wound debridement",
+          "date": "2025-10-04",
+          "operator": null
+        }
+      ],
+      "complications": [
+        {
+          "name": "urinary tract infection",
+          "date": "2025-09-28",
+          "severity": "moderate",
+          "management": "ceftriaxone"
+        },
+        {
+          "name": "pulmonary embolism",
+          "date": "2025-09-30",
+          "severity": "moderate",
+          "management": "IVC filter, prophylactic anticoagulation"
+        },
+        {
+          "name": "surgical site infection",
+          "date": "2025-10-04",
+          "severity": "severe",
+          "management": "debridement, vancomycin"
+        }
+      ],
+      "anticoagulation": {
+        "medications": [
+          {
+            "name": "lovenox",
+            "status": "active",
+            "date": "2025-09-20",
+            "dose": "40mg daily",
+            "indication": "DVT prophylaxis"
+          }
+        ],
+        "critical": false,
+        "found": [
+          {
+            "medication": "ASPIRIN",
+            "brandName": "ASA",
+            "type": "antiplatelet",
+            "class": "COX inhibitor",
+            "reversal": "platelet transfusion",
+            "status": "current",
+            "context": "INR 1.0\n\nPMH: HTN, DM2, BPH, CAD S/P stent 2020\nPSH: None\nMeds: metoprolol, metformin, lisinopril, ASA 81mg, finasteride\nAll: PCN - rash\n\nASSESSMENT: 67M with C5-6 bilateral facet dislocation with incom"
+          },
+          {
+            "medication": "ENOXAPARIN",
+            "brandName": "Lovenox",
+            "type": "anticoagulant",
+            "class": "low molecular weight heparin",
+            "reversal": "protamine (partial)",
+            "status": "current",
+            "context": "l PE\nD-dimer: >5000\nTroponin: 0.08 (mildly elevated)\n\nA/P: POD#10, now with PE despite prophylactic lovenox\n- Discussed with hematology - recommend IVC filter given high bleeding risk with therapeutic antico"
+          }
+        ],
+        "hasAnticoagulation": true,
+        "hasCurrentAnticoagulation": true,
+        "hasReversed": false,
+        "riskLevel": "critical"
+      },
+      "imaging": {
+        "findings": [
+          "C5-C6 bilateral facet dislocation with >75% canal compromise",
+          "spinal cord edema C4-C7",
+          "bilateral pulmonary emboli",
+          "no epidural abscess"
+        ],
+        "dates": [
+          "2025-09-20",
+          "2025-09-30",
+          "2025-10-04"
+        ]
+      },
+      "functionalScores": {
+        "ASIA": "C",
+        "GCS": 15,
+        "kps": 60
+      },
+      "medications": [
+        {
+          "name": "vancomycin",
+          "route": "IV",
+          "duration": "6 weeks total"
+        },
+        {
+          "name": "lovenox",
+          "dose": "40mg",
+          "frequency": "daily",
+          "route": "subcutaneous"
+        }
+      ],
+      "followUp": {
+        "appointments": [
+          {
+            "specialty": "Neurosurgery",
+            "timeframe": "post-rehab"
+          },
+          {
+            "specialty": "Hematology",
+            "timeframe": "as scheduled"
+          },
+          {
+            "specialty": "Psychiatry",
+            "timeframe": "as scheduled"
+          }
+        ],
+        "imaging": [
+          "IVC filter removal consideration at 3-6 months"
+        ],
+        "instructions": []
+      },
+      "dischargeDestination": {
+        "location": "Rehab",
+        "support": "Regional SCI Center",
+        "primary": {
+          "destination": "rehabilitation",
+          "label": "Rehabilitation Facility",
+          "description": "Acute inpatient rehabilitation",
+          "independence": "moderate",
+          "priority": 3,
+          "matchedPattern": "\\btransfer(?:red)?\\s+to\\s+rehab(?:ilitation)?\\b",
+          "context": "tpatient)\n- NEUROLOGIC RECOVERY OCCURRING - incomplete injury showing late improvements\n- Ready for transfer to rehab in few days\n- May have potential for limited ambulation with bracing if continues to improve\n\nDISCH"
+        },
+        "alternatives": [],
+        "confidence": 0.8999999999999999
+      },
+      "_suggestions": [
+        {
+          "field": "tumor.histology",
+          "reason": "Histology determines prognosis and treatment plan",
+          "priority": "critical",
+          "whereToFind": "Look for: pathology report, \"glioblastoma\", \"meningioma\", \"astrocytoma\", \"oligodendroglioma\"",
+          "clinicalSignificance": "Histology is THE most important prognostic factor. Guides all treatment decisions.",
+          "relatedFields": [
+            "tumor.whoGrade",
+            "molecularMarkers",
+            "adjuvantTherapy"
+          ],
+          "timestamp": "2025-10-16T21:01:43.249Z"
+        },
+        {
+          "field": "tumor.whoGrade",
+          "reason": "WHO grade is essential for prognosis and treatment planning",
+          "priority": "critical",
+          "whereToFind": "Look for: \"WHO grade\", \"Grade I/II/III/IV\" in pathology report",
+          "clinicalSignificance": "Grade 1 = benign, Grade 4 = aggressive. Determines need for radiation/chemotherapy.",
+          "relatedFields": [
+            "tumor.histology",
+            "adjuvantTherapy",
+            "followUpSchedule"
+          ],
+          "timestamp": "2025-10-16T21:01:43.249Z"
+        },
+        {
+          "field": "examination.gcs",
+          "reason": "GCS is fundamental for neurological assessment",
+          "priority": "critical",
+          "whereToFind": "Look for: \"GCS\", \"Glasgow Coma Scale\", \"E_V_M_\" in any clinical note",
+          "clinicalSignificance": "GCS tracks neurological status. Decline ≥2 points requires immediate imaging.",
+          "relatedFields": [
+            "neurologicalExam",
+            "mentalStatus"
+          ],
+          "timestamp": "2025-10-16T21:01:43.249Z"
+        },
+        {
+          "field": "resectionExtent",
+          "reason": "Extent of resection affects survival and recurrence risk",
+          "priority": "high",
+          "whereToFind": "Look for: \"GTR\", \"STR\", \"gross total\", \"subtotal\", \"biopsy only\" in operative note",
+          "clinicalSignificance": "GTR associated with longer survival. STR may require adjuvant radiation.",
+          "relatedFields": [
+            "postopMRI",
+            "adjuvantTherapy"
+          ],
+          "timestamp": "2025-10-16T21:01:43.249Z"
+        },
+        {
+          "field": "functionalStatus",
+          "reason": "Functional status (mRS or KPS) documents baseline and outcome",
+          "priority": "medium",
+          "whereToFind": "Look for: \"mRS\", \"Rankin\", \"KPS\", \"Karnofsky\" or infer from discharge destination and support level",
+          "clinicalSignificance": "mRS 0-2 = good outcome, 3-5 = poor outcome. Guides discharge planning.",
+          "relatedFields": [
+            "dischargeDestination",
+            "supportLevel",
+            "ptotAssessment"
+          ],
+          "timestamp": "2025-10-16T21:01:43.249Z"
+        }
+      ],
+      "oncology": {
+        "histology": null,
+        "molecularMarkers": {},
+        "treatment": []
+      },
+      "physicalExam": {
+        "general": null,
+        "heent": null,
+        "cardiovascular": null,
+        "pulmonary": null,
+        "abdomen": null,
+        "extremities": null,
+        "skin": null
+      },
+      "neurologicalExam": {
+        "mentalStatus": null,
+        "cranialNerves": null,
+        "motor": null,
+        "sensory": null,
+        "reflexes": null,
+        "coordination": null,
+        "gait": null,
+        "gcs": "15",
+        "pupils": null
+      },
+      "significantEvents": {
+        "events": [
+          {
+            "type": "hemorrhage",
+            "description": "- Discussed with hematology - recommend IVC filter given high bleeding risk with therapeutic anticoagulation so early post-op",
+            "date": null
+          },
+          {
+            "type": "infection",
+            "description": "PREOP DX: Postop wound infection C-spine",
+            "date": null
+          },
+          {
+            "type": "infection",
+            "description": "A/P: POD#8, now with UTI",
+            "date": "8"
+          },
+          {
+            "type": "infection",
+            "description": "Events: Spiked fever to 101.6 overnight. UA sent - positive. Started on ceftriaxone.",
+            "date": "to 10"
+          }
+        ]
+      },
+      "icuStay": {
+        "admitted": false,
+        "duration": null,
+        "unit": null,
+        "ventilator": false,
+        "ventilatorDays": null,
+        "pressors": false,
+        "sedation": false,
+        "complications": []
+      },
+      "preOpDeficits": {
+        "motor": [],
+        "sensory": [],
+        "cranialNerves": [],
+        "cognitive": [],
+        "speech": []
+      },
+      "postOpDeficits": {
+        "immediate": {
+          "motor": [],
+          "sensory": [],
+          "cranialNerves": [],
+          "cognitive": [],
+          "speech": []
+        },
+        "discharge": {
+          "motor": [],
+          "sensory": [],
+          "cranialNerves": [],
+          "cognitive": [],
+          "speech": []
+        },
+        "new": [],
+        "resolved": [],
+        "persistent": []
+      },
+      "consultations": {
+        "consultants": [
+          {
+            "service": "hematology",
+            "recommendation": "IVC filter given high bleeding risk with therapeutic anticoagulation so early post-op"
+          }
+        ]
+      },
+      "labs": {
+        "sodium": null,
+        "potassium": null,
+        "hemoglobin": 14.2,
+        "hematocrit": null,
+        "platelets": 198,
+        "wbc": 10.5,
+        "inr": 1,
+        "creatinine": null
+      },
+      "vitals": {
+        "bloodPressure": "88/54",
+        "heartRate": 58,
+        "respiratoryRate": null,
+        "temperature": null,
+        "oxygenSaturation": 96
+      },
+      "hospitalCourse": {
+        "timeline": [
+          {
+            "date": "Level 2",
+            "type": "procedure",
+            "description": {
+              "name": ")",
+              "date": null,
+              "dateSource": "not_found",
+              "confidence": 0,
+              "details": null,
+              "temporalContext": {
+                "isReference": false,
+                "referenceType": "ambiguous",
+                "referencePattern": null,
+                "pod": null,
+                "category": "PRESENT",
+                "confidence": 0.5,
+                "context": "Keep NPO\n- Foley placement\n- Type and cross 4 units\n- DVT prophylaxis: SCDs (no pharmacologic given surgery)\n- Consents obtained\n\nFamily meeting: Wife"
+              },
+              "position": 2572
+            },
+            "details": null
+          },
+          {
+            "date": "Level 2",
+            "type": "procedure",
+            "description": {
+              "name": "needed urgently, prognosis guarded for recovery",
+              "date": null,
+              "dateSource": "not_found",
+              "confidence": 0,
+              "details": null,
+              "temporalContext": {
+                "isReference": false,
+                "referenceType": "ambiguous",
+                "referencePattern": null,
+                "pod": null,
+                "category": "PRESENT",
+                "confidence": 0.5,
+                "context": "Consents obtained\n\nFamily meeting: Wife and daughter present. Explained injury, spinal cord damage, surgery needed urgently, prognosis guarded for rec"
+              },
+              "position": 2683
+            },
+            "details": null
+          },
+          {
+            "date": "Level 2",
+            "type": "procedure",
+            "description": {
+              "name": "DETAILS",
+              "date": null,
+              "dateSource": "not_found",
+              "confidence": 0,
+              "details": null,
+              "temporalContext": {
+                "isReference": false,
+                "referenceType": "ambiguous",
+                "referencePattern": null,
+                "pod": null,
+                "category": "PREOP",
+                "confidence": 0.5,
+                "context": "emity signals present but diminished, lower extremity signals absent (consistent with preop exam).\n\nPROCEDURE DETAILS:\n\nPatient positioned prone on Ja"
+              },
+              "position": 3405
+            },
+            "details": null
+          },
+          {
+            "date": "Level 2",
+            "type": "procedure",
+            "description": {
+              "name": "Wound opened",
+              "date": null,
+              "dateSource": "not_found",
+              "confidence": 0,
+              "details": null,
+              "temporalContext": {
+                "isReference": false,
+                "referenceType": "ambiguous",
+                "referencePattern": null,
+                "pod": null,
+                "category": "PRESENT",
+                "confidence": 0.5,
+                "context": "fascia. Approximately 15cc frank pus. No epidural abscess. Hardware appears stable and well-fixed.\n\nPROCEDURE:\n\nWound opened. Copious purulent materia"
+              },
+              "position": 5889
+            },
+            "details": null
+          },
+          {
+            "date": "Level 2",
+            "type": "procedure",
+            "description": {
+              "name": "follow-up post-rehab",
+              "date": null,
+              "dateSource": "not_found",
+              "confidence": 0,
+              "details": null,
+              "temporalContext": {
+                "isReference": false,
+                "referenceType": "ambiguous",
+                "referencePattern": null,
+                "pod": null,
+                "category": "FUTURE",
+                "confidence": 0.5,
+                "context": "e meds)\n6. Acetaminophen PRN\n7. Oxycodone PRN\n\nFOLLOW-UP:\n- Continue IV vancomycin x 4 weeks\n- Neurosurgery follow-up post-rehab\n- Hematology follow-u"
+              },
+              "position": 7829
+            },
+            "details": null
+          },
+          {
+            "date": "Level 2",
+            "type": "procedure",
+            "description": {
+              "name": "fusion",
+              "date": null,
+              "dateSource": "not_found",
+              "confidence": 0,
+              "details": null,
+              "temporalContext": {
+                "isReference": false,
+                "referenceType": "ambiguous",
+                "referencePattern": null,
+                "pod": null,
+                "category": "ACUTE",
+                "confidence": 0.5,
+                "context": "eduction attempted in ED UNSUCCESSFUL\n- Plan: Emergent OR for open reduction and posterior cervical fusion C4-C7\n- Keep NPO\n- Foley placement\n- Type a"
+              },
+              "position": 2457
+            },
+            "details": null
+          },
+          {
+            "date": "Level 2",
+            "type": "procedure",
+            "description": {
+              "name": "1",
+              "date": null,
+              "dateSource": "not_found",
+              "confidence": 0,
+              "details": null,
+              "temporalContext": {
+                "isReference": true,
+                "referenceType": "postOp",
+                "referencePattern": "postop",
+                "pod": null,
+                "category": "ADMISSION",
+                "confidence": 0.8,
+                "context": "==================\n\nPREOP DX: C5-6 bilateral facet dislocation with incomplete SCI\nPOSTOP DX: same\n\nPROCEDURE:\n\n1. Open reduction C5-6\n2. Posterior ce"
+              },
+              "position": 2987
+            },
+            "details": null
+          },
+          {
+            "date": "POD#8",
+            "type": "complication",
+            "description": {
+              "name": "PE",
+              "date": [],
+              "dates": [],
+              "details": null,
+              "confidence": 0,
+              "temporalContexts": [
+                {
+                  "isReference": false,
+                  "referenceType": "ambiguous",
+                  "referencePattern": null,
+                  "pod": null,
+                  "category": "ACUTE",
+                  "confidence": 0.5,
+                  "context": "==\n\nEvents: Developed acute SOB at 4am, O2 sat 88% RA, tachypneic to 28. CTA chest showed bilateral PE.\n\nExam:\nTachypneic, labored breathing\nO2 requir"
+                },
+                {
+                  "isReference": false,
+                  "referenceType": "ambiguous",
+                  "referencePattern": null,
+                  "pod": null,
+                  "category": "ACUTE",
+                  "confidence": 0.5,
+                  "context": ":\n- Continue IV vancomycin x 4 weeks\n- Neurosurgery follow-up post-rehab\n- Hematology follow-up for PE/anticoagulation\n- Consider IVC filter removal a"
+                }
+              ],
+              "originalNames": [
+                "PE",
+                "PE"
+              ],
+              "merged": true,
+              "mergeCount": 2
+            },
+            "details": null
+          },
+          {
+            "date": "POD#8",
+            "type": "complication",
+            "description": {
+              "name": "UTI",
+              "onsetDate": null,
+              "dateSource": "not_found",
+              "confidence": 0,
+              "temporalContext": {
+                "isReference": true,
+                "referenceType": "new_event",
+                "referencePattern": "now",
+                "pod": 8,
+                "podType": "postop_day",
+                "category": "POSTOP",
+                "confidence": 0.9,
+                "context": "\n\nExam: otherwise unchanged\n\nUA: >100 WBC, + bacteria, +nitrites\nUCx: pending\n\nA/P: POD#8, now with UTI\n- Common in SCI patients with catheters\n- Star"
+              },
+              "position": 4619
+            },
+            "details": null
+          },
+          {
+            "date": "8",
+            "type": "infection",
+            "description": "A/P: POD#8, now with UTI",
+            "details": null
+          },
+          {
+            "date": "to 10",
+            "type": "infection",
+            "description": "Events: Spiked fever to 101.6 overnight. UA sent - positive. Started on ceftriaxone.",
+            "details": null
+          },
+          {
+            "date": null,
+            "type": "hemorrhage",
+            "description": "- Discussed with hematology - recommend IVC filter given high bleeding risk with therapeutic anticoagulation so early post-op",
+            "details": null
+          },
+          {
+            "date": null,
+            "type": "infection",
+            "description": "PREOP DX: Postop wound infection C-spine",
+            "details": null
+          },
+          {
+            "date": null,
+            "type": "imaging",
+            "description": "negative CT chest/abd/pelvis: negative for acute traumatic injury XR: no other fractures MRI C-spine (17:30): - C5-6 bilateral jumped facets with severe canal stenosis - Spinal cord edema C4-C7 levels with hyperintense T2 signal - No epidural hematoma - Posterior ligamentous complex disruption LABS: CBC: WBC 10",
+            "details": null
+          }
+        ],
+        "summary": null,
+        "admissionSummary": "NOTE: PRODUCE HIGH QUALITY, COMPREHENSIVE, CLEAR DISCHARGE SUMMARY: NEUROSURGICAL SPINE TRAUMA DOCUMENTATION",
+        "icuCourse": null,
+        "floorCourse": null,
+        "dischargeSummary": null
+      },
+      "confidence": {
+        "demographics": 0.8,
+        "dates": 0.8,
+        "presentingSymptoms": 0.8,
+        "procedures": 0.8,
+        "complications": 0.8,
+        "medications": 0.8,
+        "imaging": 0.8,
+        "followUp": 0.8,
+        "pathology": 0.8
+      }
+    },
+    "validation": {
+      "isValid": false,
+      "confidence": 24,
+      "errorCount": 0,
+      "warningCount": 3,
+      "flagCount": 6,
+      "errors": [],
+      "warnings": [
+        {
+          "field": "followUp.appointments",
+          "value": {
+            "specialty": "Neurosurgery",
+            "timeframe": "post-rehab"
+          },
+          "reason": "Follow-up not explicitly stated"
+        },
+        {
+          "field": "followUp.appointments",
+          "value": {
+            "specialty": "Hematology",
+            "timeframe": "as scheduled"
+          },
+          "reason": "Follow-up not explicitly stated"
+        },
+        {
+          "field": "followUp.appointments",
+          "value": {
+            "specialty": "Psychiatry",
+            "timeframe": "as scheduled"
+          },
+          "reason": "Follow-up not explicitly stated"
+        }
+      ],
+      "flags": [
+        {
+          "field": "dates.ictusDate",
+          "value": "2025-09-20",
+          "reason": "Ictus date not explicitly stated in source",
+          "severity": "critical"
+        },
+        {
+          "field": "pathology.primaryDiagnosis",
+          "value": "Brain Tumors",
+          "reason": "Diagnosis not explicitly stated in source",
+          "severity": "high"
+        },
+        {
+          "field": "imaging.findings",
+          "value": "C5-C6 bilateral facet dislocation with >75% canal compromise",
+          "reason": "Imaging finding not found in source",
+          "severity": "medium"
+        },
+        {
+          "field": "imaging.findings",
+          "value": "spinal cord edema C4-C7",
+          "reason": "Imaging finding not found in source",
+          "severity": "medium"
+        },
+        {
+          "field": "imaging.findings",
+          "value": "bilateral pulmonary emboli",
+          "reason": "Imaging finding not found in source",
+          "severity": "medium"
+        },
+        {
+          "field": "imaging.findings",
+          "value": "no epidural abscess",
+          "reason": "Imaging finding not found in source",
+          "severity": "medium"
+        }
+      ],
+      "criticalFlags": [
+        {
+          "field": "dates.ictusDate",
+          "value": "2025-09-20",
+          "reason": "Ictus date not explicitly stated in source",
+          "severity": "critical"
+        }
+      ],
+      "recommendations": [
+        {
+          "priority": "critical",
+          "message": "1 critical fields require manual review",
+          "action": "Review flagged fields before proceeding"
+        },
+        {
+          "priority": "high",
+          "message": "Overall confidence is low",
+          "action": "Consider adding more detailed notes or correcting extracted data"
+        }
+      ]
+    },
+    "intelligence": {
+      "pathology": {
+        "primary": "Brain Tumors",
+        "secondary": [],
+        "subtype": {
+          "type": "TUMORS",
+          "details": {
+            "molecularMarkers": []
+          },
+          "riskLevel": "MODERATE",
+          "prognosis": {},
+          "recommendations": {
+            "imaging": [
+              "MRI brain with contrast 24-48h postop (baseline)",
+              "MRI at 3 months post-RT/chemo",
+              "MRI every 2-3 months during treatment",
+              "MRI every 3-6 months after treatment completion"
+            ],
+            "medications": [
+              "Dexamethasone taper over 2-4 weeks",
+              "Levetiracetam 500-1000mg BID (seizure prophylaxis)",
+              "Temozolomide per Stupp protocol (high-grade)",
+              "PPI while on dexamethasone"
+            ],
+            "monitoring": [
+              "Wound check at 10-14 days",
+              "Radiation oncology consultation",
+              "Medical oncology consultation",
+              "Neurocognitive assessment"
+            ]
+          },
+          "complications": [
+            {
+              "name": "Seizures",
+              "risk": "Moderate-High",
+              "timing": "Throughout course",
+              "management": "AED prophylaxis 3-12 months"
+            },
+            {
+              "name": "Edema",
+              "risk": "High",
+              "timing": "Perioperative",
+              "management": "Dexamethasone taper"
+            },
+            {
+              "name": "Recurrence",
+              "risk": "Moderate",
+              "timing": "Months to years",
+              "management": "Re-resection, RT, chemo"
+            },
+            {
+              "name": "Radiation necrosis",
+              "risk": "Low",
+              "timing": "6-24 months post-RT",
+              "management": "Steroids, bevacizumab, surgery"
+            }
+          ]
+        },
+        "confidence": 0.8,
+        "complexity": "simple"
+      },
+      "quality": {
+        "noteQuality": {
+          "score": 0.9999999999999999,
+          "length": 8110,
+          "hasStructure": true,
+          "hasDates": true
+        },
+        "extractionQuality": {
+          "score": 0.7999999999999999,
+          "fieldCount": 25,
+          "hasPathology": true,
+          "hasProcedures": false,
+          "hasDates": true
+        },
+        "overallScore": 0.8999999999999999
+      },
+      "completeness": {
+        "score": 0.75,
+        "presentFields": [
+          "demographics",
+          "dates",
+          "presentingSymptoms",
+          "procedures",
+          "complications",
+          "medications"
+        ],
+        "missingFields": [
+          "functionalStatus",
+          "discharge"
+        ],
+        "totalFields": 8
+      },
+      "consistency": {
+        "isConsistent": true,
+        "issues": [],
+        "score": 1
+      },
+      "learnedPatterns": {},
+      "suggestions": [
+        {
+          "type": "missing_field",
+          "field": "dates.admission",
+          "message": "Admission date not extracted",
+          "priority": "high"
+        },
+        {
+          "type": "missing_field",
+          "field": "discharge.destination",
+          "message": "Discharge destination not extracted",
+          "priority": "medium"
+        }
+      ],
+      "validationFeedback": {
+        "errorCount": 0,
+        "warningCount": 3,
+        "criticalErrors": [],
+        "patterns": [],
+        "recommendations": []
+      },
+      "contextInsights": {
+        "pathology": {
+          "primary": "TUMORS",
+          "complexity": 1,
+          "hasMultiplePathologies": false
+        },
+        "clinical": {
+          "complexity": 1,
+          "hasConsultants": true,
+          "consultantTypes": []
+        },
+        "temporal": {
+          "hasTimeline": false,
+          "hasPODTracking": false
+        },
+        "recommendations": [
+          {
+            "type": "EMPHASIZE_CONSULTANTS",
+            "priority": "high",
+            "message": "Include insights from 1 consultant note(s)"
+          },
+          {
+            "type": "PATHOLOGY_SPECIFIC",
+            "priority": "high",
+            "message": "Apply TUMORS-specific extraction patterns"
+          }
+        ]
+      },
+      "metadata": {
+        "generated": "2025-10-16T21:01:43.284Z",
+        "noteLength": 8110,
+        "extractedFields": 25,
+        "includesValidation": true,
+        "includesContext": true
+      }
+    },
+    "qualityMetrics": {
+      "extraction": {
+        "completeness": 0.8181818181818182,
+        "confidence": 0.7999999999999999,
+        "extractedFields": 9,
+        "totalFields": 11,
+        "missingFields": [
+          "functionalStatus",
+          "discharge"
+        ],
+        "score": 0.8109090909090909
+      },
+      "validation": {
+        "passRate": 0.8,
+        "isValid": false,
+        "errorCount": 0,
+        "warningCount": 3,
+        "criticalErrors": 0,
+        "majorErrors": 0,
+        "minorErrors": 0,
+        "errors": [],
+        "warnings": [
+          {
+            "field": "followUp.appointments",
+            "value": {
+              "specialty": "Neurosurgery",
+              "timeframe": "post-rehab"
+            },
+            "reason": "Follow-up not explicitly stated"
+          },
+          {
+            "field": "followUp.appointments",
+            "value": {
+              "specialty": "Hematology",
+              "timeframe": "as scheduled"
+            },
+            "reason": "Follow-up not explicitly stated"
+          },
+          {
+            "field": "followUp.appointments",
+            "value": {
+              "specialty": "Psychiatry",
+              "timeframe": "as scheduled"
+            },
+            "reason": "Follow-up not explicitly stated"
+          }
+        ],
+        "score": 0.8
+      },
+      "summary": {
+        "readability": 0.2,
+        "completeness": 0.8181818181818182,
+        "coherence": 0.7,
+        "wordCount": 627,
+        "sectionCount": 4,
+        "score": 0.5972727272727273
+      },
+      "overall": 0.7019090909090909,
+      "metadata": {
+        "calculated": "2025-10-16T21:01:59.312Z",
+        "extractionMethod": "llm+patterns",
+        "noteCount": 1
+      }
+    },
+    "refinementIterations": 1,
+    "metadata": {
+      "startTime": "2025-10-16T21:01:30.082Z",
+      "processingTime": 29230,
+      "performanceMetrics": {
+        "contextBuilding": {
+          "name": "Context Building",
+          "category": "intelligence",
+          "duration": 1,
+          "startTime": "2025-10-16T21:01:30.082Z",
+          "endTime": "2025-10-16T21:01:30.083Z",
+          "metadata": {
+            "noteLength": 8110
+          },
+          "severity": "info"
+        },
+        "extraction": {
+          "name": "Phase 1: Extraction",
+          "category": "extraction",
+          "duration": 13196,
+          "startTime": "2025-10-16T21:01:30.083Z",
+          "endTime": "2025-10-16T21:01:43.279Z",
+          "metadata": {
+            "noteLength": 8110
+          },
+          "severity": "info"
+        },
+        "validation": {
+          "name": "Validation",
+          "category": "validation",
+          "duration": 5,
+          "startTime": "2025-10-16T21:01:43.279Z",
+          "endTime": "2025-10-16T21:01:43.283Z",
+          "metadata": {
+            "extractionMethod": "llm+patterns"
+          },
+          "severity": "info"
+        },
+        "intelligence": {
+          "name": "Phase 2: Intelligence",
+          "category": "intelligence",
+          "duration": 0,
+          "startTime": "2025-10-16T21:01:43.283Z",
+          "endTime": "2025-10-16T21:01:43.284Z",
+          "metadata": {
+            "pathology": "TUMORS"
+          },
+          "severity": "info"
+        },
+        "narrative": {
+          "name": "Phase 3: Narrative Generation",
+          "category": "narrative",
+          "duration": 16023,
+          "startTime": "2025-10-16T21:01:43.288Z",
+          "endTime": "2025-10-16T21:01:59.311Z",
+          "metadata": {
+            "pathology": "TUMORS",
+            "style": "formal"
+          },
+          "severity": "warning"
+        },
+        "qualityMetrics": {
+          "name": "Quality Metrics Calculation",
+          "category": "quality_metrics",
+          "duration": 1,
+          "startTime": "2025-10-16T21:01:59.311Z",
+          "endTime": "2025-10-16T21:01:59.312Z",
+          "metadata": {},
+          "severity": "info"
+        },
+        "overall": {
+          "name": "Complete Orchestration",
+          "category": "orchestration",
+          "duration": 29230,
+          "startTime": "2025-10-16T21:01:30.082Z",
+          "endTime": "2025-10-16T21:01:59.312Z",
+          "metadata": {
+            "enableLearning": true,
+            "enableFeedbackLoops": true,
+            "qualityThreshold": 0.7,
+            "success": true,
+            "refinementIterations": 1,
+            "qualityScore": 0.7019090909090909
+          },
+          "severity": "info"
+        }
+      }
+    }
+  },
+  "duration": "29.23",
+  "success": true
+}

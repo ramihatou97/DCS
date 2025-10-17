@@ -1,0 +1,724 @@
+{
+  "testDate": "2025-10-16T21:06:16.882Z",
+  "groundTruth": {
+    "demographics": {
+      "age": 67,
+      "gender": "M",
+      "mrn": "45678912"
+    },
+    "dates": {
+      "admission": "2025-09-20",
+      "surgery": "2025-09-20",
+      "discharge": "2025-10-13",
+      "los": 23
+    },
+    "diagnosis": {
+      "primary": "C5-C6 bilateral facet dislocation",
+      "sci": "Incomplete SCI, ASIA C",
+      "neurologicLevel": "C7"
+    },
+    "procedures": [
+      {
+        "name": "Open reduction C5-6",
+        "date": "2025-09-20"
+      },
+      {
+        "name": "Posterior cervical fusion C4-C7",
+        "date": "2025-09-20"
+      },
+      {
+        "name": "Lateral mass screws and rods",
+        "date": "2025-09-20"
+      },
+      {
+        "name": "IVC filter placement",
+        "date": "2025-09-30"
+      },
+      {
+        "name": "I&D wound infection (1st)",
+        "date": "2025-10-04"
+      },
+      {
+        "name": "I&D wound infection (2nd)",
+        "date": "2025-10-06"
+      }
+    ],
+    "complications": [
+      {
+        "name": "Neurogenic shock",
+        "pod": "0-5",
+        "resolved": true
+      },
+      {
+        "name": "UTI",
+        "pod": 8,
+        "date": "2025-09-28"
+      },
+      {
+        "name": "Bilateral PE",
+        "pod": 10,
+        "date": "2025-09-30"
+      },
+      {
+        "name": "MRSA wound infection",
+        "pod": 14,
+        "date": "2025-10-04"
+      }
+    ],
+    "medications": [
+      "Vancomycin IV (4 more weeks via PICC)",
+      "Lovenox 40mg SQ daily",
+      "Sertraline 50mg daily",
+      "Docusate + Senna",
+      "Metoprolol",
+      "Metformin",
+      "Lisinopril",
+      "Acetaminophen PRN",
+      "Oxycodone PRN"
+    ],
+    "functionalStatus": {
+      "initial": {
+        "ue": "Deltoids/biceps [5/5], triceps [4/5], wrist ext [3/5], finger flex [2/5], intrinsics [0/5]",
+        "le": "[0/5] throughout"
+      },
+      "discharge": {
+        "ue": "C8/T1 now [3/5] (improved)",
+        "le": "L leg quad [1/5] (trace flicker), R leg [0/5]"
+      },
+      "recovery": "Late neurologic recovery noted POD 20"
+    },
+    "dischargeDestination": "Regional SCI Center (acute inpatient rehab)",
+    "consultants": [
+      "Neurosurgery (Dr. Patterson)",
+      "SICU (Dr. Rodriguez)",
+      "PM&R (Dr. Sarah Mitchell)",
+      "Psychiatry (Dr. Karen Lee)",
+      "Infectious Disease (Dr. Robert Chen)",
+      "Hematology (Dr. James Park)",
+      "PT (Mike Thompson)",
+      "OT (Lisa Garcia)"
+    ]
+  },
+  "summaries": [
+    {
+      "id": 1,
+      "config": "Config 1: Claude Sonnet 3.5 (Full Orchestration)",
+      "demographics": {
+        "age": 67,
+        "gender": "M"
+      },
+      "dates": {
+        "admission": "2025-09-20",
+        "discharge": "2025-10-13"
+      },
+      "diagnosis": {
+        "primary": "C5-C6 bilateral facet dislocation",
+        "sci": "ASIA C"
+      },
+      "procedures": [
+        {
+          "name": "posterior cervical fusion C4-C7",
+          "date": "2025-09-20",
+          "operator": "Dr. Patterson"
+        },
+        {
+          "name": "IVC filter placement",
+          "date": "2025-09-30",
+          "operator": null
+        },
+        {
+          "name": "wound debridement",
+          "date": "2025-10-04",
+          "operator": null
+        }
+      ],
+      "complications": [
+        {
+          "name": "urinary tract infection",
+          "date": "2025-09-28",
+          "severity": "moderate",
+          "management": "ceftriaxone"
+        },
+        {
+          "name": "pulmonary embolism",
+          "date": "2025-09-30",
+          "severity": "moderate",
+          "management": "IVC filter, prophylactic anticoagulation"
+        },
+        {
+          "name": "surgical site infection",
+          "date": "2025-10-04",
+          "severity": "severe",
+          "management": "debridement, vancomycin"
+        }
+      ],
+      "medications": [
+        {
+          "name": "vancomycin",
+          "route": "IV",
+          "duration": "6 weeks total"
+        },
+        {
+          "name": "lovenox",
+          "dose": "40mg",
+          "frequency": "daily",
+          "route": "subcutaneous"
+        }
+      ],
+      "functionalStatus": {
+        "ASIA": "C",
+        "GCS": 15,
+        "kps": 60
+      },
+      "dischargeDestination": "Regional SCI Center",
+      "qualityScore": 0.7019090909090909
+    },
+    {
+      "id": 2,
+      "config": "Config 2: GPT-4o (Full Orchestration)",
+      "demographics": {
+        "age": 67,
+        "gender": "M"
+      },
+      "dates": {
+        "admission": "2025-09-20",
+        "discharge": "2025-10-13"
+      },
+      "diagnosis": {
+        "primary": "C5-C6 bilateral facet dislocation",
+        "sci": "ASIA C"
+      },
+      "procedures": [
+        {
+          "name": "posterior cervical fusion C4-C7",
+          "date": "2025-09-20",
+          "operator": "Dr. Patterson"
+        },
+        {
+          "name": "IVC filter placement",
+          "date": "2025-09-30",
+          "operator": null
+        },
+        {
+          "name": "wound debridement",
+          "date": "2025-10-04",
+          "operator": null
+        }
+      ],
+      "complications": [
+        {
+          "name": "urinary tract infection",
+          "date": "2025-09-28",
+          "severity": "moderate",
+          "management": "ceftriaxone"
+        },
+        {
+          "name": "pulmonary embolism",
+          "date": "2025-09-30",
+          "severity": "moderate",
+          "management": "IVC filter, prophylactic anticoagulation"
+        },
+        {
+          "name": "surgical site infection",
+          "date": "2025-10-04",
+          "severity": "severe",
+          "management": "debridement, vancomycin"
+        }
+      ],
+      "medications": [
+        {
+          "name": "vancomycin",
+          "route": "IV",
+          "duration": "6 weeks total"
+        },
+        {
+          "name": "lovenox",
+          "dose": "40mg",
+          "frequency": "daily",
+          "route": "subcutaneous"
+        }
+      ],
+      "functionalStatus": {
+        "ASIA": "C",
+        "GCS": 15,
+        "kps": 60
+      },
+      "dischargeDestination": "Rehab",
+      "qualityScore": 0.7019090909090909
+    },
+    {
+      "id": 3,
+      "config": "Config 3: Gemini 1.5 Pro (Full Orchestration)",
+      "demographics": {
+        "age": 67,
+        "gender": "M"
+      },
+      "dates": {
+        "admission": "2025-09-20",
+        "discharge": "2025-10-13"
+      },
+      "diagnosis": {
+        "primary": "C5-C6 bilateral facet dislocation",
+        "sci": "ASIA C"
+      },
+      "procedures": [
+        {
+          "name": "posterior cervical fusion C4-C7",
+          "date": "2025-09-20",
+          "operator": "Dr. Patterson"
+        },
+        {
+          "name": "IVC filter placement",
+          "date": "2025-09-30",
+          "operator": null
+        },
+        {
+          "name": "wound debridement",
+          "date": "2025-10-04",
+          "operator": null
+        }
+      ],
+      "complications": [
+        {
+          "name": "urinary tract infection",
+          "date": "2025-09-28",
+          "severity": "moderate",
+          "management": "ceftriaxone"
+        },
+        {
+          "name": "pulmonary embolism",
+          "date": "2025-09-30",
+          "severity": "moderate",
+          "management": "IVC filter, prophylactic anticoagulation"
+        },
+        {
+          "name": "surgical site infection",
+          "date": "2025-10-04",
+          "severity": "severe",
+          "management": "debridement, vancomycin"
+        }
+      ],
+      "medications": [
+        {
+          "name": "vancomycin",
+          "route": "IV",
+          "duration": "6 weeks total"
+        },
+        {
+          "name": "lovenox",
+          "dose": "40mg",
+          "frequency": "daily",
+          "route": "subcutaneous"
+        }
+      ],
+      "functionalStatus": {
+        "ASIA": "C",
+        "GCS": 15,
+        "kps": 60
+      },
+      "dischargeDestination": "Rehab",
+      "qualityScore": 0.6837272727272727
+    },
+    {
+      "id": 4,
+      "config": "Config 4: Template-Based (No LLM)",
+      "demographics": {
+        "age": 67,
+        "gender": "M"
+      },
+      "dates": {},
+      "diagnosis": {},
+      "procedures": [
+        {
+          "name": ")",
+          "date": null,
+          "dateSource": "not_found",
+          "confidence": 0,
+          "details": null,
+          "temporalContext": {
+            "isReference": false,
+            "referenceType": "ambiguous",
+            "referencePattern": null,
+            "pod": null,
+            "category": "PRESENT",
+            "confidence": 0.5,
+            "context": "Keep NPO\n- Foley placement\n- Type and cross 4 units\n- DVT prophylaxis: SCDs (no pharmacologic given surgery)\n- Consents obtained\n\nFamily meeting: Wife"
+          },
+          "position": 2572
+        },
+        {
+          "name": "needed urgently, prognosis guarded for recovery",
+          "date": null,
+          "dateSource": "not_found",
+          "confidence": 0,
+          "details": null,
+          "temporalContext": {
+            "isReference": false,
+            "referenceType": "ambiguous",
+            "referencePattern": null,
+            "pod": null,
+            "category": "PRESENT",
+            "confidence": 0.5,
+            "context": "Consents obtained\n\nFamily meeting: Wife and daughter present. Explained injury, spinal cord damage, surgery needed urgently, prognosis guarded for rec"
+          },
+          "position": 2683
+        },
+        {
+          "name": "DETAILS",
+          "date": null,
+          "dateSource": "not_found",
+          "confidence": 0,
+          "details": null,
+          "temporalContext": {
+            "isReference": false,
+            "referenceType": "ambiguous",
+            "referencePattern": null,
+            "pod": null,
+            "category": "PREOP",
+            "confidence": 0.5,
+            "context": "emity signals present but diminished, lower extremity signals absent (consistent with preop exam).\n\nPROCEDURE DETAILS:\n\nPatient positioned prone on Ja"
+          },
+          "position": 3405
+        },
+        {
+          "name": "Wound opened",
+          "date": null,
+          "dateSource": "not_found",
+          "confidence": 0,
+          "details": null,
+          "temporalContext": {
+            "isReference": false,
+            "referenceType": "ambiguous",
+            "referencePattern": null,
+            "pod": null,
+            "category": "PRESENT",
+            "confidence": 0.5,
+            "context": "fascia. Approximately 15cc frank pus. No epidural abscess. Hardware appears stable and well-fixed.\n\nPROCEDURE:\n\nWound opened. Copious purulent materia"
+          },
+          "position": 5889
+        },
+        {
+          "name": "follow-up post-rehab",
+          "date": null,
+          "dateSource": "not_found",
+          "confidence": 0,
+          "details": null,
+          "temporalContext": {
+            "isReference": false,
+            "referenceType": "ambiguous",
+            "referencePattern": null,
+            "pod": null,
+            "category": "FUTURE",
+            "confidence": 0.5,
+            "context": "e meds)\n6. Acetaminophen PRN\n7. Oxycodone PRN\n\nFOLLOW-UP:\n- Continue IV vancomycin x 4 weeks\n- Neurosurgery follow-up post-rehab\n- Hematology follow-u"
+          },
+          "position": 7829
+        },
+        {
+          "name": "fusion",
+          "date": null,
+          "dateSource": "not_found",
+          "confidence": 0,
+          "details": null,
+          "temporalContext": {
+            "isReference": false,
+            "referenceType": "ambiguous",
+            "referencePattern": null,
+            "pod": null,
+            "category": "ACUTE",
+            "confidence": 0.5,
+            "context": "eduction attempted in ED UNSUCCESSFUL\n- Plan: Emergent OR for open reduction and posterior cervical fusion C4-C7\n- Keep NPO\n- Foley placement\n- Type a"
+          },
+          "position": 2457
+        },
+        {
+          "name": "1",
+          "date": null,
+          "dateSource": "not_found",
+          "confidence": 0,
+          "details": null,
+          "temporalContext": {
+            "isReference": true,
+            "referenceType": "postOp",
+            "referencePattern": "postop",
+            "pod": null,
+            "category": "ADMISSION",
+            "confidence": 0.8,
+            "context": "==================\n\nPREOP DX: C5-6 bilateral facet dislocation with incomplete SCI\nPOSTOP DX: same\n\nPROCEDURE:\n\n1. Open reduction C5-6\n2. Posterior ce"
+          },
+          "position": 2987
+        }
+      ],
+      "complications": [
+        {
+          "name": "PE",
+          "date": [],
+          "dates": [],
+          "details": null,
+          "confidence": 0,
+          "temporalContexts": [
+            {
+              "isReference": false,
+              "referenceType": "ambiguous",
+              "referencePattern": null,
+              "pod": null,
+              "category": "ACUTE",
+              "confidence": 0.5,
+              "context": "==\n\nEvents: Developed acute SOB at 4am, O2 sat 88% RA, tachypneic to 28. CTA chest showed bilateral PE.\n\nExam:\nTachypneic, labored breathing\nO2 requir"
+            },
+            {
+              "isReference": false,
+              "referenceType": "ambiguous",
+              "referencePattern": null,
+              "pod": null,
+              "category": "ACUTE",
+              "confidence": 0.5,
+              "context": ":\n- Continue IV vancomycin x 4 weeks\n- Neurosurgery follow-up post-rehab\n- Hematology follow-up for PE/anticoagulation\n- Consider IVC filter removal a"
+            }
+          ],
+          "originalNames": [
+            "PE",
+            "PE"
+          ],
+          "merged": true,
+          "mergeCount": 2
+        },
+        {
+          "name": "UTI",
+          "onsetDate": null,
+          "dateSource": "not_found",
+          "confidence": 0,
+          "temporalContext": {
+            "isReference": true,
+            "referenceType": "new_event",
+            "referencePattern": "now",
+            "pod": 8,
+            "podType": "postop_day",
+            "category": "POSTOP",
+            "confidence": 0.9,
+            "context": "\n\nExam: otherwise unchanged\n\nUA: >100 WBC, + bacteria, +nitrites\nUCx: pending\n\nA/P: POD#8, now with UTI\n- Common in SCI patients with catheters\n- Star"
+          },
+          "position": 4619
+        }
+      ],
+      "medications": [
+        {
+          "name": "cross",
+          "dose": "4 units",
+          "frequency": null,
+          "status": "active",
+          "startDate": null,
+          "stopDate": null,
+          "dateSource": "not_found",
+          "temporalContext": {
+            "isReference": false,
+            "referenceType": "ambiguous",
+            "referencePattern": null,
+            "pod": null,
+            "category": "PRESENT",
+            "confidence": 0.5,
+            "context": "t OR for open reduction and posterior cervical fusion C4-C7\n- Keep NPO\n- Foley placement\n- Type and cross 4 units\n- DVT prophylaxis: SCDs (no pharmaco"
+          },
+          "position": 2510
+        },
+        {
+          "name": "Lovenox",
+          "dose": "40mg",
+          "frequency": null,
+          "status": "active",
+          "startDate": null,
+          "stopDate": null,
+          "dateSource": "not_found",
+          "temporalContext": {
+            "isReference": false,
+            "referenceType": "ambiguous",
+            "referencePattern": null,
+            "pod": null,
+            "category": "POSTOP",
+            "confidence": 0.5,
+            "context": "nter\nTRANSFER DATE: 10/13/2025\n\nDISCHARGE MEDICATIONS:\n\n1. Vancomycin IV via PICC (4 more weeks)\n2. Lovenox 40mg SQ daily (prophylactic)\n3. Sertraline"
+          },
+          "position": 7590
+        },
+        {
+          "name": "Sertraline",
+          "dose": "50mg",
+          "frequency": "daily",
+          "status": "active",
+          "startDate": null,
+          "stopDate": null,
+          "dateSource": "not_found",
+          "temporalContext": {
+            "isReference": false,
+            "referenceType": "ambiguous",
+            "referencePattern": null,
+            "pod": null,
+            "category": "PRESENT",
+            "confidence": 0.5,
+            "context": "E MEDICATIONS:\n\n1. Vancomycin IV via PICC (4 more weeks)\n2. Lovenox 40mg SQ daily (prophylactic)\n3. Sertraline 50mg daily\n4. Docusate + Senna (bowel p"
+          },
+          "position": 7630
+        },
+        {
+          "name": "Metoprolol",
+          "dose": null,
+          "frequency": "PRN",
+          "status": "active",
+          "startDate": null,
+          "stopDate": null,
+          "dateSource": "not_found",
+          "temporalContext": {
+            "isReference": false,
+            "referenceType": "ambiguous",
+            "referencePattern": null,
+            "pod": null,
+            "category": "PRESENT",
+            "confidence": 0.5,
+            "context": "ovenox 40mg SQ daily (prophylactic)\n3. Sertraline 50mg daily\n4. Docusate + Senna (bowel program)\n5. Metoprolol, metformin, lisinopril (home meds)\n6. A"
+          },
+          "position": 7691
+        }
+      ],
+      "functionalStatus": {
+        "kps": 60,
+        "ecog": null,
+        "mRS": null
+      },
+      "qualityScore": 0.6707727272727273
+    },
+    {
+      "id": 5,
+      "config": "Config 5: Hybrid (LLM Extraction + Template Narrative)",
+      "demographics": {
+        "age": 67,
+        "gender": "M"
+      },
+      "dates": {
+        "admission": "2025-09-20",
+        "discharge": "2025-10-13"
+      },
+      "diagnosis": {
+        "primary": "C5-C6 bilateral facet dislocation",
+        "sci": "ASIA C"
+      },
+      "procedures": [
+        {
+          "name": "posterior cervical fusion C4-C7",
+          "date": "2025-09-20",
+          "operator": "Dr. Patterson"
+        },
+        {
+          "name": "IVC filter placement",
+          "date": "2025-09-30",
+          "operator": null
+        },
+        {
+          "name": "wound debridement",
+          "date": "2025-10-04",
+          "operator": null
+        }
+      ],
+      "complications": [
+        {
+          "name": "urinary tract infection",
+          "date": "2025-09-28",
+          "severity": "moderate",
+          "management": "ceftriaxone"
+        },
+        {
+          "name": "pulmonary embolism",
+          "date": "2025-09-30",
+          "severity": "moderate",
+          "management": "IVC filter, prophylactic anticoagulation"
+        },
+        {
+          "name": "surgical site infection",
+          "date": "2025-10-04",
+          "severity": "severe",
+          "management": "debridement, vancomycin"
+        }
+      ],
+      "medications": [
+        {
+          "name": "vancomycin",
+          "route": "IV",
+          "duration": "6 weeks total"
+        },
+        {
+          "name": "lovenox",
+          "dose": "40mg",
+          "frequency": "daily",
+          "route": "subcutaneous"
+        }
+      ],
+      "functionalStatus": {
+        "ASIA": "C",
+        "GCS": 15,
+        "kps": 60
+      },
+      "dischargeDestination": "Rehab",
+      "qualityScore": 0.6398636363636364
+    }
+  ],
+  "accuracyScores": [
+    {
+      "id": 1,
+      "config": "Config 1: Claude Sonnet 3.5 (Full Orchestration)",
+      "score": 20.416666666666668,
+      "maxScore": 33,
+      "percentage": "61.9",
+      "qualityScore": "70.2"
+    },
+    {
+      "id": 2,
+      "config": "Config 2: GPT-4o (Full Orchestration)",
+      "score": 20.416666666666668,
+      "maxScore": 33,
+      "percentage": "61.9",
+      "qualityScore": "70.2"
+    },
+    {
+      "id": 3,
+      "config": "Config 3: Gemini 1.5 Pro (Full Orchestration)",
+      "score": 20.416666666666668,
+      "maxScore": 33,
+      "percentage": "61.9",
+      "qualityScore": "68.4"
+    },
+    {
+      "id": 4,
+      "config": "Config 4: Template-Based (No LLM)",
+      "score": 17.833333333333332,
+      "maxScore": 33,
+      "percentage": "54.0",
+      "qualityScore": "67.1"
+    },
+    {
+      "id": 5,
+      "config": "Config 5: Hybrid (LLM Extraction + Template Narrative)",
+      "score": 20.416666666666668,
+      "maxScore": 33,
+      "percentage": "61.9",
+      "qualityScore": "64.0"
+    }
+  ],
+  "analysis": {
+    "bestAccuracy": {
+      "id": 5,
+      "config": "Config 5: Hybrid (LLM Extraction + Template Narrative)",
+      "score": 20.416666666666668,
+      "maxScore": 33,
+      "percentage": "61.9",
+      "qualityScore": "64.0"
+    },
+    "worstAccuracy": {
+      "id": 4,
+      "config": "Config 4: Template-Based (No LLM)",
+      "score": 17.833333333333332,
+      "maxScore": 33,
+      "percentage": "54.0",
+      "qualityScore": "67.1"
+    },
+    "averageAccuracy": "60.3"
+  }
+}

@@ -59,6 +59,7 @@ import intelligenceHub from './intelligenceHub.js';
 import learningEngine from './ml/learningEngine.js';
 import contextProvider from './context/contextProvider.js';
 import { calculateQualityMetrics } from './qualityMetrics.js';
+import performanceMonitor from '../utils/performanceMonitor.js';
 
 // ========================================
 // MAIN FUNCTIONS
@@ -92,7 +93,14 @@ export async function orchestrateSummaryGeneration(notes, options = {}) {
   } = options;
 
   console.log('[Orchestrator] Starting intelligent summary generation...');
-  
+
+  // Start overall orchestration timing
+  const orchestrationTimerId = performanceMonitor.startTimer(
+    'Complete Orchestration',
+    'orchestration',
+    { enableLearning, enableFeedbackLoops, qualityThreshold }
+  );
+
   const startTime = Date.now();
   const orchestrationResult = {
     success: false,
@@ -104,15 +112,33 @@ export async function orchestrateSummaryGeneration(notes, options = {}) {
     refinementIterations: 0,
     metadata: {
       startTime: new Date().toISOString(),
-      processingTime: 0
+      processingTime: 0,
+      performanceMetrics: {}
     }
   };
 
   try {
     // PHASE 4 STEP 1: Gather initial intelligence
     const noteText = Array.isArray(notes) ? notes.join('\n\n') : notes;
+
+    // DEBUG: Log notes received
+    console.log('[Orchestrator] Notes received:', {
+      type: Array.isArray(notes) ? 'array' : typeof notes,
+      count: Array.isArray(notes) ? notes.length : 1,
+      totalLength: noteText?.length || 0,
+      isEmpty: !noteText || noteText.trim().length === 0,
+      sample: noteText ? noteText.substring(0, 100) + '...' : 'EMPTY'
+    });
+
+    const contextTimerId = performanceMonitor.startTimer(
+      'Context Building',
+      'intelligence',
+      { noteLength: noteText.length }
+    );
     const context = contextProvider.buildContext(noteText);
-    
+    orchestrationResult.metadata.performanceMetrics.contextBuilding =
+      performanceMonitor.endTimer(contextTimerId);
+
     console.log('[Orchestrator] Context built:', {
       pathology: context.pathology.primary,
       complexity: context.clinical.complexity
@@ -130,19 +156,48 @@ export async function orchestrateSummaryGeneration(notes, options = {}) {
         qualityMetrics: extractedData.qualityMetrics || {},
         metadata: { extractionMethod: 'pre-extracted' }
       };
+      orchestrationResult.metadata.performanceMetrics.extraction = { duration: 0, skipped: true };
     } else {
       console.log('[Orchestrator] Extracting data from notes...');
-      extraction = await extractMedicalEntities(notes, {
-        includeConfidence: true,
-        enableDeduplication: true,
-        enablePreprocessing: true
-      });
+      const extractionTimerId = performanceMonitor.startTimer(
+        'Phase 1: Extraction',
+        'extraction',
+        { noteLength: noteText.length }
+      );
+
+      try {
+        extraction = await extractMedicalEntities(notes, {
+          includeConfidence: true,
+          enableDeduplication: true,
+          enablePreprocessing: true
+        });
+      } catch (error) {
+        console.error('[Orchestrator] Extraction error:', error);
+        // Create minimal extraction result
+        extraction = {
+          extracted: {},
+          confidence: {},
+          pathologyTypes: [],
+          clinicalIntelligence: {},
+          qualityMetrics: {},
+          metadata: { extractionMethod: 'failed', error: error.message }
+        };
+      } finally {
+        orchestrationResult.metadata.performanceMetrics.extraction =
+          performanceMonitor.endTimer(extractionTimerId);
+      }
     }
 
     orchestrationResult.extractedData = extraction.extracted;
 
     // PHASE 4 STEP 3: Validate extraction
     console.log('[Orchestrator] Validating extraction...');
+    const validationTimerId = performanceMonitor.startTimer(
+      'Validation',
+      'validation',
+      { extractionMethod: extraction.metadata?.extractionMethod }
+    );
+
     const validationResult = validateExtraction(
       extraction.extracted,
       noteText,
@@ -151,23 +206,47 @@ export async function orchestrateSummaryGeneration(notes, options = {}) {
         checkConsistency: true
       }
     );
-    
+
     const validation = getValidationSummary(validationResult);
     orchestrationResult.validation = validation;
 
+    orchestrationResult.metadata.performanceMetrics.validation =
+      performanceMonitor.endTimer(validationTimerId);
+
     // PHASE 4 STEP 4: Gather comprehensive intelligence
     console.log('[Orchestrator] Gathering comprehensive intelligence...');
-    const intelligence = await intelligenceHub.gatherIntelligence(
-      notes,
-      extraction.extracted,
-      {
-        includeValidation: true,
-        validation: validationResult,
-        context
-      }
+    const intelligenceTimerId = performanceMonitor.startTimer(
+      'Phase 2: Intelligence',
+      'intelligence',
+      { pathology: context.pathology.primary }
     );
-    
-    orchestrationResult.intelligence = intelligence;
+
+    let intelligence;
+    try {
+      intelligence = await intelligenceHub.gatherIntelligence(
+        notes,
+        extraction.extracted,
+        {
+          includeValidation: true,
+          validation: validationResult,
+          context
+        }
+      );
+
+      orchestrationResult.intelligence = intelligence;
+    } catch (error) {
+      console.error('[Orchestrator] Intelligence gathering error:', error);
+      // Create minimal intelligence result
+      intelligence = {
+        quality: { score: 0 },
+        insights: [],
+        recommendations: []
+      };
+      orchestrationResult.intelligence = intelligence;
+    } finally {
+      orchestrationResult.metadata.performanceMetrics.intelligence =
+        performanceMonitor.endTimer(intelligenceTimerId);
+    }
 
     // PHASE 4 STEP 5: Feedback loop - Learn from validation errors
     if (enableFeedbackLoops && enableLearning && validation.errors.critical > 0) {
@@ -219,35 +298,83 @@ export async function orchestrateSummaryGeneration(notes, options = {}) {
 
     // PHASE 4 STEP 7: Generate narrative with full intelligence context
     console.log('[Orchestrator] Generating narrative with intelligence context...');
-    const narrative = await generateNarrative(
-      orchestrationResult.extractedData,
-      notes,
-      {
-        pathologyType: context.pathology.primary,
-        style: 'formal',
-        useLLM: null, // Auto-detect
-        intelligence: orchestrationResult.intelligence, // Pass intelligence for context
-        clinicalIntelligence: extraction.clinicalIntelligence // Pass Phase 2 intelligence
-      }
+
+    // DEBUG: Log what we're passing to narrative generation
+    console.log('[Orchestrator] Narrative generation input:', {
+      notesType: Array.isArray(notes) ? 'array' : typeof notes,
+      notesCount: Array.isArray(notes) ? notes.length : 1,
+      notesLength: noteText?.length || 0,
+      hasExtractedData: !!orchestrationResult.extractedData,
+      pathology: context.pathology.primary
+    });
+
+    const narrativeTimerId = performanceMonitor.startTimer(
+      'Phase 3: Narrative Generation',
+      'narrative',
+      { pathology: context.pathology.primary, style: 'formal' }
     );
 
-    orchestrationResult.summary = narrative;
+    let narrative;
+    try {
+      narrative = await generateNarrative(
+        orchestrationResult.extractedData,
+        noteText, // Use noteText instead of notes array
+        {
+          pathologyType: context.pathology.primary,
+          style: 'formal',
+          useLLM: null, // Auto-detect
+          intelligence: orchestrationResult.intelligence, // Pass intelligence for context
+          clinicalIntelligence: extraction.clinicalIntelligence // Pass Phase 2 intelligence
+        }
+      );
+
+      orchestrationResult.summary = narrative;
+    } catch (error) {
+      console.error('[Orchestrator] Narrative generation error:', error);
+      // Create fallback narrative
+      orchestrationResult.summary = {
+        chiefComplaint: 'Error generating narrative',
+        error: error.message
+      };
+    } finally {
+      // Always end the timer, even if there was an error
+      orchestrationResult.metadata.performanceMetrics.narrative =
+        performanceMonitor.endTimer(narrativeTimerId);
+    }
 
     // PHASE 4 STEP 8: Calculate final quality metrics
-    const fullSummaryText = Object.values(narrative)
-      .filter(v => typeof v === 'string')
-      .join('\n\n');
-    
-    orchestrationResult.qualityMetrics = calculateQualityMetrics(
-      orchestrationResult.extractedData,
-      validationResult,
-      fullSummaryText,
-      {
-        extractionMethod: extraction.metadata?.extractionMethod,
-        noteCount: Array.isArray(notes) ? notes.length : 1,
-        refinementIterations: refinementIteration
-      }
+    const qualityTimerId = performanceMonitor.startTimer(
+      'Quality Metrics Calculation',
+      'quality_metrics'
     );
+
+    try {
+      const fullSummaryText = Object.values(narrative || {})
+        .filter(v => typeof v === 'string')
+        .join('\n\n');
+
+      orchestrationResult.qualityMetrics = calculateQualityMetrics(
+        orchestrationResult.extractedData,
+        validationResult,
+        fullSummaryText,
+        {
+          extractionMethod: extraction.metadata?.extractionMethod,
+          noteCount: Array.isArray(notes) ? notes.length : 1,
+          refinementIterations: refinementIteration
+        }
+      );
+    } catch (error) {
+      console.error('[Orchestrator] Quality metrics calculation error:', error);
+      orchestrationResult.qualityMetrics = {
+        overall: 0,
+        extraction: 0,
+        validation: 0,
+        summary: 0
+      };
+    } finally {
+      orchestrationResult.metadata.performanceMetrics.qualityMetrics =
+        performanceMonitor.endTimer(qualityTimerId);
+    }
 
     // PHASE 4 STEP 9: Share insights for future learning
     if (enableLearning) {
@@ -256,14 +383,42 @@ export async function orchestrateSummaryGeneration(notes, options = {}) {
 
     orchestrationResult.success = true;
     orchestrationResult.metadata.processingTime = Date.now() - startTime;
-    
+
+    // End overall orchestration timing
+    const orchestrationMetric = performanceMonitor.endTimer(orchestrationTimerId, {
+      success: true,
+      refinementIterations: refinementIteration,
+      qualityScore: orchestrationResult.qualityMetrics.overall
+    });
+
+    orchestrationResult.metadata.performanceMetrics.overall = orchestrationMetric;
+
     console.log(`[Orchestrator] Summary generation complete in ${orchestrationResult.metadata.processingTime}ms`);
     console.log(`[Orchestrator] Final quality: ${(orchestrationResult.qualityMetrics.overall * 100).toFixed(1)}%`);
+
+    // Log performance breakdown
+    if (orchestrationMetric?.severity === 'warning' || orchestrationMetric?.severity === 'critical') {
+      console.warn('[Orchestrator] ⚠️  Performance warning - operation took longer than expected');
+      console.log('[Orchestrator] Performance breakdown:');
+      console.log(`  - Context: ${orchestrationResult.metadata.performanceMetrics.contextBuilding?.duration || 0}ms`);
+      console.log(`  - Extraction: ${orchestrationResult.metadata.performanceMetrics.extraction?.duration || 0}ms`);
+      console.log(`  - Intelligence: ${orchestrationResult.metadata.performanceMetrics.intelligence?.duration || 0}ms`);
+      console.log(`  - Validation: ${orchestrationResult.metadata.performanceMetrics.validation?.duration || 0}ms`);
+      console.log(`  - Narrative: ${orchestrationResult.metadata.performanceMetrics.narrative?.duration || 0}ms`);
+      console.log(`  - Quality Metrics: ${orchestrationResult.metadata.performanceMetrics.qualityMetrics?.duration || 0}ms`);
+    }
 
     return orchestrationResult;
 
   } catch (error) {
     console.error('[Orchestrator] Error during summary generation:', error);
+
+    // End orchestration timing with error
+    performanceMonitor.endTimer(orchestrationTimerId, {
+      success: false,
+      error: error.message
+    });
+
     orchestrationResult.success = false;
     orchestrationResult.error = error.message;
     orchestrationResult.metadata.processingTime = Date.now() - startTime;

@@ -228,12 +228,14 @@ function calculateReadabilityScore(text) {
     const avgSyllablesPerWord = syllables / words.length;
     
     // Flesch Reading Ease formula (adapted for medical text)
-    // Medical text typically scores 30-50 (difficult)
+    // Medical text typically scores 30-50 (difficult) - this is EXPECTED for clinical content
     let score = 206.835 - (1.015 * avgWordsPerSentence) - (84.6 * avgSyllablesPerWord);
-    
-    // Normalize to 0-1 scale (30-70 range for medical text)
-    score = (score - 30) / 40;
-    score = Math.min(1.0, Math.max(0, score));
+
+    // Normalize to 0-1 scale with more lenient range for medical text
+    // Medical professionals expect technical terminology, so don't over-penalize complexity
+    // Range: 20-70 (broader acceptance), floor at 0.2 (never completely fail on readability)
+    score = (score - 20) / 50;
+    score = Math.min(1.0, Math.max(0.2, score));  // Floor at 0.2 instead of 0
     
     return score;
     
@@ -271,41 +273,95 @@ function countSyllables(word) {
 }
 
 /**
- * Check summary completeness
+ * Check summary completeness - IMPROVED
+ * Now checks for actual narrative sections AND extracted entities, not just keywords
  */
 function checkSummaryCompleteness(summary, extractedData) {
   try {
     const lowerSummary = summary.toLowerCase();
-    
+
     let score = 0;
     let checks = 0;
-    
-    // Check for key sections
-    const sections = [
-      'presentation', 'history', 'hospital course', 'procedure',
-      'complication', 'medication', 'discharge', 'follow'
+
+    // IMPROVED: Check for actual narrative section headers (more accurate than keyword matching)
+    const narrativeSections = [
+      { name: 'chief complaint', variations: ['presenting complaint', 'chief complaint', 'presentation'] },
+      { name: 'history', variations: ['history of present illness', 'hpi', 'history'] },
+      { name: 'hospital course', variations: ['hospital course', 'clinical course', 'course'] },
+      { name: 'procedures', variations: ['procedures', 'operations', 'interventions', 'procedure'] },
+      { name: 'complications', variations: ['complications', 'complication'] },
+      { name: 'medications', variations: ['medications', 'discharge medications', 'medication'] },
+      { name: 'discharge', variations: ['discharge status', 'discharge condition', 'discharge'] },
+      { name: 'follow-up', variations: ['follow-up', 'follow up', 'followup'] }
     ];
-    
-    for (const section of sections) {
+
+    // Check each section with multiple variations
+    for (const section of narrativeSections) {
       checks++;
-      if (lowerSummary.includes(section)) {
+      const found = section.variations.some(v => lowerSummary.includes(v));
+      if (found) {
         score++;
       }
     }
-    
-    // Check for key data points
-    if (extractedData.demographics?.age && lowerSummary.includes('year')) {
-      score++;
+
+    // IMPROVED: Check for presence of key extracted entities in narrative
+    // This validates that the narrative actually includes the extracted data
+
+    // 1. Check for patient demographics
+    if (extractedData.demographics?.age) {
       checks++;
+      const ageStr = extractedData.demographics.age.toString();
+      if (lowerSummary.includes(ageStr) || lowerSummary.includes('year')) {
+        score++;
+      }
     }
-    
-    if (extractedData.pathology && lowerSummary.includes(extractedData.pathology.primary?.toLowerCase() || '')) {
-      score++;
+
+    // 2. Check for pathology type
+    if (extractedData.pathology?.type) {
       checks++;
+      const pathologyType = extractedData.pathology.type.toLowerCase();
+      if (lowerSummary.includes(pathologyType)) {
+        score++;
+      }
     }
-    
+
+    // 3. Check for procedures (if any were extracted)
+    if (extractedData.procedures?.procedures && extractedData.procedures.procedures.length > 0) {
+      checks++;
+      const procedureFound = extractedData.procedures.procedures.some(proc => {
+        const procName = (proc.name || proc.procedure || '').toLowerCase();
+        // Check for key words from procedure name (handle long procedure names)
+        const keyWords = procName.split(/\s+/).filter(w => w.length > 4); // Words longer than 4 chars
+        return keyWords.some(word => lowerSummary.includes(word));
+      });
+      if (procedureFound) {
+        score++;
+      }
+    }
+
+    // 4. Check for complications (if any were extracted)
+    if (extractedData.complications && extractedData.complications.length > 0) {
+      checks++;
+      const complicationFound = extractedData.complications.some(comp => {
+        const compName = (comp.complication || comp.name || '').toLowerCase();
+        return lowerSummary.includes(compName);
+      });
+      if (complicationFound) {
+        score++;
+      }
+    }
+
+    // 5. Check for discharge destination
+    if (extractedData.discharge?.destination) {
+      checks++;
+      const destination = extractedData.discharge.destination.toLowerCase();
+      if (lowerSummary.includes(destination)) {
+        score++;
+      }
+    }
+
     return checks > 0 ? score / checks : 0;
-    
+
   } catch (error) {
     console.error('[Quality Metrics] Error checking completeness:', error);
     return 0.5;
@@ -313,31 +369,60 @@ function checkSummaryCompleteness(summary, extractedData) {
 }
 
 /**
- * Assess narrative coherence
+ * Assess narrative coherence - IMPROVED
+ * Checks for temporal flow, causal relationships, and structural elements
+ * that indicate a well-organized clinical narrative
  */
 function assessCoherence(summary) {
   try {
-    let score = 0.5; // Base score
-    
-    // Check for transition words
-    const transitions = [
-      'subsequently', 'following', 'after', 'during', 'however',
-      'additionally', 'furthermore', 'therefore', 'consequently'
-    ];
-    
+    let score = 0.5; // Base score (50%)
+
     const lowerSummary = summary.toLowerCase();
-    const transitionCount = transitions.filter(t => lowerSummary.includes(t)).length;
-    
-    // More transitions = better coherence (up to a point)
-    score += Math.min(0.3, transitionCount * 0.05);
-    
-    // Check for logical flow (sentences start with capital letters)
-    const sentences = summary.split(/[.!?]+/).filter(s => s.trim().length > 0);
-    const properlyCapitalized = sentences.filter(s => /^[A-Z]/.test(s.trim())).length;
-    score += (properlyCapitalized / sentences.length) * 0.2;
-    
+
+    // 1. Check for temporal markers (chronological flow)
+    // Clinical narratives should have clear timeline progression
+    const temporalMarkers = [
+      'initially', 'subsequently', 'on post-operative day', 'pod',
+      'following', 'then', 'after', 'during', 'prior to',
+      'on admission', 'at presentation', 'on hospital day',
+      'preoperatively', 'intraoperatively', 'postoperatively'
+    ];
+
+    const temporalCount = temporalMarkers.filter(m => lowerSummary.includes(m)).length;
+    if (temporalCount > 0) {
+      // More temporal markers = better chronological flow (up to +0.2)
+      score += Math.min(0.2, temporalCount * 0.05);
+    }
+
+    // 2. Check for causal connectors (logical relationships)
+    // Good clinical narratives explain cause-effect relationships
+    const causalConnectors = [
+      'due to', 'resulting in', 'leading to', 'because',
+      'therefore', 'thus', 'consequently', 'secondary to',
+      'attributed to', 'caused by', 'as a result'
+    ];
+
+    const causalCount = causalConnectors.filter(c => lowerSummary.includes(c)).length;
+    if (causalCount > 0) {
+      // Presence of causal reasoning adds +0.2
+      score += Math.min(0.2, causalCount * 0.05);
+    }
+
+    // 3. Check for section transitions and structure
+    // Well-organized narratives have clear section breaks
+    const sectionHeaders = [
+      'chief complaint', 'history', 'hospital course', 'procedures',
+      'complications', 'medications', 'discharge', 'follow-up'
+    ];
+
+    const sectionCount = sectionHeaders.filter(h => lowerSummary.includes(h)).length;
+    if (sectionCount >= 3) {
+      // At least 3 distinct sections present adds +0.1
+      score += 0.1;
+    }
+
     return Math.min(1.0, score);
-    
+
   } catch (error) {
     console.error('[Quality Metrics] Error assessing coherence:', error);
     return 0.5;

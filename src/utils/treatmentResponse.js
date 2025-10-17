@@ -85,9 +85,14 @@ export function trackTreatmentResponses(extractedData, timeline = null) {
 function trackMedicationResponses(extractedData, events) {
   const responses = [];
 
-  if (!extractedData.medications?.current) return responses;
+  // Get medications from either structure: medications.current OR medications.medications
+  const medicationsList = extractedData.medications?.current ||
+                         extractedData.medications?.medications ||
+                         [];
 
-  extractedData.medications.current.forEach(medication => {
+  if (!medicationsList || medicationsList.length === 0) return responses;
+
+  medicationsList.forEach(medication => {
     const medName = medication.name || medication;
 
     // Special case: Nimodipine for SAH vasospasm prophylaxis
@@ -540,8 +545,11 @@ function checkForHypertensionTreatment(extractedData) {
   }
 
   // Check medications for pressors
-  if (extractedData.medications?.current) {
-    return extractedData.medications.current.some(med => {
+  const medicationsList = extractedData.medications?.current ||
+                         extractedData.medications?.medications ||
+                         [];
+  if (medicationsList.length > 0) {
+    return medicationsList.some(med => {
       const name = (med.name || med).toLowerCase();
       return name.includes('phenylephrine') ||
              name.includes('norepinephrine') ||

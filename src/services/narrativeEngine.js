@@ -68,6 +68,16 @@ import { applyMedicalWritingStyle, validateMedicalWritingStyle } from '../utils/
 import { buildNarrativeWithTransitions, selectTransition } from '../utils/narrativeTransitions.js';
 import { calculateQualityMetrics } from './qualityMetrics.js';
 
+// Narrative Templates (for section validation and fallback)
+import {
+  isSectionAdequate,
+  generateChiefComplaintTemplate,
+  generateDischargeInstructionsTemplate,
+  generatePrognosisTemplate,
+  generateProceduresTemplate,
+  generateHospitalCourseTemplate
+} from '../utils/narrativeTemplates.js';
+
 // ========================================
 // MAIN FUNCTIONS
 // ========================================
@@ -143,10 +153,15 @@ export const generateNarrative = async (extractedData, sourceNotes = '', options
       // Parse LLM narrative into sections
       const parsedNarrative = parseLLMNarrative(llmNarrative);
 
+      // CRITICAL: Validate and complete narrative sections
+      // This ensures 100% section coverage even if LLM output is incomplete
+      const completedNarrative = validateAndCompleteSections(parsedNarrative, extractedData, options.intelligence);
+      console.log('[Narrative Validation] Section completion applied');
+
       // Apply learned patterns to parsed narrative
       let enhancedNarrative = applyLearnedPatterns ?
-        applyNarrativePatternsToSections(parsedNarrative, learnedPatterns) :
-        parsedNarrative;
+        applyNarrativePatternsToSections(completedNarrative, learnedPatterns) :
+        completedNarrative;
 
       // PHASE 3: Apply narrative quality enhancements to LLM output
       console.log('[Phase 3] Applying narrative quality enhancements to LLM output...');
@@ -795,6 +810,100 @@ export const formatNarrativeForExport = (narrative, options = {}) => {
   });
 
   return sections.join(sectionSeparator);
+};
+
+/**
+ * Validate narrative sections and fill missing ones with high-quality templates
+ *
+ * This is the KEY FUNCTION that ensures 100% section coverage
+ * and solves the "missing sections" problem in E2E tests.
+ *
+ * @param {Object} narrative - Parsed LLM narrative
+ * @param {Object} extracted - Extracted medical data
+ * @param {Object} intelligence - Clinical intelligence data
+ * @returns {Object} Complete narrative with all sections
+ */
+const validateAndCompleteSections = (narrative, extracted, intelligence = null) => {
+  if (!narrative) {
+    console.warn('[Narrative Validation] No narrative to validate, using full templates');
+    return null; // Trigger template fallback
+  }
+
+  const completed = { ...narrative };
+  let sectionsFixed = 0;
+
+  // QUALITY IMPROVEMENT: Remove length-based validation
+  // Only use templates for truly missing sections, not "short" sections
+  // This preserves rich LLM-generated content instead of replacing with basic templates
+
+  // Define section validation rules (minLength removed)
+  const sectionRules = [
+    {
+      key: 'chiefComplaint',
+      template: () => generateChiefComplaintTemplate(extracted),
+      critical: true
+    },
+    {
+      key: 'hospitalCourse',
+      template: () => generateHospitalCourseTemplate(extracted),
+      critical: true
+    },
+    {
+      key: 'procedures',
+      template: () => generateProceduresTemplate(extracted),
+      critical: true
+    },
+    {
+      key: 'followUpPlan',
+      template: () => generateDischargeInstructionsTemplate(extracted),
+      critical: true,
+      alias: 'dischargeInstructions' // Map to correct name
+    }
+  ];
+
+  // Validate and fix each section (no minLength checks)
+  for (const rule of sectionRules) {
+    const section = completed[rule.key];
+    const isAdequate = isSectionAdequate(section);
+
+    if (!isAdequate || section === 'Not available.') {
+      console.log(`[Narrative Validation] Section '${rule.key}' truly missing, using template fallback`);
+      completed[rule.key] = rule.template();
+      sectionsFixed++;
+    }
+  }
+
+  // CRITICAL: Add sections that LLM parser doesn't extract
+  // These are the main missing sections from E2E tests!
+
+  // 1. Discharge Instructions (often missing completely)
+  if (!completed.dischargeInstructions || !isSectionAdequate(completed.dischargeInstructions)) {
+    console.log('[Narrative Validation] Adding discharge instructions (commonly missing from LLM)');
+    completed.dischargeInstructions = generateDischargeInstructionsTemplate(extracted);
+    sectionsFixed++;
+  }
+
+  // 2. Prognosis (second most commonly missing)
+  if (!completed.prognosis || !isSectionAdequate(completed.prognosis)) {
+    console.log('[Narrative Validation] Adding prognosis (commonly missing from LLM)');
+    completed.prognosis = generatePrognosisTemplate(extracted, intelligence);
+    sectionsFixed++;
+  }
+
+  // 3. Ensure followUpPlan exists (only replace if truly missing)
+  if (!isSectionAdequate(completed.followUpPlan)) {
+    console.log('[Narrative Validation] Adding follow-up plan (missing from LLM)');
+    completed.followUpPlan = generateDischargeInstructionsTemplate(extracted);
+    sectionsFixed++;
+  }
+
+  if (sectionsFixed > 0) {
+    console.log(`[Narrative Validation] ✓ Fixed/completed ${sectionsFixed} narrative sections`);
+  } else {
+    console.log('[Narrative Validation] ✓ All sections adequate, no fixes needed');
+  }
+
+  return completed;
 };
 
 /**

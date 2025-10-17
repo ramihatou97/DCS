@@ -128,6 +128,42 @@ function extractScoreTimeline(extractedData) {
     });
   }
 
+  // FALLBACK: Extract from functionalScores (populated by extraction.js)
+  if (extractedData.functionalScores && Object.keys(extractedData.functionalScores).length > 0) {
+    const dischargeDate = extractedData.dates?.discharge || extractedData.dates?.dischargeDate;
+    const admissionDate = extractedData.dates?.admission || extractedData.dates?.admissionDate;
+
+    // Map score types to standardized names (all lowercase for consistency)
+    const scoreMap = {
+      kps: SCORE_TYPES.KPS,
+      ecog: SCORE_TYPES.ECOG,
+      mRS: SCORE_TYPES.MRS,
+      mrs: SCORE_TYPES.MRS,
+      gcs: SCORE_TYPES.GCS,
+      nihss: SCORE_TYPES.NIHSS,
+      barthel: 'barthel',
+      asia: SCORE_TYPES.ASIA
+    };
+
+    for (const [key, value] of Object.entries(extractedData.functionalScores)) {
+      if (value !== null && value !== undefined) {
+        const scoreType = scoreMap[key] || key.toLowerCase();
+        scores.push({
+          type: scoreType,
+          score: value,
+          date: dischargeDate || admissionDate,
+          timestamp: dischargeDate
+            ? parseFlexibleDate(dischargeDate)?.getTime()
+            : admissionDate
+              ? parseFlexibleDate(admissionDate)?.getTime()
+              : Date.now(),
+          context: 'discharge_or_admission',
+          raw: { [key]: value }
+        });
+      }
+    }
+  }
+
   // Extract GCS from neurological assessment
   if (extractedData.neurologicalAssessment?.gcs) {
     const gcsEntries = Array.isArray(extractedData.neurologicalAssessment.gcs)
@@ -313,6 +349,63 @@ function detectStatusChanges(scoreTimeline) {
       }
     }
   });
+
+  // FALLBACK: If no same-type changes detected, try cross-type comparison for mixed score timelines
+  if (changes.length === 0 && scoreTimeline.length >= 2) {
+    // Sort timeline chronologically
+    const sorted = [...scoreTimeline].sort((a, b) => a.timestamp - b.timestamp);
+
+    for (let i = 1; i < sorted.length; i++) {
+      const from = sorted[i - 1];
+      const to = sorted[i];
+
+      // Normalize scores to 0-100 scale for cross-type comparison
+      // Use case-insensitive lookup
+      const fromMeta = SCORE_METADATA[from.type?.toLowerCase()];
+      const toMeta = SCORE_METADATA[to.type?.toLowerCase()];
+
+      if (!fromMeta || !toMeta) continue;
+
+      const fromNormalized = ((from.score - fromMeta.min) / (fromMeta.max - fromMeta.min)) * 100;
+      const toNormalized = ((to.score - toMeta.min) / (toMeta.max - toMeta.min)) * 100;
+
+      // Adjust for score direction (some scales: higher=better, others: lower=better)
+      const fromAdjusted = fromMeta.betterDirection === 'lower' ? (100 - fromNormalized) : fromNormalized;
+      const toAdjusted = toMeta.betterDirection === 'lower' ? (100 - toNormalized) : toNormalized;
+
+      const delta = toAdjusted - fromAdjusted;
+      const timeDelta = to.timestamp - from.timestamp;
+      const daysDelta = timeDelta / (1000 * 60 * 60 * 24);
+
+      if (Math.abs(delta) >= 5) { // At least 5 point change on normalized scale
+        changes.push({
+          type: `${from.type}_to_${to.type}`,
+          from: {
+            score: from.score,
+            date: from.date,
+            timestamp: from.timestamp,
+            context: from.context,
+            normalized: Math.round(fromAdjusted)
+          },
+          to: {
+            score: to.score,
+            date: to.date,
+            timestamp: to.timestamp,
+            context: to.context,
+            normalized: Math.round(toAdjusted)
+          },
+          delta: {
+            score: Math.round(delta),
+            days: Math.round(daysDelta),
+            direction: delta > 0 ? 'improvement' : 'deterioration',
+            magnitude: Math.abs(delta) / 100,
+            significance: Math.abs(delta) >= 20 ? 'major' : Math.abs(delta) >= 10 ? 'moderate' : 'minor'
+          },
+          crossTypeComparison: true
+        });
+      }
+    }
+  }
 
   return changes;
 }
