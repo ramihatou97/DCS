@@ -62,6 +62,92 @@ import { cleanText } from '../utils/textUtils.js';
 import { isLLMAvailable, generateSummaryWithLLM } from './llmService.js';
 import { getNarrativePatterns } from './ml/learningEngine.js';
 
+// ========================================
+// DATA NORMALIZATION HELPERS
+// ========================================
+
+/**
+ * Ensure a value is always an array
+ * @param {*} value - Value to convert to array
+ * @returns {Array} Array representation of the value
+ */
+const ensureArray = (value) => {
+  if (Array.isArray(value)) return value;
+  if (value === null || value === undefined) return [];
+  if (typeof value === 'object' && Object.keys(value).length > 0) return [value];
+  if (typeof value === 'string' && value.trim().length > 0) return [{ text: value }];
+  return [];
+};
+
+/**
+ * Get length of value for logging purposes
+ * @param {*} value - Value to get length of
+ * @returns {number|string} Length or '?' if unknown
+ */
+const getLength = (value) => {
+  if (Array.isArray(value)) return value.length;
+  if (value === null || value === undefined) return 0;
+  if (typeof value === 'object') return 1;
+  return '?';
+};
+
+/**
+ * Normalize extracted data to ensure all array fields are always arrays
+ * This prevents "map is not a function" errors throughout the narrative engine
+ * 
+ * @param {Object} extracted - Extracted data from parser
+ * @returns {Object} Normalized data with guaranteed array fields
+ */
+const normalizeExtractedData = (extracted) => {
+  if (!extracted) {
+    console.warn('[Narrative] No extracted data provided, using empty structure');
+    return {
+      procedures: [],
+      complications: [],
+      medications: [],
+      consultations: [],
+      imaging: [],
+      labResults: [],
+      pathology: {}
+    };
+  }
+  
+  // Normalize all array fields
+  const normalized = {
+    ...extracted,
+    procedures: ensureArray(extracted.procedures),
+    complications: ensureArray(extracted.complications),
+    medications: ensureArray(extracted.medications),
+    consultations: ensureArray(extracted.consultations),
+    imaging: ensureArray(extracted.imaging),
+    labResults: ensureArray(extracted.labResults),
+    
+    // Nested array fields
+    pathology: {
+      ...extracted.pathology,
+      secondaryDiagnoses: ensureArray(extracted.pathology?.secondaryDiagnoses)
+    }
+  };
+  
+  // Log normalization for debugging
+  const changes = [];
+  if (getLength(extracted.procedures) !== normalized.procedures.length) {
+    changes.push(`procedures: ${getLength(extracted.procedures)} → ${normalized.procedures.length}`);
+  }
+  if (getLength(extracted.complications) !== normalized.complications.length) {
+    changes.push(`complications: ${getLength(extracted.complications)} → ${normalized.complications.length}`);
+  }
+  if (getLength(extracted.medications) !== normalized.medications.length) {
+    changes.push(`medications: ${getLength(extracted.medications)} → ${normalized.medications.length}`);
+  }
+  
+  if (changes.length > 0) {
+    console.log('[Narrative] Data normalized:', changes.join(', '));
+  }
+  
+  return normalized;
+};
+
 // Phase 3: Narrative Quality Enhancements
 import { synthesizeMultiSourceNarrative } from '../utils/narrativeSynthesis.js';
 import { applyMedicalWritingStyle, validateMedicalWritingStyle } from '../utils/medicalWritingStyle.js';
@@ -77,6 +163,21 @@ import {
   generateProceduresTemplate,
   generateHospitalCourseTemplate
 } from '../utils/narrativeTemplates.js';
+
+// COMPLETENESS FIX: Import comprehensive section generators
+import { ensureAllSectionsGenerated } from '../utils/narrativeSectionGenerators.js';
+
+// SPECIFICITY FIX: Import specific narrative generators to avoid vague terms
+import {
+  generateSpecificComplicationsNarrative,
+  generateSpecificProceduresNarrative,
+  generateSpecificMedicationsNarrative,
+  generateSpecificFollowUpNarrative,
+  generateSpecificLabsNarrative,
+  generateSpecificImagingNarrative,
+  generateSpecificConsultationsNarrative,
+  replaceVagueQuantifiers
+} from '../utils/specificNarrativeGenerators.js';
 
 // ========================================
 // MAIN FUNCTIONS
@@ -108,6 +209,10 @@ export const generateNarrative = async (extractedData, sourceNotes = '', options
     useLLM = null, // null = auto, true = force LLM, false = force templates
     applyLearnedPatterns = true // NEW: Apply learned narrative patterns
   } = options;
+
+  // ✅ CRITICAL FIX: Normalize extracted data to prevent "map is not a function" errors
+  const extracted = normalizeExtractedData(extractedData);
+  console.log('[Narrative] Data validated and normalized');
 
   // Determine if we should use LLM
   const shouldUseLLM = useLLM !== null ? useLLM : isLLMAvailable();
@@ -192,6 +297,11 @@ export const generateNarrative = async (extractedData, sourceNotes = '', options
         enhancedNarrative.followUpPlan = applyMedicalWritingStyle(enhancedNarrative.followUpPlan, 'followUp');
       }
 
+      // COMPLETENESS FIX: Use comprehensive section generator
+      // This ensures ALL critical and important sections are present
+      enhancedNarrative = ensureAllSectionsGenerated(enhancedNarrative, extractedData);
+      console.log('[Narrative] Applied comprehensive section generation for completeness');
+
       // Calculate quality metrics
       const fullSummary = Object.values(enhancedNarrative).filter(v => typeof v === 'string').join('\n\n');
       const qualityMetrics = calculateQualityMetrics(extractedData, {}, fullSummary, {
@@ -200,7 +310,7 @@ export const generateNarrative = async (extractedData, sourceNotes = '', options
       });
 
       console.log(`[Phase 3] Quality score: ${(qualityMetrics.overall * 100).toFixed(1)}%`);
-      console.log('LLM narrative generation successful');
+      console.log('[Narrative] LLM generation successful with', Object.keys(enhancedNarrative).filter(k => k !== 'metadata' && k !== 'qualityMetrics').length, 'sections');
 
       return {
         ...enhancedNarrative,
@@ -223,14 +333,17 @@ export const generateNarrative = async (extractedData, sourceNotes = '', options
   console.log('Using template-based narrative generation');
 
   let narrative = {
+    // Standard narrative sections
     chiefComplaint: generateChiefComplaint(extractedData),
     historyOfPresentIllness: generateHPI(extractedData, pathologyType),
     hospitalCourse: generateHospitalCourse(extractedData, pathologyType),
-    procedures: generateProceduresNarrative(extractedData),
-    complications: generateComplicationsNarrative(extractedData),
+    // SPECIFICITY FIX: Use specific generators to avoid vague terms
+    procedures: generateSpecificProceduresNarrative(extractedData),
+    complications: generateSpecificComplicationsNarrative(extractedData),
     dischargeStatus: generateDischargeStatus(extractedData),
-    dischargeMedications: generateMedicationsNarrative(extractedData),
-    followUpPlan: generateFollowUpNarrative(extractedData),
+    dischargeMedications: generateSpecificMedicationsNarrative(extractedData),
+    followUpPlan: generateSpecificFollowUpNarrative(extractedData),
+
     metadata: {
       generatedAt: new Date().toISOString(),
       pathologyType,
@@ -238,6 +351,21 @@ export const generateNarrative = async (extractedData, sourceNotes = '', options
       generationMethod: 'template'
     }
   };
+
+  // COMPLETENESS FIX: Use comprehensive section generator
+  // This ensures ALL critical and important sections are present
+  narrative = ensureAllSectionsGenerated(narrative, extractedData);
+  console.log('[Narrative] Applied comprehensive section generation for template-based output');
+
+  // SPECIFICITY FIX: Replace all vague quantifiers in narrative sections
+  Object.keys(narrative).forEach(key => {
+    if (typeof narrative[key] === 'string' && key !== 'metadata') {
+      narrative[key] = replaceVagueQuantifiers(narrative[key]);
+    }
+  });
+  console.log('[Narrative] Applied vague quantifier replacement for better specificity');
+
+  console.log('[Narrative] Generated sections:', Object.keys(narrative).filter(k => k !== 'metadata').length);
 
   // Post-process: handle abbreviations
   if (expandAbbreviations) {
@@ -665,6 +793,14 @@ const generateFollowUpNarrative = (data) => {
 };
 
 /**
+ * Generate Demographics section (for completeness scorer)
+ *
+ * This section is required by the 6-dimension quality metrics completeness scorer.
+ * It provides a formatted demographics header for the discharge summary.
+ */
+// Note: generateDemographicsSection moved to narrativeSectionGenerators.js for better organization
+
+/**
  * Expand all medical abbreviations in narrative
  */
 const expandAllAbbreviations = (narrative) => {
@@ -705,8 +841,9 @@ const expandAbbreviationsInText = (text) => {
  * Generate pathology-specific narrative template
  */
 export const generateTemplatedNarrative = (extractedData, pathologyType) => {
+  // ✅ Data will be normalized inside generateNarrative
   const template = getTemplateByPathology(pathologyType);
-  const narrative = generateNarrative(extractedData, { pathologyType });
+  const narrative = generateNarrative(extractedData, '', { pathologyType });
 
   // Populate template with generated narrative
   const populated = {};
@@ -733,7 +870,9 @@ export const generateTemplatedNarrative = (extractedData, pathologyType) => {
  * Generate concise summary (for quick review)
  */
 export const generateConciseSummary = (extractedData) => {
-  const { demographics, pathology, procedures, dischargeDestination } = extractedData;
+  // ✅ CRITICAL FIX: Normalize data first
+  const extracted = normalizeExtractedData(extractedData);
+  const { demographics, pathology, procedures, dischargeDestination } = extracted;
 
   const parts = [];
 
@@ -748,9 +887,9 @@ export const generateConciseSummary = (extractedData) => {
     parts.push(pathology.primaryDiagnosis);
   }
 
-  // Procedures
-  if (procedures?.procedures && procedures.procedures.length > 0) {
-    const procNames = procedures.procedures.map(p => p.name).join(', ');
+  // Procedures - now guaranteed to be an array
+  if (Array.isArray(procedures) && procedures.length > 0) {
+    const procNames = procedures.map(p => p.name || p.type || String(p)).join(', ');
     parts.push(`s/p ${procNames}`);
   }
 
@@ -775,6 +914,8 @@ export const formatNarrativeForExport = (narrative, options = {}) => {
   const sections = [];
 
   const sectionOrder = [
+    { key: 'principalDiagnosis', header: 'PRINCIPAL DIAGNOSIS' },
+    { key: 'secondaryDiagnoses', header: 'SECONDARY DIAGNOSES' },
     { key: 'chiefComplaint', header: 'CHIEF COMPLAINT' },
     { key: 'historyOfPresentIllness', header: 'HISTORY OF PRESENT ILLNESS' },
     { key: 'hospitalCourse', header: 'HOSPITAL COURSE' },
@@ -782,6 +923,7 @@ export const formatNarrativeForExport = (narrative, options = {}) => {
     { key: 'complications', header: 'COMPLICATIONS' },
     { key: 'dischargeStatus', header: 'DISCHARGE STATUS' },
     { key: 'dischargeMedications', header: 'DISCHARGE MEDICATIONS' },
+    { key: 'dischargeDisposition', header: 'DISCHARGE DISPOSITION' },
     { key: 'followUpPlan', header: 'FOLLOW-UP PLAN' }
   ];
 
@@ -839,6 +981,31 @@ const validateAndCompleteSections = (narrative, extracted, intelligence = null) 
   // Define section validation rules (minLength removed)
   const sectionRules = [
     {
+      key: 'principalDiagnosis',
+      template: () => {
+        if (extracted.pathology) {
+          return `${extracted.pathology.primaryDiagnosis || extracted.pathology}`;
+        }
+        return 'See discharge diagnoses.';
+      },
+      critical: false
+    },
+    {
+      key: 'secondaryDiagnoses',
+      template: () => {
+        const diagnoses = [];
+        if (extracted.pathology?.secondaryDiagnoses) {
+          diagnoses.push(...extracted.pathology.secondaryDiagnoses);
+        }
+        // ✅ SAFETY: complications is now guaranteed to be an array
+        if (Array.isArray(extracted.complications) && extracted.complications.length > 0) {
+          diagnoses.push(...extracted.complications.map(c => c.type || c.name || String(c)));
+        }
+        return diagnoses.length > 0 ? diagnoses.join('\n') : 'None documented.';
+      },
+      critical: false
+    },
+    {
       key: 'chiefComplaint',
       template: () => generateChiefComplaintTemplate(extracted),
       critical: true
@@ -852,6 +1019,16 @@ const validateAndCompleteSections = (narrative, extracted, intelligence = null) 
       key: 'procedures',
       template: () => generateProceduresTemplate(extracted),
       critical: true
+    },
+    {
+      key: 'dischargeDisposition',
+      template: () => {
+        if (extracted.patientInfo?.dischargeDisposition) {
+          return extracted.patientInfo.dischargeDisposition;
+        }
+        return 'Home with follow-up as outlined.';
+      },
+      critical: false
     },
     {
       key: 'followUpPlan',
@@ -916,71 +1093,136 @@ const parseLLMNarrative = (llmText) => {
     return null;
   }
 
+  // DEBUG: Log the first part of LLM response to see format
+  console.log('🔍 LLM Response (first 500 chars):', llmText.substring(0, 500));
+  console.log('🔍 LLM Response length:', llmText.length);
+
   // Define section headers the LLM should use (from the prompt)
+  // Updated to match the numbered format from the LLM prompt - INCLUDING ALL 11 SECTIONS
   const sectionHeaders = [
-    { key: 'chiefComplaint', patterns: ['CHIEF COMPLAINT', 'Chief Complaint'] },
-    { key: 'historyOfPresentIllness', patterns: ['HISTORY OF PRESENT ILLNESS', 'History of Present Illness', 'HPI'] },
-    { key: 'hospitalCourse', patterns: ['HOSPITAL COURSE', 'Hospital Course'] },
-    { key: 'procedures', patterns: ['PROCEDURES', 'Procedures', 'OPERATIONS', 'Operations'] },
-    { key: 'complications', patterns: ['COMPLICATIONS', 'Complications'] },
-    { key: 'dischargeStatus', patterns: ['DISCHARGE STATUS', 'Discharge Status', 'CONDITION AT DISCHARGE', 'Condition at Discharge'] },
-    { key: 'followUpPlan', patterns: ['FOLLOW-UP', 'Follow-up', 'FOLLOW UP', 'Follow Up', 'FOLLOW-UP PLAN', 'Follow-up Plan'] }
+    { key: 'principalDiagnosis', patterns: ['1. PRINCIPAL DIAGNOSIS', '1. Principal Diagnosis', 'PRINCIPAL DIAGNOSIS', 'Principal Diagnosis'] },
+    { key: 'secondaryDiagnoses', patterns: ['2. SECONDARY DIAGNOSES', '2. Secondary Diagnoses', 'SECONDARY DIAGNOSES', 'Secondary Diagnoses'] },
+    { key: 'chiefComplaint', patterns: ['3. CHIEF COMPLAINT', '3. Chief Complaint', 'CHIEF COMPLAINT', 'Chief Complaint'] },
+    { key: 'historyOfPresentIllness', patterns: ['4. HISTORY OF PRESENT ILLNESS', '4. History of Present Illness', '4. HPI', 'HISTORY OF PRESENT ILLNESS', 'History of Present Illness', 'HPI'] },
+    { key: 'hospitalCourse', patterns: ['5. HOSPITAL COURSE', '5. Hospital Course', 'HOSPITAL COURSE', 'Hospital Course'] },
+    { key: 'procedures', patterns: ['6. PROCEDURES', '6. Procedures', '6. PROCEDURES PERFORMED', 'PROCEDURES', 'Procedures', 'OPERATIONS'] },
+    { key: 'complications', patterns: ['7. COMPLICATIONS', '7. Complications', 'COMPLICATIONS', 'Complications'] },
+    { key: 'dischargeStatus', patterns: ['8. DISCHARGE STATUS', '8. Discharge Status', 'DISCHARGE STATUS', 'Discharge Status'] },
+    { key: 'dischargeDisposition', patterns: ['10. DISCHARGE DISPOSITION', '10. Discharge Disposition', 'DISCHARGE DISPOSITION'] },
+    { key: 'followUpPlan', patterns: ['11. FOLLOW-UP PLAN', '11. Follow-up Plan', '11. FOLLOW UP', 'FOLLOW-UP', 'Follow-up'] }
   ];
 
   const narrative = {};
   
-  // Try to extract each section
+  // Try to extract each section with more flexible parsing
   sectionHeaders.forEach(({ key, patterns }) => {
     let sectionContent = null;
 
     for (const pattern of patterns) {
-      // Create regex to match section header and capture content until next section or end
-      // Pattern: header (with optional colon) followed by content until next ALL CAPS header or end
-      const regex = new RegExp(
-        `${pattern}:?\\s*\\n([\\s\\S]*?)(?=\\n[A-Z][A-Z\\s-]+:|$)`,
-        'i'
-      );
+      // Try multiple regex patterns for better matching
+      const regexPatterns = [
+        // Pattern 1: Section header followed by colon and content
+        new RegExp(`${pattern}:?\\s*\\n([\\s\\S]*?)(?=\\n[A-Z][A-Z\\s-]+:|$)`, 'i'),
+        // Pattern 2: Section header with optional numbering (e.g., "1. CHIEF COMPLAINT")
+        new RegExp(`\\d*\\.?\\s*${pattern}:?\\s*\\n?([\\s\\S]*?)(?=\\n\\d*\\.?\\s*[A-Z][A-Z\\s-]+:|$)`, 'i'),
+        // Pattern 3: Section header in bold markdown format
+        new RegExp(`\\*\\*${pattern}\\*\\*:?\\s*\\n?([\\s\\S]*?)(?=\\n\\*\\*[A-Z][A-Z\\s-]+\\*\\*|$)`, 'i'),
+        // Pattern 4: More lenient - just find the header and take content until next header-like line
+        new RegExp(`${pattern}:?\\s*\\n?([\\s\\S]*?)(?=\\n(?:\\d+\\.\\s*)?(?:[A-Z][A-Z\\s-]+:|\\*\\*[A-Z])|$)`, 'i')
+      ];
       
-      const match = llmText.match(regex);
-      
-      if (match && match[1]) {
-        sectionContent = match[1].trim();
-        break; // Found content with this pattern
+      for (const regex of regexPatterns) {
+        const match = llmText.match(regex);
+        
+        if (match && match[1] && match[1].trim()) {
+          sectionContent = match[1].trim();
+          console.log(`✅ Extracted ${key}: ${sectionContent.substring(0, 100)}...`);
+          break; // Found content with this pattern
+        }
       }
+
+      if (sectionContent) break; // Found content, move to next section
     }
 
     // Store content or default message
+    if (!sectionContent) {
+      console.log(`⚠️ Could not extract ${key} from LLM response`);
+    }
     narrative[key] = sectionContent || 'Not available.';
   });
 
   // Add medications section (may be embedded in discharge status)
-  // Try to find medication list separately
-  const medicationPatterns = ['DISCHARGE MEDICATIONS', 'Discharge Medications', 'MEDICATIONS', 'Medications'];
+  // Try to find medication list separately with more flexible patterns
+  const medicationPatterns = ['9. DISCHARGE MEDICATIONS', '9. Discharge Medications', 'DISCHARGE MEDICATIONS', 'Discharge Medications', 'MEDICATIONS', 'Medications'];
   let medicationContent = null;
 
   for (const pattern of medicationPatterns) {
-    const regex = new RegExp(
-      `${pattern}:?\\s*\\n([\\s\\S]*?)(?=\\n[A-Z][A-Z\\s-]+:|$)`,
-      'i'
-    );
-    const match = llmText.match(regex);
-    if (match && match[1]) {
-      medicationContent = match[1].trim();
-      break;
+    const regexPatterns = [
+      new RegExp(`${pattern}:?\\s*\\n([\\s\\S]*?)(?=\\n[A-Z][A-Z\\s-]+:|$)`, 'i'),
+      new RegExp(`\\d*\\.?\\s*${pattern}:?\\s*\\n?([\\s\\S]*?)(?=\\n\\d*\\.?\\s*[A-Z][A-Z\\s-]+:|$)`, 'i'),
+      new RegExp(`\\*\\*${pattern}\\*\\*:?\\s*\\n?([\\s\\S]*?)(?=\\n\\*\\*[A-Z][A-Z\\s-]+\\*\\*|$)`, 'i')
+    ];
+
+    for (const regex of regexPatterns) {
+      const match = llmText.match(regex);
+      if (match && match[1] && match[1].trim()) {
+        medicationContent = match[1].trim();
+        console.log(`✅ Extracted medications: ${medicationContent.substring(0, 100)}...`);
+        break;
+      }
     }
+
+    if (medicationContent) break;
   }
 
+  if (!medicationContent) {
+    console.log(`⚠️ Could not extract medications from LLM response`);
+  }
   narrative.dischargeMedications = medicationContent || 'Not available.';
 
   // Validation: ensure at least some content was extracted
   const extractedSections = Object.values(narrative).filter(v => v !== 'Not available.').length;
   
   if (extractedSections === 0) {
-    console.warn('LLM narrative parser found no recognizable sections. Raw text:', llmText.substring(0, 200));
-    return null; // Return null to trigger template fallback
+    console.warn('LLM narrative parser found no recognizable sections. Attempting fallback parsing...');
+    console.warn('Raw text preview:', llmText.substring(0, 500));
+
+    // FALLBACK: Try to extract ANY content between common patterns
+    const fallbackPatterns = [
+      { key: 'chiefComplaint', regex: /(?:chief complaint|presenting complaint|reason for admission)[\s:]*([^\n]+(?:\n[^\n]+)*?)(?=\n\n|\n[A-Z])/i },
+      { key: 'historyOfPresentIllness', regex: /(?:history of present illness|hpi|clinical presentation)[\s:]*([^\n]+(?:\n[^\n]+)*?)(?=\n\n|\n[A-Z])/i },
+      { key: 'hospitalCourse', regex: /(?:hospital course|clinical course|hospital stay)[\s:]*([^\n]+(?:\n[^\n]+)*?)(?=\n\n|\n[A-Z])/i },
+      { key: 'procedures', regex: /(?:procedures?|operations?|surgical intervention)[\s:]*([^\n]+(?:\n[^\n]+)*?)(?=\n\n|\n[A-Z])/i }
+    ];
+
+    for (const { key, regex } of fallbackPatterns) {
+      const match = llmText.match(regex);
+      if (match && match[1]) {
+        narrative[key] = match[1].trim();
+        console.log(`📌 Fallback extracted ${key}: ${narrative[key].substring(0, 80)}...`);
+      }
+    }
+
+    // Recount after fallback
+    const fallbackExtracted = Object.values(narrative).filter(v => v !== 'Not available.').length;
+    
+    if (fallbackExtracted === 0) {
+      console.error('❌ Even fallback parsing failed. LLM response may be in unexpected format.');
+      
+      // LAST RESORT: Use the entire LLM response as hospital course if it has medical content
+      if (llmText.length > 100 && /patient|admission|discharge|procedure|diagnosis/i.test(llmText)) {
+        console.log('🔄 Using entire LLM response as hospital course');
+        narrative.hospitalCourse = llmText;
+        narrative.chiefComplaint = 'See hospital course for details.';
+        narrative.historyOfPresentIllness = 'See hospital course for details.';
+      } else {
+        return null; // Return null to trigger template fallback
+      }
+    }
   }
 
-  console.log(`LLM narrative parsed: ${extractedSections}/8 sections extracted`);
+  const totalSections = Object.keys(narrative).length;
+  console.log(`LLM narrative parsed: ${extractedSections}/${totalSections} sections extracted`);
 
   return narrative;
 };

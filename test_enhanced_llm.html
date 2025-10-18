@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Enhanced LLM System</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 16px;
+            padding: 40px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        h1 { color: #2d3748; margin-bottom: 30px; }
+        .test-section {
+            margin-bottom: 30px;
+            padding: 20px;
+            background: #f7fafc;
+            border-radius: 12px;
+            border-left: 4px solid #4299e1;
+        }
+        .test-section h2 {
+            color: #2d3748;
+            margin-bottom: 15px;
+            font-size: 20px;
+        }
+        button {
+            background: #4299e1;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-right: 10px;
+            margin-bottom: 10px;
+            transition: all 0.2s;
+        }
+        button:hover {
+            background: #3182ce;
+            transform: translateY(-2px);
+        }
+        .result {
+            margin-top: 15px;
+            padding: 15px;
+            background: white;
+            border-radius: 8px;
+            border: 1px solid #e2e8f0;
+            font-family: 'Monaco', 'Courier New', monospace;
+            font-size: 13px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .success { color: #059669; }
+        .error { color: #dc2626; }
+        .info { color: #2563eb; }
+        pre {
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 Enhanced LLM System Test Suite</h1>
+
+        <!-- Test 1: Model Selection -->
+        <div class="test-section">
+            <h2>1️⃣ Model Selection Test</h2>
+            <button onclick="testModelSelection()">Test Model Selection</button>
+            <button onclick="getCurrentModel()">Get Current Model</button>
+            <div id="model-result" class="result" style="display: none;"></div>
+        </div>
+
+        <!-- Test 2: Cost Tracking -->
+        <div class="test-section">
+            <h2>2️⃣ Cost Tracking Test</h2>
+            <button onclick="testCostTracking()">View Cost Tracking</button>
+            <button onclick="testPerformanceMetrics()">View Performance Metrics</button>
+            <button onclick="resetTracking()">Reset Tracking</button>
+            <div id="cost-result" class="result" style="display: none;"></div>
+        </div>
+
+        <!-- Test 3: Fallback System -->
+        <div class="test-section">
+            <h2>3️⃣ Fallback System Test</h2>
+            <button onclick="testFallbackOrder()">Show Fallback Order</button>
+            <div id="fallback-result" class="result" style="display: none;"></div>
+        </div>
+
+        <!-- Test 4: Model Capabilities -->
+        <div class="test-section">
+            <h2>4️⃣ Model Capabilities</h2>
+            <button onclick="showAllModels()">Show All Models</button>
+            <button onclick="compareModels()">Compare Models</button>
+            <div id="models-result" class="result" style="display: none;"></div>
+        </div>
+
+        <!-- Test 5: Integration Test -->
+        <div class="test-section">
+            <h2>5️⃣ Integration Test</h2>
+            <p style="margin-bottom: 10px; color: #64748b;">
+                This will make a real API call to test the full system.
+                Make sure you have API credits!
+            </p>
+            <button onclick="testFullIntegration()">Run Full Integration Test</button>
+            <div id="integration-result" class="result" style="display: none;"></div>
+        </div>
+    </div>
+
+    <script type="module">
+        import {
+            PREMIUM_MODELS,
+            getSelectedModel,
+            setSelectedModel,
+            getCostTracking,
+            getPerformanceMetrics,
+            resetCostTracking,
+            callLLMWithFallback
+        } from './src/services/llmService.js';
+
+        // Make functions available globally
+        window.PREMIUM_MODELS = PREMIUM_MODELS;
+        window.getSelectedModel = getSelectedModel;
+        window.setSelectedModel = setSelectedModel;
+        window.getCostTracking = getCostTracking;
+        window.getPerformanceMetrics = getPerformanceMetrics;
+        window.resetCostTracking = resetCostTracking;
+        window.callLLMWithFallback = callLLMWithFallback;
+
+        // Test 1: Model Selection
+        window.testModelSelection = () => {
+            const resultDiv = document.getElementById('model-result');
+            resultDiv.style.display = 'block';
+            
+            let html = '<div class="info">Testing model selection...</div>\n\n';
+            
+            try {
+                // Test switching models
+                setSelectedModel('claude-sonnet-3.5');
+                html += '<div class="success">✅ Switched to Claude Sonnet 3.5</div>\n';
+                
+                setSelectedModel('gpt-4o');
+                html += '<div class="success">✅ Switched to GPT-4o</div>\n';
+                
+                setSelectedModel('gemini-1.5-pro');
+                html += '<div class="success">✅ Switched to Gemini 1.5 Pro</div>\n';
+                
+                // Switch back to Claude
+                setSelectedModel('claude-sonnet-3.5');
+                html += '<div class="success">✅ Switched back to Claude Sonnet 3.5</div>\n';
+                
+                html += '\n<div class="info">Model selection working correctly!</div>';
+            } catch (error) {
+                html += `<div class="error">❌ Error: ${error.message}</div>`;
+            }
+            
+            resultDiv.innerHTML = html;
+        };
+
+        window.getCurrentModel = () => {
+            const resultDiv = document.getElementById('model-result');
+            resultDiv.style.display = 'block';
+            
+            try {
+                const model = getSelectedModel();
+                resultDiv.innerHTML = `
+                    <div class="info">Current Model:</div>
+                    <pre>${JSON.stringify(model, null, 2)}</pre>
+                `;
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="error">❌ Error: ${error.message}</div>`;
+            }
+        };
+
+        // Test 2: Cost Tracking
+        window.testCostTracking = () => {
+            const resultDiv = document.getElementById('cost-result');
+            resultDiv.style.display = 'block';
+            
+            try {
+                const tracking = getCostTracking();
+                resultDiv.innerHTML = `
+                    <div class="info">Cost Tracking Data:</div>
+                    <pre>${JSON.stringify(tracking, null, 2)}</pre>
+                `;
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="error">❌ Error: ${error.message}</div>`;
+            }
+        };
+
+        window.testPerformanceMetrics = () => {
+            const resultDiv = document.getElementById('cost-result');
+            resultDiv.style.display = 'block';
+            
+            try {
+                const metrics = getPerformanceMetrics();
+                resultDiv.innerHTML = `
+                    <div class="info">Performance Metrics:</div>
+                    <pre>${JSON.stringify(metrics, null, 2)}</pre>
+                `;
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="error">❌ Error: ${error.message}</div>`;
+            }
+        };
+
+        window.resetTracking = () => {
+            const resultDiv = document.getElementById('cost-result');
+            resultDiv.style.display = 'block';
+            
+            try {
+                resetCostTracking();
+                resultDiv.innerHTML = '<div class="success">✅ Cost tracking reset successfully!</div>';
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="error">❌ Error: ${error.message}</div>`;
+            }
+        };
+
+        // Test 3: Fallback System
+        window.testFallbackOrder = () => {
+            const resultDiv = document.getElementById('fallback-result');
+            resultDiv.style.display = 'block';
+            
+            try {
+                const model = getSelectedModel();
+                resultDiv.innerHTML = `
+                    <div class="info">Current Model: ${model.name}</div>
+                    <div class="info">Provider: ${model.provider}</div>
+                    <div style="margin-top: 10px;">
+                        <strong>Fallback Order:</strong><br>
+                        1️⃣ ${model.name} (Primary)<br>
+                        2️⃣ [Next best model in tier]<br>
+                        3️⃣ [Third option]<br>
+                        4️⃣ [Fast/cheap fallbacks]<br>
+                    </div>
+                    <div style="margin-top: 10px;" class="info">
+                        The system will automatically try these models in order if the primary fails.
+                    </div>
+                `;
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="error">❌ Error: ${error.message}</div>`;
+            }
+        };
+
+        // Test 4: Model Capabilities
+        window.showAllModels = () => {
+            const resultDiv = document.getElementById('models-result');
+            resultDiv.style.display = 'block';
+            
+            try {
+                let html = '<div class="info">Available Models:</div>\n<pre>';
+                
+                Object.values(PREMIUM_MODELS).forEach(model => {
+                    html += `\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`;
+                    html += `${model.recommended ? '⭐ ' : ''}${model.name}\n`;
+                    html += `Provider: ${model.provider}\n`;
+                    html += `Context: ${(model.contextWindow / 1000).toFixed(0)}K tokens\n`;
+                    html += `Cost: $${model.costPer1MInput}/$${model.costPer1MOutput} per 1M\n`;
+                    html += `Speed: ${model.speed} | Quality: ${model.quality}\n`;
+                });
+                
+                html += '\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━</pre>';
+                resultDiv.innerHTML = html;
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="error">❌ Error: ${error.message}</div>`;
+            }
+        };
+
+        window.compareModels = () => {
+            const resultDiv = document.getElementById('models-result');
+            resultDiv.style.display = 'block';
+            
+            try {
+                const recommended = Object.values(PREMIUM_MODELS).filter(m => m.recommended);
+                
+                let html = '<div class="info">Recommended Models Comparison:</div>\n<pre>\n';
+                html += 'Model               | Cost (I/O) | Context | Speed    | Quality\n';
+                html += '─'.repeat(70) + '\n';
+                
+                recommended.forEach(model => {
+                    const name = model.name.padEnd(18);
+                    const cost = `$${model.costPer1MInput}/$${model.costPer1MOutput}`.padEnd(11);
+                    const context = `${(model.contextWindow / 1000).toFixed(0)}K`.padEnd(8);
+                    const speed = model.speed.padEnd(9);
+                    const quality = model.quality;
+                    
+                    html += `${name} | ${cost} | ${context} | ${speed} | ${quality}\n`;
+                });
+                
+                html += '</pre>';
+                resultDiv.innerHTML = html;
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="error">❌ Error: ${error.message}</div>`;
+            }
+        };
+
+        // Test 5: Integration Test
+        window.testFullIntegration = async () => {
+            const resultDiv = document.getElementById('integration-result');
+            resultDiv.style.display = 'block';
+            resultDiv.innerHTML = '<div class="info">Running integration test... This may take 10-30 seconds.</div>';
+            
+            try {
+                const testPrompt = 'Say "Hello from the enhanced LLM system!" and list 3 benefits of AI in healthcare.';
+                
+                const response = await callLLMWithFallback(testPrompt, {
+                    task: 'integration_test',
+                    maxTokens: 200,
+                    temperature: 0.7,
+                    enableCache: false,
+                    enableFallback: true
+                });
+                
+                resultDiv.innerHTML = `
+                    <div class="success">✅ Integration Test Successful!</div>
+                    <div style="margin-top: 10px;"><strong>Response:</strong></div>
+                    <pre>${response}</pre>
+                    <div style="margin-top: 10px;" class="info">
+                        Check the browser console for detailed logs including:
+                        - Model selection
+                        - API call duration
+                        - Cost calculation
+                        - Token usage
+                    </div>
+                `;
+                
+                // Show updated cost tracking
+                setTimeout(() => {
+                    const tracking = getCostTracking();
+                    const lastCall = tracking.history[tracking.history.length - 1];
+                    
+                    if (lastCall) {
+                        resultDiv.innerHTML += `
+                            <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid #e2e8f0;">
+                                <strong>Call Details:</strong><br>
+                                Provider: ${lastCall.provider}<br>
+                                Cost: $${lastCall.cost.toFixed(4)}<br>
+                                Duration: ${lastCall.duration}ms<br>
+                                Input Tokens: ${lastCall.inputTokens}<br>
+                                Output Tokens: ${lastCall.outputTokens}
+                            </div>
+                        `;
+                    }
+                }, 100);
+                
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <div class="error">❌ Integration Test Failed</div>
+                    <pre>${error.message}</pre>
+                    <div style="margin-top: 10px;" class="info">
+                        Common issues:
+                        - Backend server not running (start with: cd backend && node server.js)
+                        - No API credits available
+                        - Network connectivity issues
+                    </div>
+                `;
+            }
+        };
+    </script>
+</body>
+</html>

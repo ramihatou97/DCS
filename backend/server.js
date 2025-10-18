@@ -65,6 +65,176 @@ app.get('/health', (_req, res) => {
   });
 });
 
+// ============================================================================
+// LLM PROXY ENDPOINTS (for multi-provider frontend integration)
+// ============================================================================
+
+// Anthropic LLM proxy endpoint
+app.post('/api/llm/anthropic', validateLLMRequest, async (req, res) => {
+  console.log('📨 LLM Anthropic API request received');
+  
+  if (!process.env.ANTHROPIC_API_KEY) {
+    return res.status(500).json({ error: 'Anthropic API key not configured' });
+  }
+
+  try {
+    const { messages, model = 'claude-3-5-sonnet-20241022', maxTokens = 4000, temperature = 0.7 } = req.body;
+
+    const response = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': process.env.ANTHROPIC_API_KEY,
+        'anthropic-version': '2023-06-01'
+      },
+      body: JSON.stringify({
+        model,
+        max_tokens: maxTokens,
+        temperature,
+        messages
+      })
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      console.error('❌ Anthropic API error:', error);
+      return res.status(response.status).json({ error: error.error?.message || 'Anthropic API error' });
+    }
+
+    const data = await response.json();
+    console.log('✅ Anthropic LLM response received');
+    
+    res.json({
+      content: data.content[0].text,
+      usage: data.usage,
+      model: data.model
+    });
+
+  } catch (error) {
+    console.error('❌ Anthropic proxy error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// OpenAI LLM proxy endpoint
+app.post('/api/llm/openai', validateLLMRequest, async (req, res) => {
+  console.log('📨 LLM OpenAI API request received');
+  
+  if (!process.env.OPENAI_API_KEY) {
+    return res.status(500).json({ error: 'OpenAI API key not configured' });
+  }
+
+  try {
+    const { messages, model = 'gpt-4o', maxTokens = 4096, temperature = 0.7 } = req.body;
+
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`
+      },
+      body: JSON.stringify({
+        model,
+        messages,
+        max_tokens: maxTokens,
+        temperature
+      })
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      console.error('❌ OpenAI API error:', error);
+      return res.status(response.status).json({ error: error.error?.message || 'OpenAI API error' });
+    }
+
+    const data = await response.json();
+    console.log('✅ OpenAI LLM response received');
+    
+    res.json({
+      content: data.choices[0].message.content,
+      usage: data.usage,
+      model: data.model
+    });
+
+  } catch (error) {
+    console.error('❌ OpenAI proxy error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Google Gemini LLM proxy endpoint
+app.post('/api/llm/google', validateLLMRequest, async (req, res) => {
+  console.log('📨 LLM Gemini API request received');
+  
+  if (!process.env.GEMINI_API_KEY) {
+    return res.status(500).json({ error: 'Gemini API key not configured' });
+  }
+
+  try {
+    const { messages, model = 'gemini-1.5-pro-latest', maxTokens = 8192, temperature = 0.7 } = req.body;
+
+    // Convert messages to Gemini format
+    const contents = messages.map(msg => ({
+      role: msg.role === 'assistant' ? 'model' : 'user',
+      parts: [{ text: msg.content }]
+    }));
+
+    const response = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${process.env.GEMINI_API_KEY}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents,
+          generationConfig: {
+            temperature,
+            maxOutputTokens: maxTokens
+          }
+        })
+      }
+    );
+
+    if (!response.ok) {
+      const error = await response.json();
+      console.error('❌ Gemini API error:', error);
+      return res.status(response.status).json({ error: error.error?.message || 'Gemini API error' });
+    }
+
+    const data = await response.json();
+    console.log('✅ Gemini LLM response received');
+    
+    res.json({
+      content: data.candidates[0].content.parts[0].text,
+      usage: data.usageMetadata,
+      model: model
+    });
+
+  } catch (error) {
+    console.error('❌ Gemini proxy error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Generate narrative endpoint
+app.post('/api/generate-narrative', validateLLMRequest, async (req, res) => {
+  console.log('📨 Generate narrative request received');
+  
+  // Forward to the primary LLM provider (Anthropic by default)
+  // Frontend should call the specific LLM endpoint directly
+  res.status(200).json({ 
+    message: 'Use /api/llm/anthropic, /api/llm/openai, or /api/llm/google endpoints directly',
+    availableEndpoints: [
+      '/api/llm/anthropic',
+      '/api/llm/openai',
+      '/api/llm/google'
+    ]
+  });
+});
+
+// ============================================================================
+// LEGACY ENDPOINTS (for backward compatibility)
+// ============================================================================
+
 // Anthropic Claude API proxy
 app.post('/api/anthropic', validateLLMRequest, async (req, res) => {
   console.log('📨 Anthropic API request received');

@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LLM Provider Diagnostics - DCS</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            padding: 40px;
+        }
+        
+        h1 {
+            color: #2d3748;
+            margin-bottom: 10px;
+            font-size: 32px;
+        }
+        
+        .subtitle {
+            color: #718096;
+            margin-bottom: 30px;
+            font-size: 16px;
+        }
+        
+        .alert {
+            background: #fed7d7;
+            border-left: 4px solid #fc8181;
+            padding: 16px;
+            border-radius: 8px;
+            margin-bottom: 30px;
+        }
+        
+        .alert-title {
+            font-weight: 600;
+            color: #c53030;
+            margin-bottom: 8px;
+        }
+        
+        .alert-text {
+            color: #742a2a;
+            line-height: 1.6;
+        }
+        
+        .provider-card {
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 16px;
+            transition: all 0.3s;
+        }
+        
+        .provider-card:hover {
+            border-color: #cbd5e0;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+        }
+        
+        .provider-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+        
+        .provider-name {
+            font-size: 20px;
+            font-weight: 600;
+            color: #2d3748;
+        }
+        
+        .status-badge {
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 600;
+        }
+        
+        .status-testing {
+            background: #fef5e7;
+            color: #d97706;
+        }
+        
+        .status-available {
+            background: #d1fae5;
+            color: #059669;
+        }
+        
+        .status-unavailable {
+            background: #fee2e2;
+            color: #dc2626;
+        }
+        
+        .status-no-key {
+            background: #e5e7eb;
+            color: #6b7280;
+        }
+        
+        .provider-details {
+            color: #718096;
+            font-size: 14px;
+            margin-bottom: 12px;
+        }
+        
+        .test-result {
+            background: #f7fafc;
+            border-radius: 8px;
+            padding: 12px;
+            font-family: 'Monaco', 'Courier New', monospace;
+            font-size: 13px;
+            color: #2d3748;
+            margin-top: 12px;
+            display: none;
+        }
+        
+        .test-result.show {
+            display: block;
+        }
+        
+        .btn {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            width: 100%;
+            margin-top: 20px;
+        }
+        
+        .btn:hover {
+            background: #5a67d8;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+        
+        .btn:disabled {
+            background: #cbd5e0;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .recommendation {
+            background: #ebf8ff;
+            border-left: 4px solid #4299e1;
+            padding: 16px;
+            border-radius: 8px;
+            margin-top: 30px;
+        }
+        
+        .recommendation-title {
+            font-weight: 600;
+            color: #2c5282;
+            margin-bottom: 8px;
+        }
+        
+        .recommendation-text {
+            color: #2c5282;
+            line-height: 1.6;
+        }
+        
+        .link {
+            color: #4299e1;
+            text-decoration: none;
+            font-weight: 600;
+        }
+        
+        .link:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 LLM Provider Diagnostics</h1>
+        <p class="subtitle">Test which AI providers are available for narrative generation</p>
+        
+        <div class="alert">
+            <div class="alert-title">⚠️ Critical Issue Detected</div>
+            <div class="alert-text">
+                Your Anthropic Claude API is out of credits. This is causing narrative generation to fail with only 2/8 sections being extracted. 
+                Use this tool to check which providers are working.
+            </div>
+        </div>
+        
+        <div id="providers-container">
+            <!-- Provider cards will be inserted here -->
+        </div>
+        
+        <button class="btn" id="test-all-btn" onclick="testAllProviders()">
+            Test All Providers
+        </button>
+        
+        <div id="recommendation" class="recommendation" style="display: none;">
+            <div class="recommendation-title">💡 Recommendation</div>
+            <div class="recommendation-text" id="recommendation-text"></div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { getApiKey, hasApiKey, API_PROVIDERS, testProvider } from './src/utils/apiKeys.js';
+        
+        const providers = [
+            {
+                id: API_PROVIDERS.ANTHROPIC,
+                name: 'Anthropic Claude 3.5 Sonnet',
+                description: 'Best for medical text - currently recommended',
+                model: 'claude-3-5-sonnet-20241022',
+                addCreditsUrl: 'https://console.anthropic.com/settings/billing'
+            },
+            {
+                id: API_PROVIDERS.OPENAI,
+                name: 'OpenAI GPT-4o',
+                description: 'Excellent medical knowledge and reasoning',
+                model: 'gpt-4o',
+                addCreditsUrl: 'https://platform.openai.com/account/billing'
+            },
+            {
+                id: API_PROVIDERS.GEMINI,
+                name: 'Google Gemini 1.5 Pro',
+                description: 'Good performance, most cost-effective',
+                model: 'gemini-1.5-pro',
+                addCreditsUrl: 'https://ai.google.dev/'
+            }
+        ];
+        
+        function renderProviders() {
+            const container = document.getElementById('providers-container');
+            container.innerHTML = '';
+            
+            providers.forEach(provider => {
+                const hasKey = hasApiKey(provider.id);
+                const card = document.createElement('div');
+                card.className = 'provider-card';
+                card.id = `provider-${provider.id}`;
+                
+                card.innerHTML = `
+                    <div class="provider-header">
+                        <div class="provider-name">${provider.name}</div>
+                        <div class="status-badge ${hasKey ? 'status-testing' : 'status-no-key'}" id="status-${provider.id}">
+                            ${hasKey ? 'Ready to Test' : 'No API Key'}
+                        </div>
+                    </div>
+                    <div class="provider-details">
+                        ${provider.description}<br>
+                        Model: ${provider.model}
+                        ${!hasKey ? '<br><a href="' + provider.addCreditsUrl + '" target="_blank" class="link">Configure API Key →</a>' : ''}
+                    </div>
+                    <div class="test-result" id="result-${provider.id}"></div>
+                `;
+                
+                container.appendChild(card);
+            });
+        }
+        
+        async function testProvider(providerId) {
+            const provider = providers.find(p => p.id === providerId);
+            const statusBadge = document.getElementById(`status-${providerId}`);
+            const resultDiv = document.getElementById(`result-${providerId}`);
+            
+            if (!hasApiKey(providerId)) {
+                return { provider: providerId, available: false, error: 'No API key configured' };
+            }
+            
+            statusBadge.textContent = 'Testing...';
+            statusBadge.className = 'status-badge status-testing';
+            
+            try {
+                // Import test function
+                const { testProvider: test } = await import('./src/utils/apiKeys.js');
+                const result = await test(providerId);
+                
+                if (result.available) {
+                    statusBadge.textContent = '✅ Available';
+                    statusBadge.className = 'status-badge status-available';
+                    resultDiv.textContent = `Success! Response: "${result.response?.substring(0, 100)}..."`;
+                } else {
+                    statusBadge.textContent = '❌ Failed';
+                    statusBadge.className = 'status-badge status-unavailable';
+                    resultDiv.textContent = `Error: ${result.error}`;
+                }
+                
+                resultDiv.classList.add('show');
+                return result;
+                
+            } catch (error) {
+                statusBadge.textContent = '❌ Error';
+                statusBadge.className = 'status-badge status-unavailable';
+                resultDiv.textContent = `Test failed: ${error.message}`;
+                resultDiv.classList.add('show');
+                return { provider: providerId, available: false, error: error.message };
+            }
+        }
+        
+        window.testAllProviders = async function() {
+            const btn = document.getElementById('test-all-btn');
+            btn.disabled = true;
+            btn.textContent = 'Testing...';
+            
+            const results = [];
+            
+            for (const provider of providers) {
+                const result = await testProvider(provider.id);
+                results.push(result);
+            }
+            
+            btn.disabled = false;
+            btn.textContent = 'Test Again';
+            
+            // Show recommendation
+            showRecommendation(results);
+        };
+        
+        function showRecommendation(results) {
+            const recDiv = document.getElementById('recommendation');
+            const recText = document.getElementById('recommendation-text');
+            
+            const available = results.filter(r => r.available);
+            
+            if (available.length === 0) {
+                recText.innerHTML = `
+                    <strong>No LLM providers available!</strong><br><br>
+                    You need to configure at least one API key:<br>
+                    • <a href="https://console.anthropic.com/settings/billing" target="_blank" class="link">Add Anthropic credits</a> (recommended)<br>
+                    • <a href="https://platform.openai.com/account/billing" target="_blank" class="link">Configure OpenAI</a><br>
+                    • <a href="https://ai.google.dev/" target="_blank" class="link">Try Google Gemini</a><br><br>
+                    Without a working LLM provider, you'll only get basic template-based summaries with minimal clinical detail.
+                `;
+            } else if (available.length === 1) {
+                recText.innerHTML = `
+                    <strong>One provider available: ${available[0].provider}</strong><br><br>
+                    The system will use this provider for all LLM operations. 
+                    For redundancy, consider configuring a backup provider.
+                `;
+            } else {
+                recText.innerHTML = `
+                    <strong>Multiple providers available!</strong><br><br>
+                    The system will automatically use the best available provider based on task priority. 
+                    You're all set! 🎉
+                `;
+            }
+            
+            recDiv.style.display = 'block';
+        }
+        
+        // Initialize
+        renderProviders();
+        
+        // Auto-test on load if keys are configured
+        const hasAnyKey = providers.some(p => hasApiKey(p.id));
+        if (hasAnyKey) {
+            console.log('API keys detected, ready to test');
+        }
+    </script>
+</body>
+</html>

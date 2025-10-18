@@ -1,0 +1,2072 @@
+[
+  {
+    "config": "Standard Models (Baseline)",
+    "duration": 12.29,
+    "quality": {
+      "overall": {
+        "score": 0.8429391891891893,
+        "percentage": 84,
+        "rating": {
+          "rating": "Good",
+          "color": "blue",
+          "emoji": "👍"
+        },
+        "confidence": 0.4619542442409442
+      },
+      "dimensions": {
+        "completeness": {
+          "score": 0.7972972972972973,
+          "weight": 0.3,
+          "weighted": 0.23918918918918916,
+          "issues": [
+            {
+              "type": "MISSING_CRITICAL_SECTION",
+              "section": "admissionDate",
+              "severity": "critical",
+              "impact": -0.05,
+              "suggestion": "Add Admission date to the discharge summary"
+            },
+            {
+              "type": "MISSING_CRITICAL_SECTION",
+              "section": "dischargeDate",
+              "severity": "critical",
+              "impact": -0.05,
+              "suggestion": "Add Discharge date to the discharge summary"
+            },
+            {
+              "type": "MISSING_CRITICAL_SECTION",
+              "section": "dischargeDisposition",
+              "severity": "critical",
+              "impact": -0.05,
+              "suggestion": "Add Discharge disposition to the discharge summary"
+            }
+          ],
+          "details": {
+            "criticalSections": {
+              "points": 6,
+              "maxPoints": 9,
+              "issues": [
+                {
+                  "type": "MISSING_CRITICAL_SECTION",
+                  "section": "admissionDate",
+                  "severity": "critical",
+                  "impact": -0.05,
+                  "suggestion": "Add Admission date to the discharge summary"
+                },
+                {
+                  "type": "MISSING_CRITICAL_SECTION",
+                  "section": "dischargeDate",
+                  "severity": "critical",
+                  "impact": -0.05,
+                  "suggestion": "Add Discharge date to the discharge summary"
+                },
+                {
+                  "type": "MISSING_CRITICAL_SECTION",
+                  "section": "dischargeDisposition",
+                  "severity": "critical",
+                  "impact": -0.05,
+                  "suggestion": "Add Discharge disposition to the discharge summary"
+                }
+              ]
+            },
+            "importantSections": {
+              "points": 6,
+              "maxPoints": 6,
+              "issues": []
+            },
+            "fieldCompleteness": {
+              "points": 7,
+              "maxPoints": 7,
+              "issues": []
+            },
+            "pathologySpecific": {
+              "points": 1,
+              "maxPoints": 1,
+              "issues": []
+            }
+          }
+        },
+        "accuracy": {
+          "score": 0.7199999999999998,
+          "rawScore": 0.7199999999999998,
+          "weight": 0.25,
+          "weighted": 0.17999999999999994,
+          "issues": [
+            {
+              "type": "AGE_MISMATCH",
+              "field": "age",
+              "extracted": 58,
+              "severity": "minor",
+              "impact": -0.01
+            },
+            {
+              "type": "DATE_NOT_FOUND",
+              "field": "admissionDate",
+              "extracted": "2024-10-01",
+              "severity": "major",
+              "impact": -0.03,
+              "suggestion": "Verify admissionDate in source notes"
+            }
+          ],
+          "details": {
+            "demographics": {
+              "totalChecks": 3,
+              "accurateChecks": 2,
+              "issues": [
+                {
+                  "type": "AGE_MISMATCH",
+                  "field": "age",
+                  "extracted": 58,
+                  "severity": "minor",
+                  "impact": -0.01
+                }
+              ]
+            },
+            "dates": {
+              "totalChecks": 3,
+              "accurateChecks": 2,
+              "issues": [
+                {
+                  "type": "DATE_NOT_FOUND",
+                  "field": "admissionDate",
+                  "extracted": "2024-10-01",
+                  "severity": "major",
+                  "impact": -0.03,
+                  "suggestion": "Verify admissionDate in source notes"
+                }
+              ]
+            },
+            "medications": {
+              "totalChecks": 0,
+              "accurateChecks": 0,
+              "issues": []
+            },
+            "procedures": {
+              "totalChecks": 0,
+              "accurateChecks": 0,
+              "issues": []
+            },
+            "hallucinations": {
+              "totalChecks": 1,
+              "accurateChecks": 1,
+              "issues": []
+            },
+            "clinicalValues": {
+              "totalChecks": 1,
+              "accurateChecks": 1,
+              "issues": []
+            },
+            "penaltyApplied": false
+          }
+        },
+        "consistency": {
+          "score": 1,
+          "rawScore": 1,
+          "weight": 0.2,
+          "weighted": 0.2,
+          "issues": [],
+          "details": {
+            "dateConsistency": {
+              "totalChecks": 2,
+              "consistentChecks": 2,
+              "issues": []
+            },
+            "medicationConsistency": {
+              "totalChecks": 0,
+              "consistentChecks": 0,
+              "issues": []
+            },
+            "diagnosisConsistency": {
+              "totalChecks": 0,
+              "consistentChecks": 0,
+              "issues": []
+            },
+            "treatmentAlignment": {
+              "totalChecks": 0,
+              "consistentChecks": 0,
+              "issues": []
+            },
+            "contradictions": {
+              "totalChecks": 1,
+              "consistentChecks": 1,
+              "issues": []
+            },
+            "penaltyApplied": false
+          }
+        },
+        "narrativeQuality": {
+          "score": 1,
+          "weight": 0.15,
+          "weighted": 0.15,
+          "issues": [],
+          "details": {
+            "flowAndTransitions": {
+              "points": 1,
+              "maxPoints": 1,
+              "issues": []
+            },
+            "medicalTerminology": {
+              "points": 1,
+              "maxPoints": 1,
+              "issues": []
+            },
+            "clarityAndConciseness": {
+              "points": 1,
+              "maxPoints": 1,
+              "issues": []
+            },
+            "professionalTone": {
+              "points": 1,
+              "maxPoints": 1,
+              "issues": []
+            },
+            "organization": {
+              "points": 1,
+              "maxPoints": 1,
+              "issues": []
+            },
+            "readability": {
+              "points": 1,
+              "maxPoints": 1,
+              "issues": []
+            }
+          }
+        },
+        "specificity": {
+          "score": 1,
+          "rawScore": 1,
+          "weight": 0.05,
+          "weighted": 0.05,
+          "issues": [],
+          "details": {
+            "valueSpecificity": {
+              "totalChecks": 1,
+              "specificChecks": 1,
+              "issues": []
+            },
+            "temporalSpecificity": {
+              "totalChecks": 1,
+              "specificChecks": 1,
+              "issues": []
+            },
+            "clinicalSpecificity": {
+              "totalChecks": 1,
+              "specificChecks": 1,
+              "issues": []
+            },
+            "medicationSpecificity": {
+              "totalChecks": 1,
+              "specificChecks": 1,
+              "issues": []
+            },
+            "procedureSpecificity": {
+              "totalChecks": 1,
+              "specificChecks": 1,
+              "issues": []
+            },
+            "penaltyApplied": false
+          }
+        },
+        "timeliness": {
+          "score": 0.47500000000000003,
+          "weight": 0.05,
+          "weighted": 0.023750000000000004,
+          "issues": [
+            {
+              "type": "VERY_STALE_DATA",
+              "days": 375,
+              "severity": "critical",
+              "impact": -0.02,
+              "suggestion": "Critical: Summary is over 3 months old"
+            }
+          ],
+          "bottlenecks": [],
+          "details": {
+            "processingSpeed": {
+              "points": 0.5,
+              "maxPoints": 1,
+              "issues": []
+            },
+            "componentPerformance": {
+              "points": 0.5,
+              "maxPoints": 1,
+              "issues": []
+            },
+            "extractionEfficiency": {
+              "points": 0.5,
+              "maxPoints": 1,
+              "issues": []
+            },
+            "narrativeGeneration": {
+              "points": 0.5,
+              "maxPoints": 1,
+              "issues": []
+            },
+            "dataFreshness": {
+              "points": 0,
+              "maxPoints": 1,
+              "issues": [
+                {
+                  "type": "VERY_STALE_DATA",
+                  "days": 375,
+                  "severity": "critical",
+                  "impact": -0.02,
+                  "suggestion": "Critical: Summary is over 3 months old"
+                }
+              ]
+            },
+            "metrics": {
+              "targetTime": 3000
+            }
+          }
+        }
+      },
+      "summary": {
+        "totalIssues": 6,
+        "criticalIssues": 4,
+        "majorIssues": 1,
+        "minorIssues": 1,
+        "warnings": 0
+      },
+      "issues": [
+        {
+          "type": "DATE_NOT_FOUND",
+          "field": "admissionDate",
+          "extracted": "2024-10-01",
+          "severity": "major",
+          "impact": -0.03,
+          "suggestion": "Verify admissionDate in source notes"
+        },
+        {
+          "type": "AGE_MISMATCH",
+          "field": "age",
+          "extracted": 58,
+          "severity": "minor",
+          "impact": -0.01
+        },
+        {
+          "type": "VERY_STALE_DATA",
+          "days": 375,
+          "severity": "critical",
+          "impact": -0.02,
+          "suggestion": "Critical: Summary is over 3 months old"
+        },
+        {
+          "type": "MISSING_CRITICAL_SECTION",
+          "section": "admissionDate",
+          "severity": "critical",
+          "impact": -0.05,
+          "suggestion": "Add Admission date to the discharge summary"
+        },
+        {
+          "type": "MISSING_CRITICAL_SECTION",
+          "section": "dischargeDate",
+          "severity": "critical",
+          "impact": -0.05,
+          "suggestion": "Add Discharge date to the discharge summary"
+        },
+        {
+          "type": "MISSING_CRITICAL_SECTION",
+          "section": "dischargeDisposition",
+          "severity": "critical",
+          "impact": -0.05,
+          "suggestion": "Add Discharge disposition to the discharge summary"
+        }
+      ],
+      "recommendations": [
+        {
+          "priority": "critical",
+          "dimension": "multiple",
+          "action": "Address critical issues immediately",
+          "details": "VERY_STALE_DATA, MISSING_CRITICAL_SECTION"
+        }
+      ],
+      "metadata": {
+        "calculated": "2025-10-17T12:12:56.876Z",
+        "processingTime": 1,
+        "extractionMethod": "llm+patterns",
+        "noteCount": 1,
+        "version": "6-dimension-v1.0"
+      }
+    },
+    "cacheStats": {
+      "extraction": {
+        "size": 0,
+        "active": 0,
+        "expired": 0
+      },
+      "narrative": {
+        "size": 0,
+        "active": 0,
+        "expired": 0
+      },
+      "quality": {
+        "size": 0,
+        "active": 0,
+        "expired": 0
+      },
+      "llm": {
+        "size": 2,
+        "active": 2,
+        "expired": 0
+      }
+    },
+    "success": true
+  },
+  {
+    "config": "Fast Models (No Cache)",
+    "duration": 0.036,
+    "quality": {
+      "overall": {
+        "score": 0.8429391891891893,
+        "percentage": 84,
+        "rating": {
+          "rating": "Good",
+          "color": "blue",
+          "emoji": "👍"
+        },
+        "confidence": 0.4619542442409442
+      },
+      "dimensions": {
+        "completeness": {
+          "score": 0.7972972972972973,
+          "weight": 0.3,
+          "weighted": 0.23918918918918916,
+          "issues": [
+            {
+              "type": "MISSING_CRITICAL_SECTION",
+              "section": "admissionDate",
+              "severity": "critical",
+              "impact": -0.05,
+              "suggestion": "Add Admission date to the discharge summary"
+            },
+            {
+              "type": "MISSING_CRITICAL_SECTION",
+              "section": "dischargeDate",
+              "severity": "critical",
+              "impact": -0.05,
+              "suggestion": "Add Discharge date to the discharge summary"
+            },
+            {
+              "type": "MISSING_CRITICAL_SECTION",
+              "section": "dischargeDisposition",
+              "severity": "critical",
+              "impact": -0.05,
+              "suggestion": "Add Discharge disposition to the discharge summary"
+            }
+          ],
+          "details": {
+            "criticalSections": {
+              "points": 6,
+              "maxPoints": 9,
+              "issues": [
+                {
+                  "type": "MISSING_CRITICAL_SECTION",
+                  "section": "admissionDate",
+                  "severity": "critical",
+                  "impact": -0.05,
+                  "suggestion": "Add Admission date to the discharge summary"
+                },
+                {
+                  "type": "MISSING_CRITICAL_SECTION",
+                  "section": "dischargeDate",
+                  "severity": "critical",
+                  "impact": -0.05,
+                  "suggestion": "Add Discharge date to the discharge summary"
+                },
+                {
+                  "type": "MISSING_CRITICAL_SECTION",
+                  "section": "dischargeDisposition",
+                  "severity": "critical",
+                  "impact": -0.05,
+                  "suggestion": "Add Discharge disposition to the discharge summary"
+                }
+              ]
+            },
+            "importantSections": {
+              "points": 6,
+              "maxPoints": 6,
+              "issues": []
+            },
+            "fieldCompleteness": {
+              "points": 7,
+              "maxPoints": 7,
+              "issues": []
+            },
+            "pathologySpecific": {
+              "points": 1,
+              "maxPoints": 1,
+              "issues": []
+            }
+          }
+        },
+        "accuracy": {
+          "score": 0.7199999999999998,
+          "rawScore": 0.7199999999999998,
+          "weight": 0.25,
+          "weighted": 0.17999999999999994,
+          "issues": [
+            {
+              "type": "AGE_MISMATCH",
+              "field": "age",
+              "extracted": 58,
+              "severity": "minor",
+              "impact": -0.01
+            },
+            {
+              "type": "DATE_NOT_FOUND",
+              "field": "admissionDate",
+              "extracted": "2024-10-01",
+              "severity": "major",
+              "impact": -0.03,
+              "suggestion": "Verify admissionDate in source notes"
+            }
+          ],
+          "details": {
+            "demographics": {
+              "totalChecks": 3,
+              "accurateChecks": 2,
+              "issues": [
+                {
+                  "type": "AGE_MISMATCH",
+                  "field": "age",
+                  "extracted": 58,
+                  "severity": "minor",
+                  "impact": -0.01
+                }
+              ]
+            },
+            "dates": {
+              "totalChecks": 3,
+              "accurateChecks": 2,
+              "issues": [
+                {
+                  "type": "DATE_NOT_FOUND",
+                  "field": "admissionDate",
+                  "extracted": "2024-10-01",
+                  "severity": "major",
+                  "impact": -0.03,
+                  "suggestion": "Verify admissionDate in source notes"
+                }
+              ]
+            },
+            "medications": {
+              "totalChecks": 0,
+              "accurateChecks": 0,
+              "issues": []
+            },
+            "procedures": {
+              "totalChecks": 0,
+              "accurateChecks": 0,
+              "issues": []
+            },
+            "hallucinations": {
+              "totalChecks": 1,
+              "accurateChecks": 1,
+              "issues": []
+            },
+            "clinicalValues": {
+              "totalChecks": 1,
+              "accurateChecks": 1,
+              "issues": []
+            },
+            "penaltyApplied": false
+          }
+        },
+        "consistency": {
+          "score": 1,
+          "rawScore": 1,
+          "weight": 0.2,
+          "weighted": 0.2,
+          "issues": [],
+          "details": {
+            "dateConsistency": {
+              "totalChecks": 2,
+              "consistentChecks": 2,
+              "issues": []
+            },
+            "medicationConsistency": {
+              "totalChecks": 0,
+              "consistentChecks": 0,
+              "issues": []
+            },
+            "diagnosisConsistency": {
+              "totalChecks": 0,
+              "consistentChecks": 0,
+              "issues": []
+            },
+            "treatmentAlignment": {
+              "totalChecks": 0,
+              "consistentChecks": 0,
+              "issues": []
+            },
+            "contradictions": {
+              "totalChecks": 1,
+              "consistentChecks": 1,
+              "issues": []
+            },
+            "penaltyApplied": false
+          }
+        },
+        "narrativeQuality": {
+          "score": 1,
+          "weight": 0.15,
+          "weighted": 0.15,
+          "issues": [],
+          "details": {
+            "flowAndTransitions": {
+              "points": 1,
+              "maxPoints": 1,
+              "issues": []
+            },
+            "medicalTerminology": {
+              "points": 1,
+              "maxPoints": 1,
+              "issues": []
+            },
+            "clarityAndConciseness": {
+              "points": 1,
+              "maxPoints": 1,
+              "issues": []
+            },
+            "professionalTone": {
+              "points": 1,
+              "maxPoints": 1,
+              "issues": []
+            },
+            "organization": {
+              "points": 1,
+              "maxPoints": 1,
+              "issues": []
+            },
+            "readability": {
+              "points": 1,
+              "maxPoints": 1,
+              "issues": []
+            }
+          }
+        },
+        "specificity": {
+          "score": 1,
+          "rawScore": 1,
+          "weight": 0.05,
+          "weighted": 0.05,
+          "issues": [],
+          "details": {
+            "valueSpecificity": {
+              "totalChecks": 1,
+              "specificChecks": 1,
+              "issues": []
+            },
+            "temporalSpecificity": {
+              "totalChecks": 1,
+              "specificChecks": 1,
+              "issues": []
+            },
+            "clinicalSpecificity": {
+              "totalChecks": 1,
+              "specificChecks": 1,
+              "issues": []
+            },
+            "medicationSpecificity": {
+              "totalChecks": 1,
+              "specificChecks": 1,
+              "issues": []
+            },
+            "procedureSpecificity": {
+              "totalChecks": 1,
+              "specificChecks": 1,
+              "issues": []
+            },
+            "penaltyApplied": false
+          }
+        },
+        "timeliness": {
+          "score": 0.47500000000000003,
+          "weight": 0.05,
+          "weighted": 0.023750000000000004,
+          "issues": [
+            {
+              "type": "VERY_STALE_DATA",
+              "days": 375,
+              "severity": "critical",
+              "impact": -0.02,
+              "suggestion": "Critical: Summary is over 3 months old"
+            }
+          ],
+          "bottlenecks": [],
+          "details": {
+            "processingSpeed": {
+              "points": 0.5,
+              "maxPoints": 1,
+              "issues": []
+            },
+            "componentPerformance": {
+              "points": 0.5,
+              "maxPoints": 1,
+              "issues": []
+            },
+            "extractionEfficiency": {
+              "points": 0.5,
+              "maxPoints": 1,
+              "issues": []
+            },
+            "narrativeGeneration": {
+              "points": 0.5,
+              "maxPoints": 1,
+              "issues": []
+            },
+            "dataFreshness": {
+              "points": 0,
+              "maxPoints": 1,
+              "issues": [
+                {
+                  "type": "VERY_STALE_DATA",
+                  "days": 375,
+                  "severity": "critical",
+                  "impact": -0.02,
+                  "suggestion": "Critical: Summary is over 3 months old"
+                }
+              ]
+            },
+            "metrics": {
+              "targetTime": 3000
+            }
+          }
+        }
+      },
+      "summary": {
+        "totalIssues": 6,
+        "criticalIssues": 4,
+        "majorIssues": 1,
+        "minorIssues": 1,
+        "warnings": 0
+      },
+      "issues": [
+        {
+          "type": "DATE_NOT_FOUND",
+          "field": "admissionDate",
+          "extracted": "2024-10-01",
+          "severity": "major",
+          "impact": -0.03,
+          "suggestion": "Verify admissionDate in source notes"
+        },
+        {
+          "type": "AGE_MISMATCH",
+          "field": "age",
+          "extracted": 58,
+          "severity": "minor",
+          "impact": -0.01
+        },
+        {
+          "type": "VERY_STALE_DATA",
+          "days": 375,
+          "severity": "critical",
+          "impact": -0.02,
+          "suggestion": "Critical: Summary is over 3 months old"
+        },
+        {
+          "type": "MISSING_CRITICAL_SECTION",
+          "section": "admissionDate",
+          "severity": "critical",
+          "impact": -0.05,
+          "suggestion": "Add Admission date to the discharge summary"
+        },
+        {
+          "type": "MISSING_CRITICAL_SECTION",
+          "section": "dischargeDate",
+          "severity": "critical",
+          "impact": -0.05,
+          "suggestion": "Add Discharge date to the discharge summary"
+        },
+        {
+          "type": "MISSING_CRITICAL_SECTION",
+          "section": "dischargeDisposition",
+          "severity": "critical",
+          "impact": -0.05,
+          "suggestion": "Add Discharge disposition to the discharge summary"
+        }
+      ],
+      "recommendations": [
+        {
+          "priority": "critical",
+          "dimension": "multiple",
+          "action": "Address critical issues immediately",
+          "details": "VERY_STALE_DATA, MISSING_CRITICAL_SECTION"
+        }
+      ],
+      "metadata": {
+        "calculated": "2025-10-17T12:12:58.914Z",
+        "processingTime": 0,
+        "extractionMethod": "llm+patterns",
+        "noteCount": 1,
+        "version": "6-dimension-v1.0"
+      }
+    },
+    "cacheStats": {
+      "extraction": {
+        "size": 0,
+        "active": 0,
+        "expired": 0
+      },
+      "narrative": {
+        "size": 0,
+        "active": 0,
+        "expired": 0
+      },
+      "quality": {
+        "size": 0,
+        "active": 0,
+        "expired": 0
+      },
+      "llm": {
+        "size": 2,
+        "active": 2,
+        "expired": 0
+      }
+    },
+    "success": true
+  },
+  {
+    "config": "Fast Models + Cache (First Run)",
+    "duration": 0.024,
+    "quality": {
+      "overall": {
+        "score": 0.8429391891891893,
+        "percentage": 84,
+        "rating": {
+          "rating": "Good",
+          "color": "blue",
+          "emoji": "👍"
+        },
+        "confidence": 0.4619542442409442
+      },
+      "dimensions": {
+        "completeness": {
+          "score": 0.7972972972972973,
+          "weight": 0.3,
+          "weighted": 0.23918918918918916,
+          "issues": [
+            {
+              "type": "MISSING_CRITICAL_SECTION",
+              "section": "admissionDate",
+              "severity": "critical",
+              "impact": -0.05,
+              "suggestion": "Add Admission date to the discharge summary"
+            },
+            {
+              "type": "MISSING_CRITICAL_SECTION",
+              "section": "dischargeDate",
+              "severity": "critical",
+              "impact": -0.05,
+              "suggestion": "Add Discharge date to the discharge summary"
+            },
+            {
+              "type": "MISSING_CRITICAL_SECTION",
+              "section": "dischargeDisposition",
+              "severity": "critical",
+              "impact": -0.05,
+              "suggestion": "Add Discharge disposition to the discharge summary"
+            }
+          ],
+          "details": {
+            "criticalSections": {
+              "points": 6,
+              "maxPoints": 9,
+              "issues": [
+                {
+                  "type": "MISSING_CRITICAL_SECTION",
+                  "section": "admissionDate",
+                  "severity": "critical",
+                  "impact": -0.05,
+                  "suggestion": "Add Admission date to the discharge summary"
+                },
+                {
+                  "type": "MISSING_CRITICAL_SECTION",
+                  "section": "dischargeDate",
+                  "severity": "critical",
+                  "impact": -0.05,
+                  "suggestion": "Add Discharge date to the discharge summary"
+                },
+                {
+                  "type": "MISSING_CRITICAL_SECTION",
+                  "section": "dischargeDisposition",
+                  "severity": "critical",
+                  "impact": -0.05,
+                  "suggestion": "Add Discharge disposition to the discharge summary"
+                }
+              ]
+            },
+            "importantSections": {
+              "points": 6,
+              "maxPoints": 6,
+              "issues": []
+            },
+            "fieldCompleteness": {
+              "points": 7,
+              "maxPoints": 7,
+              "issues": []
+            },
+            "pathologySpecific": {
+              "points": 1,
+              "maxPoints": 1,
+              "issues": []
+            }
+          }
+        },
+        "accuracy": {
+          "score": 0.7199999999999998,
+          "rawScore": 0.7199999999999998,
+          "weight": 0.25,
+          "weighted": 0.17999999999999994,
+          "issues": [
+            {
+              "type": "AGE_MISMATCH",
+              "field": "age",
+              "extracted": 58,
+              "severity": "minor",
+              "impact": -0.01
+            },
+            {
+              "type": "DATE_NOT_FOUND",
+              "field": "admissionDate",
+              "extracted": "2024-10-01",
+              "severity": "major",
+              "impact": -0.03,
+              "suggestion": "Verify admissionDate in source notes"
+            }
+          ],
+          "details": {
+            "demographics": {
+              "totalChecks": 3,
+              "accurateChecks": 2,
+              "issues": [
+                {
+                  "type": "AGE_MISMATCH",
+                  "field": "age",
+                  "extracted": 58,
+                  "severity": "minor",
+                  "impact": -0.01
+                }
+              ]
+            },
+            "dates": {
+              "totalChecks": 3,
+              "accurateChecks": 2,
+              "issues": [
+                {
+                  "type": "DATE_NOT_FOUND",
+                  "field": "admissionDate",
+                  "extracted": "2024-10-01",
+                  "severity": "major",
+                  "impact": -0.03,
+                  "suggestion": "Verify admissionDate in source notes"
+                }
+              ]
+            },
+            "medications": {
+              "totalChecks": 0,
+              "accurateChecks": 0,
+              "issues": []
+            },
+            "procedures": {
+              "totalChecks": 0,
+              "accurateChecks": 0,
+              "issues": []
+            },
+            "hallucinations": {
+              "totalChecks": 1,
+              "accurateChecks": 1,
+              "issues": []
+            },
+            "clinicalValues": {
+              "totalChecks": 1,
+              "accurateChecks": 1,
+              "issues": []
+            },
+            "penaltyApplied": false
+          }
+        },
+        "consistency": {
+          "score": 1,
+          "rawScore": 1,
+          "weight": 0.2,
+          "weighted": 0.2,
+          "issues": [],
+          "details": {
+            "dateConsistency": {
+              "totalChecks": 2,
+              "consistentChecks": 2,
+              "issues": []
+            },
+            "medicationConsistency": {
+              "totalChecks": 0,
+              "consistentChecks": 0,
+              "issues": []
+            },
+            "diagnosisConsistency": {
+              "totalChecks": 0,
+              "consistentChecks": 0,
+              "issues": []
+            },
+            "treatmentAlignment": {
+              "totalChecks": 0,
+              "consistentChecks": 0,
+              "issues": []
+            },
+            "contradictions": {
+              "totalChecks": 1,
+              "consistentChecks": 1,
+              "issues": []
+            },
+            "penaltyApplied": false
+          }
+        },
+        "narrativeQuality": {
+          "score": 1,
+          "weight": 0.15,
+          "weighted": 0.15,
+          "issues": [],
+          "details": {
+            "flowAndTransitions": {
+              "points": 1,
+              "maxPoints": 1,
+              "issues": []
+            },
+            "medicalTerminology": {
+              "points": 1,
+              "maxPoints": 1,
+              "issues": []
+            },
+            "clarityAndConciseness": {
+              "points": 1,
+              "maxPoints": 1,
+              "issues": []
+            },
+            "professionalTone": {
+              "points": 1,
+              "maxPoints": 1,
+              "issues": []
+            },
+            "organization": {
+              "points": 1,
+              "maxPoints": 1,
+              "issues": []
+            },
+            "readability": {
+              "points": 1,
+              "maxPoints": 1,
+              "issues": []
+            }
+          }
+        },
+        "specificity": {
+          "score": 1,
+          "rawScore": 1,
+          "weight": 0.05,
+          "weighted": 0.05,
+          "issues": [],
+          "details": {
+            "valueSpecificity": {
+              "totalChecks": 1,
+              "specificChecks": 1,
+              "issues": []
+            },
+            "temporalSpecificity": {
+              "totalChecks": 1,
+              "specificChecks": 1,
+              "issues": []
+            },
+            "clinicalSpecificity": {
+              "totalChecks": 1,
+              "specificChecks": 1,
+              "issues": []
+            },
+            "medicationSpecificity": {
+              "totalChecks": 1,
+              "specificChecks": 1,
+              "issues": []
+            },
+            "procedureSpecificity": {
+              "totalChecks": 1,
+              "specificChecks": 1,
+              "issues": []
+            },
+            "penaltyApplied": false
+          }
+        },
+        "timeliness": {
+          "score": 0.47500000000000003,
+          "weight": 0.05,
+          "weighted": 0.023750000000000004,
+          "issues": [
+            {
+              "type": "VERY_STALE_DATA",
+              "days": 375,
+              "severity": "critical",
+              "impact": -0.02,
+              "suggestion": "Critical: Summary is over 3 months old"
+            }
+          ],
+          "bottlenecks": [],
+          "details": {
+            "processingSpeed": {
+              "points": 0.5,
+              "maxPoints": 1,
+              "issues": []
+            },
+            "componentPerformance": {
+              "points": 0.5,
+              "maxPoints": 1,
+              "issues": []
+            },
+            "extractionEfficiency": {
+              "points": 0.5,
+              "maxPoints": 1,
+              "issues": []
+            },
+            "narrativeGeneration": {
+              "points": 0.5,
+              "maxPoints": 1,
+              "issues": []
+            },
+            "dataFreshness": {
+              "points": 0,
+              "maxPoints": 1,
+              "issues": [
+                {
+                  "type": "VERY_STALE_DATA",
+                  "days": 375,
+                  "severity": "critical",
+                  "impact": -0.02,
+                  "suggestion": "Critical: Summary is over 3 months old"
+                }
+              ]
+            },
+            "metrics": {
+              "targetTime": 3000
+            }
+          }
+        }
+      },
+      "summary": {
+        "totalIssues": 6,
+        "criticalIssues": 4,
+        "majorIssues": 1,
+        "minorIssues": 1,
+        "warnings": 0
+      },
+      "issues": [
+        {
+          "type": "DATE_NOT_FOUND",
+          "field": "admissionDate",
+          "extracted": "2024-10-01",
+          "severity": "major",
+          "impact": -0.03,
+          "suggestion": "Verify admissionDate in source notes"
+        },
+        {
+          "type": "AGE_MISMATCH",
+          "field": "age",
+          "extracted": 58,
+          "severity": "minor",
+          "impact": -0.01
+        },
+        {
+          "type": "VERY_STALE_DATA",
+          "days": 375,
+          "severity": "critical",
+          "impact": -0.02,
+          "suggestion": "Critical: Summary is over 3 months old"
+        },
+        {
+          "type": "MISSING_CRITICAL_SECTION",
+          "section": "admissionDate",
+          "severity": "critical",
+          "impact": -0.05,
+          "suggestion": "Add Admission date to the discharge summary"
+        },
+        {
+          "type": "MISSING_CRITICAL_SECTION",
+          "section": "dischargeDate",
+          "severity": "critical",
+          "impact": -0.05,
+          "suggestion": "Add Discharge date to the discharge summary"
+        },
+        {
+          "type": "MISSING_CRITICAL_SECTION",
+          "section": "dischargeDisposition",
+          "severity": "critical",
+          "impact": -0.05,
+          "suggestion": "Add Discharge disposition to the discharge summary"
+        }
+      ],
+      "recommendations": [
+        {
+          "priority": "critical",
+          "dimension": "multiple",
+          "action": "Address critical issues immediately",
+          "details": "VERY_STALE_DATA, MISSING_CRITICAL_SECTION"
+        }
+      ],
+      "metadata": {
+        "calculated": "2025-10-17T12:13:00.940Z",
+        "processingTime": 0,
+        "extractionMethod": "llm+patterns",
+        "noteCount": 1,
+        "version": "6-dimension-v1.0"
+      }
+    },
+    "cacheStats": {
+      "extraction": {
+        "size": 0,
+        "active": 0,
+        "expired": 0
+      },
+      "narrative": {
+        "size": 0,
+        "active": 0,
+        "expired": 0
+      },
+      "quality": {
+        "size": 0,
+        "active": 0,
+        "expired": 0
+      },
+      "llm": {
+        "size": 2,
+        "active": 2,
+        "expired": 0
+      }
+    },
+    "success": true
+  },
+  {
+    "config": "Fast Models + Cache (Second Run - Cache Hit)",
+    "duration": 0.023,
+    "quality": {
+      "overall": {
+        "score": 0.8429391891891893,
+        "percentage": 84,
+        "rating": {
+          "rating": "Good",
+          "color": "blue",
+          "emoji": "👍"
+        },
+        "confidence": 0.4619542442409442
+      },
+      "dimensions": {
+        "completeness": {
+          "score": 0.7972972972972973,
+          "weight": 0.3,
+          "weighted": 0.23918918918918916,
+          "issues": [
+            {
+              "type": "MISSING_CRITICAL_SECTION",
+              "section": "admissionDate",
+              "severity": "critical",
+              "impact": -0.05,
+              "suggestion": "Add Admission date to the discharge summary"
+            },
+            {
+              "type": "MISSING_CRITICAL_SECTION",
+              "section": "dischargeDate",
+              "severity": "critical",
+              "impact": -0.05,
+              "suggestion": "Add Discharge date to the discharge summary"
+            },
+            {
+              "type": "MISSING_CRITICAL_SECTION",
+              "section": "dischargeDisposition",
+              "severity": "critical",
+              "impact": -0.05,
+              "suggestion": "Add Discharge disposition to the discharge summary"
+            }
+          ],
+          "details": {
+            "criticalSections": {
+              "points": 6,
+              "maxPoints": 9,
+              "issues": [
+                {
+                  "type": "MISSING_CRITICAL_SECTION",
+                  "section": "admissionDate",
+                  "severity": "critical",
+                  "impact": -0.05,
+                  "suggestion": "Add Admission date to the discharge summary"
+                },
+                {
+                  "type": "MISSING_CRITICAL_SECTION",
+                  "section": "dischargeDate",
+                  "severity": "critical",
+                  "impact": -0.05,
+                  "suggestion": "Add Discharge date to the discharge summary"
+                },
+                {
+                  "type": "MISSING_CRITICAL_SECTION",
+                  "section": "dischargeDisposition",
+                  "severity": "critical",
+                  "impact": -0.05,
+                  "suggestion": "Add Discharge disposition to the discharge summary"
+                }
+              ]
+            },
+            "importantSections": {
+              "points": 6,
+              "maxPoints": 6,
+              "issues": []
+            },
+            "fieldCompleteness": {
+              "points": 7,
+              "maxPoints": 7,
+              "issues": []
+            },
+            "pathologySpecific": {
+              "points": 1,
+              "maxPoints": 1,
+              "issues": []
+            }
+          }
+        },
+        "accuracy": {
+          "score": 0.7199999999999998,
+          "rawScore": 0.7199999999999998,
+          "weight": 0.25,
+          "weighted": 0.17999999999999994,
+          "issues": [
+            {
+              "type": "AGE_MISMATCH",
+              "field": "age",
+              "extracted": 58,
+              "severity": "minor",
+              "impact": -0.01
+            },
+            {
+              "type": "DATE_NOT_FOUND",
+              "field": "admissionDate",
+              "extracted": "2024-10-01",
+              "severity": "major",
+              "impact": -0.03,
+              "suggestion": "Verify admissionDate in source notes"
+            }
+          ],
+          "details": {
+            "demographics": {
+              "totalChecks": 3,
+              "accurateChecks": 2,
+              "issues": [
+                {
+                  "type": "AGE_MISMATCH",
+                  "field": "age",
+                  "extracted": 58,
+                  "severity": "minor",
+                  "impact": -0.01
+                }
+              ]
+            },
+            "dates": {
+              "totalChecks": 3,
+              "accurateChecks": 2,
+              "issues": [
+                {
+                  "type": "DATE_NOT_FOUND",
+                  "field": "admissionDate",
+                  "extracted": "2024-10-01",
+                  "severity": "major",
+                  "impact": -0.03,
+                  "suggestion": "Verify admissionDate in source notes"
+                }
+              ]
+            },
+            "medications": {
+              "totalChecks": 0,
+              "accurateChecks": 0,
+              "issues": []
+            },
+            "procedures": {
+              "totalChecks": 0,
+              "accurateChecks": 0,
+              "issues": []
+            },
+            "hallucinations": {
+              "totalChecks": 1,
+              "accurateChecks": 1,
+              "issues": []
+            },
+            "clinicalValues": {
+              "totalChecks": 1,
+              "accurateChecks": 1,
+              "issues": []
+            },
+            "penaltyApplied": false
+          }
+        },
+        "consistency": {
+          "score": 1,
+          "rawScore": 1,
+          "weight": 0.2,
+          "weighted": 0.2,
+          "issues": [],
+          "details": {
+            "dateConsistency": {
+              "totalChecks": 2,
+              "consistentChecks": 2,
+              "issues": []
+            },
+            "medicationConsistency": {
+              "totalChecks": 0,
+              "consistentChecks": 0,
+              "issues": []
+            },
+            "diagnosisConsistency": {
+              "totalChecks": 0,
+              "consistentChecks": 0,
+              "issues": []
+            },
+            "treatmentAlignment": {
+              "totalChecks": 0,
+              "consistentChecks": 0,
+              "issues": []
+            },
+            "contradictions": {
+              "totalChecks": 1,
+              "consistentChecks": 1,
+              "issues": []
+            },
+            "penaltyApplied": false
+          }
+        },
+        "narrativeQuality": {
+          "score": 1,
+          "weight": 0.15,
+          "weighted": 0.15,
+          "issues": [],
+          "details": {
+            "flowAndTransitions": {
+              "points": 1,
+              "maxPoints": 1,
+              "issues": []
+            },
+            "medicalTerminology": {
+              "points": 1,
+              "maxPoints": 1,
+              "issues": []
+            },
+            "clarityAndConciseness": {
+              "points": 1,
+              "maxPoints": 1,
+              "issues": []
+            },
+            "professionalTone": {
+              "points": 1,
+              "maxPoints": 1,
+              "issues": []
+            },
+            "organization": {
+              "points": 1,
+              "maxPoints": 1,
+              "issues": []
+            },
+            "readability": {
+              "points": 1,
+              "maxPoints": 1,
+              "issues": []
+            }
+          }
+        },
+        "specificity": {
+          "score": 1,
+          "rawScore": 1,
+          "weight": 0.05,
+          "weighted": 0.05,
+          "issues": [],
+          "details": {
+            "valueSpecificity": {
+              "totalChecks": 1,
+              "specificChecks": 1,
+              "issues": []
+            },
+            "temporalSpecificity": {
+              "totalChecks": 1,
+              "specificChecks": 1,
+              "issues": []
+            },
+            "clinicalSpecificity": {
+              "totalChecks": 1,
+              "specificChecks": 1,
+              "issues": []
+            },
+            "medicationSpecificity": {
+              "totalChecks": 1,
+              "specificChecks": 1,
+              "issues": []
+            },
+            "procedureSpecificity": {
+              "totalChecks": 1,
+              "specificChecks": 1,
+              "issues": []
+            },
+            "penaltyApplied": false
+          }
+        },
+        "timeliness": {
+          "score": 0.47500000000000003,
+          "weight": 0.05,
+          "weighted": 0.023750000000000004,
+          "issues": [
+            {
+              "type": "VERY_STALE_DATA",
+              "days": 375,
+              "severity": "critical",
+              "impact": -0.02,
+              "suggestion": "Critical: Summary is over 3 months old"
+            }
+          ],
+          "bottlenecks": [],
+          "details": {
+            "processingSpeed": {
+              "points": 0.5,
+              "maxPoints": 1,
+              "issues": []
+            },
+            "componentPerformance": {
+              "points": 0.5,
+              "maxPoints": 1,
+              "issues": []
+            },
+            "extractionEfficiency": {
+              "points": 0.5,
+              "maxPoints": 1,
+              "issues": []
+            },
+            "narrativeGeneration": {
+              "points": 0.5,
+              "maxPoints": 1,
+              "issues": []
+            },
+            "dataFreshness": {
+              "points": 0,
+              "maxPoints": 1,
+              "issues": [
+                {
+                  "type": "VERY_STALE_DATA",
+                  "days": 375,
+                  "severity": "critical",
+                  "impact": -0.02,
+                  "suggestion": "Critical: Summary is over 3 months old"
+                }
+              ]
+            },
+            "metrics": {
+              "targetTime": 3000
+            }
+          }
+        }
+      },
+      "summary": {
+        "totalIssues": 6,
+        "criticalIssues": 4,
+        "majorIssues": 1,
+        "minorIssues": 1,
+        "warnings": 0
+      },
+      "issues": [
+        {
+          "type": "DATE_NOT_FOUND",
+          "field": "admissionDate",
+          "extracted": "2024-10-01",
+          "severity": "major",
+          "impact": -0.03,
+          "suggestion": "Verify admissionDate in source notes"
+        },
+        {
+          "type": "AGE_MISMATCH",
+          "field": "age",
+          "extracted": 58,
+          "severity": "minor",
+          "impact": -0.01
+        },
+        {
+          "type": "VERY_STALE_DATA",
+          "days": 375,
+          "severity": "critical",
+          "impact": -0.02,
+          "suggestion": "Critical: Summary is over 3 months old"
+        },
+        {
+          "type": "MISSING_CRITICAL_SECTION",
+          "section": "admissionDate",
+          "severity": "critical",
+          "impact": -0.05,
+          "suggestion": "Add Admission date to the discharge summary"
+        },
+        {
+          "type": "MISSING_CRITICAL_SECTION",
+          "section": "dischargeDate",
+          "severity": "critical",
+          "impact": -0.05,
+          "suggestion": "Add Discharge date to the discharge summary"
+        },
+        {
+          "type": "MISSING_CRITICAL_SECTION",
+          "section": "dischargeDisposition",
+          "severity": "critical",
+          "impact": -0.05,
+          "suggestion": "Add Discharge disposition to the discharge summary"
+        }
+      ],
+      "recommendations": [
+        {
+          "priority": "critical",
+          "dimension": "multiple",
+          "action": "Address critical issues immediately",
+          "details": "VERY_STALE_DATA, MISSING_CRITICAL_SECTION"
+        }
+      ],
+      "metadata": {
+        "calculated": "2025-10-17T12:13:02.964Z",
+        "processingTime": 0,
+        "extractionMethod": "llm+patterns",
+        "noteCount": 1,
+        "version": "6-dimension-v1.0"
+      }
+    },
+    "cacheStats": {
+      "extraction": {
+        "size": 0,
+        "active": 0,
+        "expired": 0
+      },
+      "narrative": {
+        "size": 0,
+        "active": 0,
+        "expired": 0
+      },
+      "quality": {
+        "size": 0,
+        "active": 0,
+        "expired": 0
+      },
+      "llm": {
+        "size": 2,
+        "active": 2,
+        "expired": 0
+      }
+    },
+    "success": true
+  },
+  {
+    "config": "Fast Models + preserveAllInfo",
+    "duration": 0.017,
+    "quality": {
+      "overall": {
+        "score": 0.8429391891891893,
+        "percentage": 84,
+        "rating": {
+          "rating": "Good",
+          "color": "blue",
+          "emoji": "👍"
+        },
+        "confidence": 0.4619542442409442
+      },
+      "dimensions": {
+        "completeness": {
+          "score": 0.7972972972972973,
+          "weight": 0.3,
+          "weighted": 0.23918918918918916,
+          "issues": [
+            {
+              "type": "MISSING_CRITICAL_SECTION",
+              "section": "admissionDate",
+              "severity": "critical",
+              "impact": -0.05,
+              "suggestion": "Add Admission date to the discharge summary"
+            },
+            {
+              "type": "MISSING_CRITICAL_SECTION",
+              "section": "dischargeDate",
+              "severity": "critical",
+              "impact": -0.05,
+              "suggestion": "Add Discharge date to the discharge summary"
+            },
+            {
+              "type": "MISSING_CRITICAL_SECTION",
+              "section": "dischargeDisposition",
+              "severity": "critical",
+              "impact": -0.05,
+              "suggestion": "Add Discharge disposition to the discharge summary"
+            }
+          ],
+          "details": {
+            "criticalSections": {
+              "points": 6,
+              "maxPoints": 9,
+              "issues": [
+                {
+                  "type": "MISSING_CRITICAL_SECTION",
+                  "section": "admissionDate",
+                  "severity": "critical",
+                  "impact": -0.05,
+                  "suggestion": "Add Admission date to the discharge summary"
+                },
+                {
+                  "type": "MISSING_CRITICAL_SECTION",
+                  "section": "dischargeDate",
+                  "severity": "critical",
+                  "impact": -0.05,
+                  "suggestion": "Add Discharge date to the discharge summary"
+                },
+                {
+                  "type": "MISSING_CRITICAL_SECTION",
+                  "section": "dischargeDisposition",
+                  "severity": "critical",
+                  "impact": -0.05,
+                  "suggestion": "Add Discharge disposition to the discharge summary"
+                }
+              ]
+            },
+            "importantSections": {
+              "points": 6,
+              "maxPoints": 6,
+              "issues": []
+            },
+            "fieldCompleteness": {
+              "points": 7,
+              "maxPoints": 7,
+              "issues": []
+            },
+            "pathologySpecific": {
+              "points": 1,
+              "maxPoints": 1,
+              "issues": []
+            }
+          }
+        },
+        "accuracy": {
+          "score": 0.7199999999999998,
+          "rawScore": 0.7199999999999998,
+          "weight": 0.25,
+          "weighted": 0.17999999999999994,
+          "issues": [
+            {
+              "type": "AGE_MISMATCH",
+              "field": "age",
+              "extracted": 58,
+              "severity": "minor",
+              "impact": -0.01
+            },
+            {
+              "type": "DATE_NOT_FOUND",
+              "field": "admissionDate",
+              "extracted": "2024-10-01",
+              "severity": "major",
+              "impact": -0.03,
+              "suggestion": "Verify admissionDate in source notes"
+            }
+          ],
+          "details": {
+            "demographics": {
+              "totalChecks": 3,
+              "accurateChecks": 2,
+              "issues": [
+                {
+                  "type": "AGE_MISMATCH",
+                  "field": "age",
+                  "extracted": 58,
+                  "severity": "minor",
+                  "impact": -0.01
+                }
+              ]
+            },
+            "dates": {
+              "totalChecks": 3,
+              "accurateChecks": 2,
+              "issues": [
+                {
+                  "type": "DATE_NOT_FOUND",
+                  "field": "admissionDate",
+                  "extracted": "2024-10-01",
+                  "severity": "major",
+                  "impact": -0.03,
+                  "suggestion": "Verify admissionDate in source notes"
+                }
+              ]
+            },
+            "medications": {
+              "totalChecks": 0,
+              "accurateChecks": 0,
+              "issues": []
+            },
+            "procedures": {
+              "totalChecks": 0,
+              "accurateChecks": 0,
+              "issues": []
+            },
+            "hallucinations": {
+              "totalChecks": 1,
+              "accurateChecks": 1,
+              "issues": []
+            },
+            "clinicalValues": {
+              "totalChecks": 1,
+              "accurateChecks": 1,
+              "issues": []
+            },
+            "penaltyApplied": false
+          }
+        },
+        "consistency": {
+          "score": 1,
+          "rawScore": 1,
+          "weight": 0.2,
+          "weighted": 0.2,
+          "issues": [],
+          "details": {
+            "dateConsistency": {
+              "totalChecks": 2,
+              "consistentChecks": 2,
+              "issues": []
+            },
+            "medicationConsistency": {
+              "totalChecks": 0,
+              "consistentChecks": 0,
+              "issues": []
+            },
+            "diagnosisConsistency": {
+              "totalChecks": 0,
+              "consistentChecks": 0,
+              "issues": []
+            },
+            "treatmentAlignment": {
+              "totalChecks": 0,
+              "consistentChecks": 0,
+              "issues": []
+            },
+            "contradictions": {
+              "totalChecks": 1,
+              "consistentChecks": 1,
+              "issues": []
+            },
+            "penaltyApplied": false
+          }
+        },
+        "narrativeQuality": {
+          "score": 1,
+          "weight": 0.15,
+          "weighted": 0.15,
+          "issues": [],
+          "details": {
+            "flowAndTransitions": {
+              "points": 1,
+              "maxPoints": 1,
+              "issues": []
+            },
+            "medicalTerminology": {
+              "points": 1,
+              "maxPoints": 1,
+              "issues": []
+            },
+            "clarityAndConciseness": {
+              "points": 1,
+              "maxPoints": 1,
+              "issues": []
+            },
+            "professionalTone": {
+              "points": 1,
+              "maxPoints": 1,
+              "issues": []
+            },
+            "organization": {
+              "points": 1,
+              "maxPoints": 1,
+              "issues": []
+            },
+            "readability": {
+              "points": 1,
+              "maxPoints": 1,
+              "issues": []
+            }
+          }
+        },
+        "specificity": {
+          "score": 1,
+          "rawScore": 1,
+          "weight": 0.05,
+          "weighted": 0.05,
+          "issues": [],
+          "details": {
+            "valueSpecificity": {
+              "totalChecks": 1,
+              "specificChecks": 1,
+              "issues": []
+            },
+            "temporalSpecificity": {
+              "totalChecks": 1,
+              "specificChecks": 1,
+              "issues": []
+            },
+            "clinicalSpecificity": {
+              "totalChecks": 1,
+              "specificChecks": 1,
+              "issues": []
+            },
+            "medicationSpecificity": {
+              "totalChecks": 1,
+              "specificChecks": 1,
+              "issues": []
+            },
+            "procedureSpecificity": {
+              "totalChecks": 1,
+              "specificChecks": 1,
+              "issues": []
+            },
+            "penaltyApplied": false
+          }
+        },
+        "timeliness": {
+          "score": 0.47500000000000003,
+          "weight": 0.05,
+          "weighted": 0.023750000000000004,
+          "issues": [
+            {
+              "type": "VERY_STALE_DATA",
+              "days": 375,
+              "severity": "critical",
+              "impact": -0.02,
+              "suggestion": "Critical: Summary is over 3 months old"
+            }
+          ],
+          "bottlenecks": [],
+          "details": {
+            "processingSpeed": {
+              "points": 0.5,
+              "maxPoints": 1,
+              "issues": []
+            },
+            "componentPerformance": {
+              "points": 0.5,
+              "maxPoints": 1,
+              "issues": []
+            },
+            "extractionEfficiency": {
+              "points": 0.5,
+              "maxPoints": 1,
+              "issues": []
+            },
+            "narrativeGeneration": {
+              "points": 0.5,
+              "maxPoints": 1,
+              "issues": []
+            },
+            "dataFreshness": {
+              "points": 0,
+              "maxPoints": 1,
+              "issues": [
+                {
+                  "type": "VERY_STALE_DATA",
+                  "days": 375,
+                  "severity": "critical",
+                  "impact": -0.02,
+                  "suggestion": "Critical: Summary is over 3 months old"
+                }
+              ]
+            },
+            "metrics": {
+              "targetTime": 3000
+            }
+          }
+        }
+      },
+      "summary": {
+        "totalIssues": 6,
+        "criticalIssues": 4,
+        "majorIssues": 1,
+        "minorIssues": 1,
+        "warnings": 0
+      },
+      "issues": [
+        {
+          "type": "DATE_NOT_FOUND",
+          "field": "admissionDate",
+          "extracted": "2024-10-01",
+          "severity": "major",
+          "impact": -0.03,
+          "suggestion": "Verify admissionDate in source notes"
+        },
+        {
+          "type": "AGE_MISMATCH",
+          "field": "age",
+          "extracted": 58,
+          "severity": "minor",
+          "impact": -0.01
+        },
+        {
+          "type": "VERY_STALE_DATA",
+          "days": 375,
+          "severity": "critical",
+          "impact": -0.02,
+          "suggestion": "Critical: Summary is over 3 months old"
+        },
+        {
+          "type": "MISSING_CRITICAL_SECTION",
+          "section": "admissionDate",
+          "severity": "critical",
+          "impact": -0.05,
+          "suggestion": "Add Admission date to the discharge summary"
+        },
+        {
+          "type": "MISSING_CRITICAL_SECTION",
+          "section": "dischargeDate",
+          "severity": "critical",
+          "impact": -0.05,
+          "suggestion": "Add Discharge date to the discharge summary"
+        },
+        {
+          "type": "MISSING_CRITICAL_SECTION",
+          "section": "dischargeDisposition",
+          "severity": "critical",
+          "impact": -0.05,
+          "suggestion": "Add Discharge disposition to the discharge summary"
+        }
+      ],
+      "recommendations": [
+        {
+          "priority": "critical",
+          "dimension": "multiple",
+          "action": "Address critical issues immediately",
+          "details": "VERY_STALE_DATA, MISSING_CRITICAL_SECTION"
+        }
+      ],
+      "metadata": {
+        "calculated": "2025-10-17T12:13:04.982Z",
+        "processingTime": 0,
+        "extractionMethod": "llm+patterns",
+        "noteCount": 1,
+        "version": "6-dimension-v1.0"
+      }
+    },
+    "cacheStats": {
+      "extraction": {
+        "size": 0,
+        "active": 0,
+        "expired": 0
+      },
+      "narrative": {
+        "size": 0,
+        "active": 0,
+        "expired": 0
+      },
+      "quality": {
+        "size": 0,
+        "active": 0,
+        "expired": 0
+      },
+      "llm": {
+        "size": 2,
+        "active": 2,
+        "expired": 0
+      }
+    },
+    "success": true
+  }
+]

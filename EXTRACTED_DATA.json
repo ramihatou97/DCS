@@ -1,0 +1,133 @@
+{
+  "demographics": {
+    "name": null,
+    "mrn": null,
+    "dob": null,
+    "age": 62,
+    "gender": "M",
+    "attendingPhysician": "Dr. Johnson"
+  },
+  "dates": {
+    "ictusDate": "2024-10-10",
+    "admissionDate": "2024-10-10",
+    "dischargeDate": "2024-10-20"
+  },
+  "pathology": {
+    "type": "aSAH",
+    "location": "AComm aneurysm",
+    "huntHess": 3,
+    "fisher": 3,
+    "size": "7mm"
+  },
+  "presentingSymptoms": [
+    "sudden severe headache",
+    "worst headache of life",
+    "nausea and vomiting",
+    "photophobia",
+    "neck stiffness",
+    "brief loss of consciousness"
+  ],
+  "procedures": [
+    {
+      "name": "EVD placement",
+      "date": "2024-10-11",
+      "operator": null
+    },
+    {
+      "name": "Cerebral angiogram and coiling of AComm aneurysm",
+      "date": "2024-10-12",
+      "operator": "Dr. Smith"
+    },
+    {
+      "name": "EVD removal",
+      "date": "2024-10-18",
+      "operator": null
+    }
+  ],
+  "complications": [
+    {
+      "name": "Acute hydrocephalus",
+      "date": "2024-10-11",
+      "severity": "moderate",
+      "management": "EVD placement"
+    },
+    {
+      "name": "Vasospasm",
+      "date": "2024-10-15",
+      "severity": "moderate",
+      "management": "Induced hypertension (MAP 90-100), nimodipine"
+    }
+  ],
+  "anticoagulation": {
+    "medications": [
+      {
+        "name": "aspirin",
+        "status": "held",
+        "date": "2024-10-10",
+        "reversalAgent": null
+      }
+    ],
+    "critical": false
+  },
+  "imaging": {
+    "findings": [
+      "CT: diffuse SAH in basal cisterns and sylvian fissures bilaterally",
+      "CTA: 7mm AComm aneurysm",
+      "CT: acute hydrocephalus",
+      "CT: resolving SAH, no new strokes, ventricles stable"
+    ],
+    "dates": [
+      "2024-10-10",
+      "2024-10-10",
+      "2024-10-11",
+      "2024-10-18"
+    ]
+  },
+  "functionalScores": {
+    "mRS": 2,
+    "KPS": 80,
+    "GCS": 14
+  },
+  "medications": [
+    {
+      "name": "Nimodipine",
+      "dose": "60mg",
+      "frequency": "q4h",
+      "route": "PO"
+    },
+    {
+      "name": "Keppra",
+      "dose": "500mg",
+      "frequency": "BID",
+      "route": "PO"
+    },
+    {
+      "name": "Tylenol",
+      "dose": "650mg",
+      "frequency": "q6h PRN",
+      "route": "PO"
+    },
+    {
+      "name": "Colace",
+      "dose": "100mg",
+      "frequency": "BID",
+      "route": "PO"
+    }
+  ],
+  "followUp": {
+    "appointments": [
+      {
+        "specialty": "Neurosurgery",
+        "timeframe": "2 weeks"
+      }
+    ],
+    "imaging": [
+      "Repeat angiogram in 6 months",
+      "CT head in 4 weeks"
+    ]
+  },
+  "dischargeDestination": {
+    "location": "Home",
+    "support": "with family"
+  }
+}

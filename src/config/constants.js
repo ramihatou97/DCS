@@ -248,6 +248,11 @@ export const EXPORT_OPTIONS = {
     mimeType: 'text/plain',
     description: 'Plain text (copy-paste ready)'
   },
+  CLINICAL_TEMPLATE: {
+    extension: '.txt',
+    mimeType: 'text/plain',
+    description: 'Clinical Template Format (institutional)'
+  },
   PDF: {
     extension: '.pdf',
     mimeType: 'application/pdf',

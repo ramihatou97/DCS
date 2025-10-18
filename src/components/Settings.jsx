@@ -7,6 +7,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Key, Server, CheckCircle, XCircle, AlertCircle, Shield, ExternalLink, Terminal, FileCode } from 'lucide-react';
+import ModelSelector from './ModelSelector';
 
 const Settings = () => {
   const [backendStatus, setBackendStatus] = useState({
@@ -92,14 +93,30 @@ const Settings = () => {
   const hasAnyKey = Object.values(backendStatus.services).some(v => v);
 
   return (
-    <div className="max-w-4xl mx-auto p-6">
+    <div className="max-w-6xl mx-auto p-6">
       {/* Header */}
       <div className="mb-8">
         <div className="flex items-center space-x-3 mb-2">
           <Shield className="w-8 h-8 text-blue-600" />
-          <h2 className="text-2xl font-bold text-gray-900">API Configuration</h2>
+          <h2 className="text-2xl font-bold text-gray-900">Settings & Configuration</h2>
         </div>
         <p className="text-gray-600">
+          Configure AI models, API keys, and view system status.
+        </p>
+      </div>
+
+      {/* Model Selector - NEW FEATURE */}
+      <div className="mb-8">
+        <ModelSelector />
+      </div>
+
+      {/* Divider */}
+      <div className="my-8 border-t-2 border-gray-200"></div>
+
+      {/* API Configuration Section Header */}
+      <div className="mb-6">
+        <h3 className="text-xl font-semibold text-gray-900 mb-2">Backend API Configuration</h3>
+        <p className="text-gray-600 text-sm">
           API keys are stored securely in the backend server. Never exposed to the browser.
         </p>
       </div>

@@ -1,0 +1,1614 @@
+{
+  "duration": 19.944,
+  "quality": {
+    "overall": {
+      "score": 0.837395552560647,
+      "percentage": 84,
+      "rating": {
+        "rating": "Good",
+        "color": "blue",
+        "emoji": "👍"
+      },
+      "confidence": 0.6594255392082954
+    },
+    "dimensions": {
+      "completeness": {
+        "score": 1,
+        "weight": 0.3,
+        "weighted": 0.3,
+        "issues": [],
+        "details": {
+          "criticalSections": {
+            "points": 9,
+            "maxPoints": 9,
+            "issues": []
+          },
+          "importantSections": {
+            "points": 6,
+            "maxPoints": 6,
+            "issues": []
+          },
+          "fieldCompleteness": {
+            "points": 7,
+            "maxPoints": 7,
+            "issues": []
+          },
+          "pathologySpecific": {
+            "points": 1,
+            "maxPoints": 1,
+            "issues": []
+          }
+        }
+      },
+      "accuracy": {
+        "score": 0.6857142857142858,
+        "rawScore": 0.6857142857142858,
+        "weight": 0.25,
+        "weighted": 0.17142857142857146,
+        "issues": [
+          {
+            "type": "AGE_MISMATCH",
+            "field": "age",
+            "extracted": 66,
+            "severity": "minor",
+            "impact": -0.01
+          },
+          {
+            "type": "DATE_NOT_FOUND",
+            "field": "admissionDate",
+            "extracted": "2024-09-15",
+            "severity": "major",
+            "impact": -0.03,
+            "suggestion": "Verify admissionDate in source notes"
+          },
+          {
+            "type": "DATE_NOT_FOUND",
+            "field": "surgeryDate",
+            "extracted": "2024-09-24",
+            "severity": "major",
+            "impact": -0.03,
+            "suggestion": "Verify surgeryDate in source notes"
+          }
+        ],
+        "details": {
+          "demographics": {
+            "totalChecks": 3,
+            "accurateChecks": 2,
+            "issues": [
+              {
+                "type": "AGE_MISMATCH",
+                "field": "age",
+                "extracted": 66,
+                "severity": "minor",
+                "impact": -0.01
+              }
+            ]
+          },
+          "dates": {
+            "totalChecks": 4,
+            "accurateChecks": 2,
+            "issues": [
+              {
+                "type": "DATE_NOT_FOUND",
+                "field": "admissionDate",
+                "extracted": "2024-09-15",
+                "severity": "major",
+                "impact": -0.03,
+                "suggestion": "Verify admissionDate in source notes"
+              },
+              {
+                "type": "DATE_NOT_FOUND",
+                "field": "surgeryDate",
+                "extracted": "2024-09-24",
+                "severity": "major",
+                "impact": -0.03,
+                "suggestion": "Verify surgeryDate in source notes"
+              }
+            ]
+          },
+          "medications": {
+            "totalChecks": 0,
+            "accurateChecks": 0,
+            "issues": []
+          },
+          "procedures": {
+            "totalChecks": 0,
+            "accurateChecks": 0,
+            "issues": []
+          },
+          "hallucinations": {
+            "totalChecks": 4,
+            "accurateChecks": 4,
+            "issues": []
+          },
+          "clinicalValues": {
+            "totalChecks": 1,
+            "accurateChecks": 1,
+            "issues": []
+          },
+          "penaltyApplied": false
+        }
+      },
+      "consistency": {
+        "score": 0.8125,
+        "rawScore": 0.8125,
+        "weight": 0.2,
+        "weighted": 0.1625,
+        "issues": [
+          {
+            "type": "DIAGNOSIS_NOT_MENTIONED",
+            "diagnosis": "thick cisternal clot with intraventricular hemorrhage",
+            "section": "narrative",
+            "severity": "minor",
+            "impact": -0.01
+          },
+          {
+            "type": "FUNCTIONAL_STATUS_CONTRADICTION",
+            "kps": 100,
+            "narrative": "mentions assistance",
+            "severity": "major",
+            "impact": -0.02
+          }
+        ],
+        "details": {
+          "dateConsistency": {
+            "totalChecks": 3,
+            "consistentChecks": 3,
+            "issues": []
+          },
+          "medicationConsistency": {
+            "totalChecks": 0,
+            "consistentChecks": 0,
+            "issues": []
+          },
+          "diagnosisConsistency": {
+            "totalChecks": 1,
+            "consistentChecks": 0,
+            "issues": [
+              {
+                "type": "DIAGNOSIS_NOT_MENTIONED",
+                "diagnosis": "thick cisternal clot with intraventricular hemorrhage",
+                "section": "narrative",
+                "severity": "minor",
+                "impact": -0.01
+              }
+            ]
+          },
+          "treatmentAlignment": {
+            "totalChecks": 0,
+            "consistentChecks": 0,
+            "issues": []
+          },
+          "contradictions": {
+            "totalChecks": 5,
+            "consistentChecks": 4,
+            "issues": [
+              {
+                "type": "FUNCTIONAL_STATUS_CONTRADICTION",
+                "kps": 100,
+                "narrative": "mentions assistance",
+                "severity": "major",
+                "impact": -0.02
+              }
+            ]
+          },
+          "penaltyApplied": false
+        }
+      },
+      "narrativeQuality": {
+        "score": 0.9276729559748429,
+        "weight": 0.15,
+        "weighted": 0.13915094339622644,
+        "issues": [
+          {
+            "type": "LACKS_TRANSITIONS",
+            "severity": "minor",
+            "impact": -0.01,
+            "suggestion": "Add transitional phrases to improve flow"
+          },
+          {
+            "type": "INSUFFICIENT_MEDICAL_TERMINOLOGY",
+            "density": 0.07142857142857142,
+            "severity": "major",
+            "impact": -0.02,
+            "suggestion": "Increase use of medical terminology for professional documentation"
+          },
+          {
+            "type": "EXCESSIVE_SENTENCE_LENGTH",
+            "avgLength": 62,
+            "severity": "major",
+            "impact": -0.02,
+            "suggestion": "Significantly shorten sentences for better readability"
+          },
+          {
+            "type": "FIRST_PERSON_USAGE",
+            "severity": "major",
+            "impact": -0.02,
+            "suggestion": "Remove first person pronouns"
+          },
+          {
+            "type": "INFORMAL_CONTRACTIONS",
+            "severity": "minor",
+            "impact": -0.01,
+            "suggestion": "Expand contractions for formal documentation"
+          },
+          {
+            "type": "SECTION_DOMINANCE",
+            "dominance": 0.9244094488188976,
+            "severity": "major",
+            "impact": -0.02,
+            "suggestion": "Redistribute content for better organization"
+          },
+          {
+            "type": "EXCESSIVE_LONG_WORDS",
+            "count": 4,
+            "severity": "minor",
+            "impact": -0.01
+          }
+        ],
+        "details": {
+          "flowAndTransitions": {
+            "points": 4,
+            "maxPoints": 5,
+            "issues": [
+              {
+                "type": "LACKS_TRANSITIONS",
+                "severity": "minor",
+                "impact": -0.01,
+                "suggestion": "Add transitional phrases to improve flow"
+              }
+            ]
+          },
+          "medicalTerminology": {
+            "points": 2,
+            "maxPoints": 3,
+            "issues": [
+              {
+                "type": "INSUFFICIENT_MEDICAL_TERMINOLOGY",
+                "density": 0.07142857142857142,
+                "severity": "major",
+                "impact": -0.02,
+                "suggestion": "Increase use of medical terminology for professional documentation"
+              }
+            ]
+          },
+          "clarityAndConciseness": {
+            "points": 65,
+            "maxPoints": 66,
+            "issues": [
+              {
+                "type": "EXCESSIVE_SENTENCE_LENGTH",
+                "avgLength": 62,
+                "severity": "major",
+                "impact": -0.02,
+                "suggestion": "Significantly shorten sentences for better readability"
+              }
+            ]
+          },
+          "professionalTone": {
+            "points": 1,
+            "maxPoints": 3,
+            "issues": [
+              {
+                "type": "FIRST_PERSON_USAGE",
+                "severity": "major",
+                "impact": -0.02,
+                "suggestion": "Remove first person pronouns"
+              },
+              {
+                "type": "INFORMAL_CONTRACTIONS",
+                "severity": "minor",
+                "impact": -0.01,
+                "suggestion": "Expand contractions for formal documentation"
+              }
+            ]
+          },
+          "organization": {
+            "points": 1,
+            "maxPoints": 2,
+            "issues": [
+              {
+                "type": "SECTION_DOMINANCE",
+                "dominance": 0.9244094488188976,
+                "severity": "major",
+                "impact": -0.02,
+                "suggestion": "Redistribute content for better organization"
+              }
+            ]
+          },
+          "readability": {
+            "points": 1,
+            "maxPoints": 2,
+            "issues": [
+              {
+                "type": "EXCESSIVE_LONG_WORDS",
+                "count": 4,
+                "severity": "minor",
+                "impact": -0.01
+              }
+            ]
+          }
+        }
+      },
+      "specificity": {
+        "score": 0.8113207547169814,
+        "rawScore": 0.8113207547169814,
+        "weight": 0.05,
+        "weighted": 0.040566037735849075,
+        "issues": [
+          {
+            "type": "VAGUE_QUANTIFIER",
+            "term": "several",
+            "severity": "minor",
+            "impact": -0.01,
+            "suggestion": "Replace \"several\" with specific number or range"
+          },
+          {
+            "type": "VAGUE_QUANTIFIER",
+            "term": "multiple",
+            "severity": "minor",
+            "impact": -0.01,
+            "suggestion": "Replace \"multiple\" with specific number or range"
+          },
+          {
+            "type": "VAGUE_QUANTIFIER",
+            "term": "mild",
+            "severity": "minor",
+            "impact": -0.01,
+            "suggestion": "Replace \"mild\" with specific number or range"
+          },
+          {
+            "type": "VAGUE_QUANTIFIER",
+            "term": "severe",
+            "severity": "minor",
+            "impact": -0.01,
+            "suggestion": "Replace \"severe\" with specific number or range"
+          },
+          {
+            "type": "VAGUE_DURATION",
+            "term": "brief",
+            "severity": "minor",
+            "impact": -0.005,
+            "suggestion": "Specify duration instead of \"brief\""
+          }
+        ],
+        "details": {
+          "valueSpecificity": {
+            "totalChecks": 6.7,
+            "specificChecks": 2.7,
+            "issues": [
+              {
+                "type": "VAGUE_QUANTIFIER",
+                "term": "several",
+                "severity": "minor",
+                "impact": -0.01,
+                "suggestion": "Replace \"several\" with specific number or range"
+              },
+              {
+                "type": "VAGUE_QUANTIFIER",
+                "term": "multiple",
+                "severity": "minor",
+                "impact": -0.01,
+                "suggestion": "Replace \"multiple\" with specific number or range"
+              },
+              {
+                "type": "VAGUE_QUANTIFIER",
+                "term": "mild",
+                "severity": "minor",
+                "impact": -0.01,
+                "suggestion": "Replace \"mild\" with specific number or range"
+              },
+              {
+                "type": "VAGUE_QUANTIFIER",
+                "term": "severe",
+                "severity": "minor",
+                "impact": -0.01,
+                "suggestion": "Replace \"severe\" with specific number or range"
+              }
+            ]
+          },
+          "temporalSpecificity": {
+            "totalChecks": 24,
+            "specificChecks": 23,
+            "issues": [
+              {
+                "type": "VAGUE_DURATION",
+                "term": "brief",
+                "severity": "minor",
+                "impact": -0.005,
+                "suggestion": "Specify duration instead of \"brief\""
+              }
+            ]
+          },
+          "clinicalSpecificity": {
+            "totalChecks": 1,
+            "specificChecks": 1,
+            "issues": []
+          },
+          "medicationSpecificity": {
+            "totalChecks": 1,
+            "specificChecks": 1,
+            "issues": []
+          },
+          "procedureSpecificity": {
+            "totalChecks": 1,
+            "specificChecks": 1,
+            "issues": []
+          },
+          "penaltyApplied": false
+        }
+      },
+      "timeliness": {
+        "score": 0.47500000000000003,
+        "weight": 0.05,
+        "weighted": 0.023750000000000004,
+        "issues": [
+          {
+            "type": "VERY_STALE_DATA",
+            "days": 385,
+            "severity": "critical",
+            "impact": -0.02,
+            "suggestion": "Critical: Summary is over 3 months old"
+          }
+        ],
+        "bottlenecks": [],
+        "details": {
+          "processingSpeed": {
+            "points": 0.5,
+            "maxPoints": 1,
+            "issues": []
+          },
+          "componentPerformance": {
+            "points": 0.5,
+            "maxPoints": 1,
+            "issues": []
+          },
+          "extractionEfficiency": {
+            "points": 0.5,
+            "maxPoints": 1,
+            "issues": []
+          },
+          "narrativeGeneration": {
+            "points": 0.5,
+            "maxPoints": 1,
+            "issues": []
+          },
+          "dataFreshness": {
+            "points": 0,
+            "maxPoints": 1,
+            "issues": [
+              {
+                "type": "VERY_STALE_DATA",
+                "days": 385,
+                "severity": "critical",
+                "impact": -0.02,
+                "suggestion": "Critical: Summary is over 3 months old"
+              }
+            ]
+          },
+          "metrics": {
+            "targetTime": 3000
+          }
+        }
+      }
+    },
+    "summary": {
+      "totalIssues": 18,
+      "criticalIssues": 1,
+      "majorIssues": 7,
+      "minorIssues": 10,
+      "warnings": 0
+    },
+    "issues": [
+      {
+        "type": "FUNCTIONAL_STATUS_CONTRADICTION",
+        "kps": 100,
+        "narrative": "mentions assistance",
+        "severity": "major",
+        "impact": -0.02
+      },
+      {
+        "type": "INSUFFICIENT_MEDICAL_TERMINOLOGY",
+        "density": 0.07142857142857142,
+        "severity": "major",
+        "impact": -0.02,
+        "suggestion": "Increase use of medical terminology for professional documentation"
+      },
+      {
+        "type": "EXCESSIVE_SENTENCE_LENGTH",
+        "avgLength": 62,
+        "severity": "major",
+        "impact": -0.02,
+        "suggestion": "Significantly shorten sentences for better readability"
+      },
+      {
+        "type": "FIRST_PERSON_USAGE",
+        "severity": "major",
+        "impact": -0.02,
+        "suggestion": "Remove first person pronouns"
+      },
+      {
+        "type": "SECTION_DOMINANCE",
+        "dominance": 0.9244094488188976,
+        "severity": "major",
+        "impact": -0.02,
+        "suggestion": "Redistribute content for better organization"
+      },
+      {
+        "type": "DATE_NOT_FOUND",
+        "field": "admissionDate",
+        "extracted": "2024-09-15",
+        "severity": "major",
+        "impact": -0.03,
+        "suggestion": "Verify admissionDate in source notes"
+      },
+      {
+        "type": "DATE_NOT_FOUND",
+        "field": "surgeryDate",
+        "extracted": "2024-09-24",
+        "severity": "major",
+        "impact": -0.03,
+        "suggestion": "Verify surgeryDate in source notes"
+      },
+      {
+        "type": "VAGUE_DURATION",
+        "term": "brief",
+        "severity": "minor",
+        "impact": -0.005,
+        "suggestion": "Specify duration instead of \"brief\""
+      },
+      {
+        "type": "AGE_MISMATCH",
+        "field": "age",
+        "extracted": 66,
+        "severity": "minor",
+        "impact": -0.01
+      },
+      {
+        "type": "DIAGNOSIS_NOT_MENTIONED",
+        "diagnosis": "thick cisternal clot with intraventricular hemorrhage",
+        "section": "narrative",
+        "severity": "minor",
+        "impact": -0.01
+      }
+    ],
+    "recommendations": [
+      {
+        "priority": "critical",
+        "dimension": "multiple",
+        "action": "Address critical issues immediately",
+        "details": "VERY_STALE_DATA"
+      }
+    ],
+    "metadata": {
+      "calculated": "2025-10-17T12:17:34.308Z",
+      "processingTime": 5,
+      "extractionMethod": "llm+patterns",
+      "noteCount": 1,
+      "version": "6-dimension-v1.0"
+    }
+  },
+  "extracted": {
+    "demographics": {
+      "name": "John Smith",
+      "mrn": "87654321",
+      "dob": "1958-03-22",
+      "age": 66,
+      "gender": "M",
+      "attendingPhysician": "Dr. Sarah Johnson"
+    },
+    "dates": {
+      "ictusDate": "2024-09-15",
+      "admissionDate": "2024-09-15",
+      "dischargeDate": "2024-09-28",
+      "surgeryDate": "2024-09-24",
+      "surgeryDates": [
+        "2024-09-24",
+        "2024-09-15",
+        "2024-09-16"
+      ],
+      "temporalContext": {
+        "ictus": null,
+        "admission": {
+          "category": "ADMISSION",
+          "confidence": 0.95,
+          "type": "admission"
+        },
+        "surgeries": [
+          {
+            "date": "2024-09-24",
+            "category": "DISCHARGE",
+            "confidence": 0.95,
+            "type": "discharge"
+          },
+          {
+            "date": "2024-09-15",
+            "category": "DISCHARGE",
+            "confidence": 0.95,
+            "type": "discharge"
+          },
+          {
+            "date": "2024-09-16",
+            "category": "DISCHARGE",
+            "confidence": 0.95,
+            "type": "discharge"
+          }
+        ],
+        "discharge": {
+          "category": "DISCHARGE",
+          "confidence": 0.95,
+          "type": "discharge"
+        }
+      }
+    },
+    "pathology": {
+      "type": "aSAH",
+      "location": "anterior communicating artery (ACOM) aneurysm",
+      "huntHess": 3,
+      "fisher": 4,
+      "size": "8mm",
+      "primary": "thick cisternal clot with intraventricular hemorrhage",
+      "primaryDiagnosis": "thick cisternal clot with intraventricular hemorrhage",
+      "secondaryDiagnoses": [],
+      "grades": {
+        "fisher": "4"
+      },
+      "subtype": {
+        "type": "SAH",
+        "details": {
+          "aneurysmLocation": "Anterior Communicating Artery",
+          "locationRisks": [
+            "Cognitive deficits",
+            "Hydrocephalus"
+          ],
+          "surgicalDifficulty": "MODERATE",
+          "aneurysmSize": "4mm (Small)",
+          "ruptureRisk": "<1% per year",
+          "vasospasmRisk": "30-40%"
+        },
+        "riskLevel": "LOW",
+        "prognosis": {
+          "vasospasmRisk": "30-40%"
+        },
+        "recommendations": {
+          "imaging": [
+            "Daily TCD for 14 days (vasospasm surveillance)",
+            "CTA if elevated TCD velocities (>120 cm/s MCA)",
+            "Repeat imaging at 6-12 months",
+            "DSA at 6 months if incompletely treated"
+          ],
+          "medications": [
+            "Nimodipine 60mg PO/NG q4h x 21 days (MANDATORY)",
+            "Maintain euvolemia (goal CVP 5-8 mmHg)",
+            "Stool softeners to prevent straining",
+            "DVT prophylaxis (SCDs, consider heparin after securing aneurysm)"
+          ],
+          "monitoring": [
+            "Neuro checks q1h x 48h, then q2h",
+            "Watch for delayed cerebral ischemia (DCI) POD 4-14",
+            "Monitor for hydrocephalus",
+            "Seizure prophylaxis if parenchymal extension"
+          ]
+        },
+        "complications": [
+          {
+            "name": "Vasospasm/DCI",
+            "risk": "30-40%",
+            "timing": "POD 4-14",
+            "management": "Induced hypertension, angioplasty if severe"
+          },
+          {
+            "name": "Hydrocephalus",
+            "risk": "Moderate",
+            "timing": "Acute or delayed",
+            "management": "EVD or VP shunt"
+          },
+          {
+            "name": "Rebleed",
+            "risk": "High",
+            "timing": "First 24-48h",
+            "management": "Secure aneurysm emergently"
+          },
+          {
+            "name": "Seizures",
+            "risk": "Low-Moderate",
+            "timing": "Acute",
+            "management": "Levetiracetam prophylaxis"
+          }
+        ]
+      }
+    },
+    "presentingSymptoms": [
+      "sudden onset severe headache",
+      "loss of consciousness"
+    ],
+    "procedures": [
+      {
+        "name": "External Ventricular Drain (EVD) Placement",
+        "date": "2024-09-15",
+        "operator": "Dr. Sarah Johnson"
+      },
+      {
+        "name": "Digital Subtraction Angiography with Endovascular Coiling of ACOM Aneurysm",
+        "date": "2024-09-16",
+        "operator": "Dr. Michael Chen"
+      },
+      {
+        "name": "EVD Removal",
+        "date": "2024-09-24",
+        "operator": "Dr. Sarah Johnson"
+      }
+    ],
+    "complications": [
+      {
+        "name": "Symptomatic Vasospasm",
+        "date": "2024-09-21",
+        "severity": "moderate",
+        "management": "Induced hypertension"
+      },
+      {
+        "name": "Hydrocephalus",
+        "date": "2024-09-15",
+        "management": "EVD placement"
+      }
+    ],
+    "anticoagulation": {
+      "medications": [
+        {
+          "name": "Aspirin",
+          "status": "held",
+          "date": "2024-09-15"
+        }
+      ],
+      "critical": false,
+      "found": [
+        {
+          "medication": "ASPIRIN",
+          "brandName": "ASA",
+          "type": "antiplatelet",
+          "class": "COX inhibitor",
+          "reversal": "platelet transfusion",
+          "status": "current",
+          "context": "ADMISSION:\n\n1. Lisinopril 20mg PO daily\n2. Atorvastatin 40mg PO daily\n3. Metformin 1000mg PO BID\n4. Aspirin 81mg PO daily (HELD on admission)\n\nALLERGIES:\n\nPenicillin (rash)\n\nSOCIAL HISTORY:\n- Retired account"
+        }
+      ],
+      "hasAnticoagulation": true,
+      "hasCurrentAnticoagulation": true,
+      "hasReversed": false,
+      "riskLevel": "high"
+    },
+    "imaging": {
+      "findings": [
+        "Diffuse subarachnoid hemorrhage in basal cisterns, sylvian fissures, and interhemispheric fissure",
+        "Fisher Grade 4 (thick cisternal clot with intraventricular hemorrhage)",
+        "Mild hydrocephalus with temporal horn dilation",
+        "8mm saccular aneurysm of anterior communicating artery (ACOM)",
+        "Aneurysm neck: 4mm",
+        "Dome-to-neck ratio: 2:1"
+      ],
+      "dates": [
+        "2024-09-15",
+        "2024-09-15"
+      ]
+    },
+    "functionalScores": {
+      "mRS": 0,
+      "KPS": 100,
+      "GCS": 15,
+      "kps": 100
+    },
+    "medications": [
+      {
+        "name": "Nimodipine",
+        "dose": "60mg",
+        "frequency": "every 4 hours",
+        "route": "PO"
+      },
+      {
+        "name": "Levetiracetam",
+        "dose": "500mg",
+        "frequency": "twice daily",
+        "route": "PO"
+      },
+      {
+        "name": "Lisinopril",
+        "dose": "20mg",
+        "frequency": "daily",
+        "route": "PO"
+      },
+      {
+        "name": "Atorvastatin",
+        "dose": "40mg",
+        "frequency": "daily",
+        "route": "PO"
+      },
+      {
+        "name": "Metformin",
+        "dose": "1000mg",
+        "frequency": "twice daily",
+        "route": "PO"
+      },
+      {
+        "name": "Acetaminophen",
+        "dose": "650mg",
+        "frequency": "every 6 hours as needed",
+        "route": "PO"
+      },
+      {
+        "name": "Docusate sodium",
+        "dose": "100mg",
+        "frequency": "twice daily as needed",
+        "route": "PO"
+      }
+    ],
+    "followUp": {
+      "appointments": [
+        {
+          "specialty": "Neurosurgery",
+          "timeframe": "2 weeks"
+        },
+        {
+          "specialty": "Interventional Neuroradiology",
+          "timeframe": "6 months"
+        },
+        {
+          "specialty": "Primary Care Physician",
+          "timeframe": "1 week"
+        }
+      ],
+      "imaging": [
+        "CT Head - 3 months",
+        "Cerebral Angiogram - 6 months"
+      ],
+      "instructions": [
+        "1"
+      ]
+    },
+    "dischargeDestination": {
+      "location": "Home",
+      "support": "with wife",
+      "primary": {
+        "destination": "deceased",
+        "label": "Deceased",
+        "description": "Patient expired during hospitalization",
+        "independence": "n/a",
+        "priority": 10,
+        "matchedPattern": "\\bdied\\b",
+        "context": "ory)\n- Occasional alcohol use (1-2 beers per week)\n- No illicit drug use\n\nFAMILY HISTORY:\n- Father: Died age 72 from myocardial infarction\n- Mother: Died age 78 from stroke\n- Sister: Alive, hypertension\n-"
+      },
+      "alternatives": [],
+      "confidence": 0.7
+    },
+    "_suggestions": [
+      {
+        "field": "gradingScales.huntHess",
+        "reason": "Hunt-Hess grade is critical for SAH prognosis and treatment planning",
+        "priority": "critical",
+        "whereToFind": "Look for: \"Hunt-Hess\", \"H&H\", \"HH grade\" in admission notes, neurosurgery consult, or imaging reports",
+        "clinicalSignificance": "Predicts mortality: Grade 1-2 (10-20%), Grade 3 (30-40%), Grade 4-5 (60-80%). Guides ICU level of care.",
+        "relatedFields": [
+          "gcs",
+          "neurologicalExam",
+          "admissionStatus"
+        ],
+        "timestamp": "2025-10-17T12:17:24.058Z"
+      },
+      {
+        "field": "gradingScales.fisher",
+        "reason": "Fisher grade predicts vasospasm risk - essential for monitoring plan",
+        "priority": "critical",
+        "whereToFind": "Look for: \"Fisher\", \"Modified Fisher\", \"mFisher\" in CT head reports or neurosurgery notes",
+        "clinicalSignificance": "Grade 3 has 60-70% vasospasm risk. Determines TCD monitoring frequency and nimodipine duration.",
+        "relatedFields": [
+          "imaging",
+          "vasospasmRisk",
+          "tcdMonitoring"
+        ],
+        "timestamp": "2025-10-17T12:17:24.058Z"
+      },
+      {
+        "field": "examination.gcs",
+        "reason": "GCS is fundamental for neurological assessment",
+        "priority": "critical",
+        "whereToFind": "Look for: \"GCS\", \"Glasgow Coma Scale\", \"E_V_M_\" in any clinical note",
+        "clinicalSignificance": "GCS tracks neurological status. Decline ≥2 points requires immediate imaging.",
+        "relatedFields": [
+          "neurologicalExam",
+          "mentalStatus"
+        ],
+        "timestamp": "2025-10-17T12:17:24.058Z"
+      },
+      {
+        "field": "aneurysm.location",
+        "reason": "Aneurysm location affects treatment approach and follow-up",
+        "priority": "high",
+        "whereToFind": "Look for: \"PCOM\", \"ACOM\", \"MCA\", \"basilar\" in CTA/angiogram reports or operative notes",
+        "clinicalSignificance": "Location determines surgical vs endovascular approach and recurrence risk.",
+        "relatedFields": [
+          "procedure",
+          "imaging"
+        ],
+        "timestamp": "2025-10-17T12:17:24.058Z"
+      },
+      {
+        "field": "aneurysm.size",
+        "reason": "Aneurysm size affects rupture risk and treatment complexity",
+        "priority": "high",
+        "whereToFind": "Look for: size in mm in CTA/angiogram reports (e.g., \"5mm aneurysm\")",
+        "clinicalSignificance": "Size >7mm = higher rupture risk. Larger aneurysms may require complex treatment.",
+        "relatedFields": [
+          "aneurysm.location",
+          "procedure"
+        ],
+        "timestamp": "2025-10-17T12:17:24.058Z"
+      },
+      {
+        "field": "medications.nimodipine",
+        "reason": "Nimodipine is standard of care for SAH - should be documented",
+        "priority": "high",
+        "whereToFind": "Look for: \"nimodipine\", \"Nimotop\", \"60mg q4h\" in medication list",
+        "clinicalSignificance": "Nimodipine reduces poor outcomes by 40%. Given for 21 days post-SAH.",
+        "relatedFields": [
+          "medications",
+          "vasospasmPrevention"
+        ],
+        "timestamp": "2025-10-17T12:17:24.058Z"
+      },
+      {
+        "field": "functionalStatus",
+        "reason": "Functional status (mRS or KPS) documents baseline and outcome",
+        "priority": "medium",
+        "whereToFind": "Look for: \"mRS\", \"Rankin\", \"KPS\", \"Karnofsky\" or infer from discharge destination and support level",
+        "clinicalSignificance": "mRS 0-2 = good outcome, 3-5 = poor outcome. Guides discharge planning.",
+        "relatedFields": [
+          "dischargeDestination",
+          "supportLevel",
+          "ptotAssessment"
+        ],
+        "timestamp": "2025-10-17T12:17:24.058Z"
+      }
+    ],
+    "oncology": {
+      "histology": null,
+      "molecularMarkers": {},
+      "treatment": []
+    },
+    "physicalExam": {
+      "general": null,
+      "heent": null,
+      "cardiovascular": null,
+      "pulmonary": null,
+      "abdomen": null,
+      "extremities": null,
+      "skin": null
+    },
+    "neurologicalExam": {
+      "mentalStatus": null,
+      "cranialNerves": null,
+      "motor": null,
+      "sensory": null,
+      "reflexes": null,
+      "coordination": null,
+      "gait": null,
+      "gcs": "15",
+      "pupils": null
+    },
+    "significantEvents": {
+      "events": [
+        {
+          "type": "seizure",
+          "description": "Patient admitted directly to Neuro ICU. Started on nimodipine 60mg PO q4h for vasospasm prophylaxis. External ventricular drain (EVD) placed at bedside by Dr. Johnson at 18:00 for hydrocephalus management. Opening pressure 28 cm H2O. Drain set to 15 cm H2O above tragus, draining clear CSF. Levetiracetam 500mg IV BID started for seizure prophylaxis. Blood pressure goal 140-160 systolic. Strict bed rest with head of bed at 30 degrees.",
+          "date": "nimodipine 60"
+        },
+        {
+          "type": "hemorrhage",
+          "description": "- Diffuse subarachnoid hemorrhage in basal cisterns, sylvian fissures, and interhemispheric fissure",
+          "date": null
+        },
+        {
+          "type": "hemorrhage",
+          "description": "Excellent. Patient had successful treatment of ruptured ACOM aneurysm with complete occlusion. Despite symptomatic vasospasm on Day 6, patient recovered completely without infarction. Discharged with mRS 0 (no symptoms) and KPS 100 (normal function). Risk of rebleeding is now <1% with complete aneurysm occlusion. Will require long-term follow-up to monitor for aneurysm recurrence and delayed complications.",
+          "date": "Day 6"
+        },
+        {
+          "type": "hemorrhage",
+          "description": "Excellent. Patient had successful treatment of ruptured ACOM aneurysm with complete occlusion. Despite symptomatic vasospasm on Day 6, patient recovered completely without infarction. Discharged with mRS 0 (no symptoms) and KPS 100 (normal function). Risk of rebleeding is now <1% with complete aneurysm occlusion. Will require long-term follow-up to monitor for aneurysm recurrence and delayed complications.",
+          "date": "Day 6"
+        },
+        {
+          "type": "stroke",
+          "description": "- Mother: Died age 78 from stroke",
+          "date": "age 78"
+        },
+        {
+          "type": "stroke",
+          "description": "- Father: Died age 72 from myocardial infarction",
+          "date": "age 72"
+        },
+        {
+          "type": "infection",
+          "description": "- Fever >101°F",
+          "date": null
+        },
+        {
+          "type": "vasospasm",
+          "description": "Patient admitted directly to Neuro ICU. Started on nimodipine 60mg PO q4h for vasospasm prophylaxis. External ventricular drain (EVD) placed at bedside by Dr. Johnson at 18:00 for hydrocephalus management. Opening pressure 28 cm H2O. Drain set to 15 cm H2O above tragus, draining clear CSF. Levetiracetam 500mg IV BID started for seizure prophylaxis. Blood pressure goal 140-160 systolic. Strict bed rest with head of bed at 30 degrees.",
+          "date": "nimodipine 60"
+        },
+        {
+          "type": "hydrocephalus",
+          "description": "- Mild hydrocephalus with temporal horn dilation",
+          "date": null
+        }
+      ]
+    },
+    "icuStay": {
+      "admitted": false,
+      "duration": null,
+      "unit": null,
+      "ventilator": false,
+      "ventilatorDays": null,
+      "pressors": false,
+      "sedation": false,
+      "complications": []
+    },
+    "preOpDeficits": {
+      "motor": [],
+      "sensory": [],
+      "cranialNerves": [],
+      "cognitive": [],
+      "speech": []
+    },
+    "postOpDeficits": {
+      "immediate": {
+        "motor": [],
+        "sensory": [],
+        "cranialNerves": [],
+        "cognitive": [],
+        "speech": []
+      },
+      "discharge": {
+        "motor": [],
+        "sensory": [],
+        "cranialNerves": [],
+        "cognitive": [],
+        "speech": []
+      },
+      "new": [],
+      "resolved": [],
+      "persistent": []
+    },
+    "consultations": {
+      "consultants": []
+    },
+    "labs": {
+      "sodium": 138,
+      "potassium": 4.1,
+      "hemoglobin": 14.2,
+      "hematocrit": null,
+      "platelets": 245,
+      "wbc": 12.5,
+      "inr": null,
+      "creatinine": 1
+    },
+    "vitals": {
+      "bloodPressure": "185/105",
+      "heartRate": 92,
+      "respiratoryRate": 18,
+      "temperature": 98.4,
+      "oxygenSaturation": 98
+    },
+    "hospitalCourse": {
+      "timeline": [
+        {
+          "date": "03/22/1958",
+          "type": "procedure",
+          "description": {
+            "name": "aneurysm coiling",
+            "date": [],
+            "dates": [],
+            "details": null,
+            "confidence": 0,
+            "temporalContexts": [
+              {
+                "isReference": false,
+                "referenceType": "ambiguous",
+                "referencePattern": null,
+                "pod": null,
+                "category": "PRESENT",
+                "confidence": 0.5,
+                "context": "ular Drain (EVD) Placement - 09/15/2024 - Dr. Sarah Johnson\n2. Digital Subtraction Angiography with Endovascular Coiling of ACOM Aneurysm - 09/16/2024"
+              }
+            ],
+            "originalNames": [
+              "aneurysm coiling",
+              "Endovascular Coiling"
+            ],
+            "merged": true,
+            "mergeCount": 5
+          },
+          "details": null
+        },
+        {
+          "date": "03/22/1958",
+          "type": "procedure",
+          "description": {
+            "name": "angiography",
+            "date": [],
+            "dates": [],
+            "details": null,
+            "confidence": 0,
+            "temporalContexts": [
+              {
+                "isReference": false,
+                "referenceType": "new_event",
+                "referencePattern": "underwent ",
+                "pod": null,
+                "category": "PRESENT",
+                "confidence": 0.9,
+                "context": " head of bed at 30 degrees.\n\nDay 2 (09/16/2024):\nPatient underwent digital subtraction angiography (DSA) with endovascular coiling of ACOM aneurysm by"
+              }
+            ],
+            "originalNames": [
+              "angiography",
+              "DSA"
+            ],
+            "merged": true,
+            "mergeCount": 4
+          },
+          "details": null
+        },
+        {
+          "date": "03/22/1958",
+          "type": "procedure",
+          "description": {
+            "name": "EVD placement",
+            "date": [],
+            "dates": [],
+            "details": null,
+            "confidence": 0,
+            "temporalContexts": [
+              {
+                "isReference": false,
+                "referenceType": "ambiguous",
+                "referencePattern": null,
+                "pod": null,
+                "category": "PRESENT",
+                "confidence": 0.5,
+                "context": "atient admitted directly to Neuro ICU. Started on nimodipine 60mg PO q4h for vasospasm prophylaxis. External ventricular drain (EVD) placed at bedside"
+              },
+              {
+                "isReference": false,
+                "referenceType": "ambiguous",
+                "referencePattern": null,
+                "pod": null,
+                "category": "PRESENT",
+                "confidence": 0.5,
+                "context": "). Levetiracetam to continue for 7 days post-discharge then discontinue.\n\nPROCEDURES PERFORMED:\n\n1. External Ventricular Drain (EVD) Placement - 09/15"
+              }
+            ],
+            "originalNames": [
+              "External ventricular drain",
+              "External Ventricular Drain"
+            ],
+            "merged": true,
+            "mergeCount": 2
+          },
+          "details": null
+        },
+        {
+          "date": "03/22/1958",
+          "type": "procedure",
+          "description": {
+            "name": "DISCHARGE SUMMARY",
+            "date": null,
+            "dateSource": "not_found",
+            "confidence": 0,
+            "details": null,
+            "temporalContext": {
+              "isReference": false,
+              "referenceType": "ambiguous",
+              "referencePattern": null,
+              "pod": null,
+              "category": "DISCHARGE",
+              "confidence": 0.5,
+              "context": "NEUROSURGERY DISCHARGE SUMMARY:\n\nPATIENT INFORMATION:\n\nName: John Smith\nMRN: 87654321\nDOB: 03/22/1958 (Ag"
+            },
+            "position": 5
+          },
+          "details": null
+        },
+        {
+          "date": "03/22/1958",
+          "type": "procedure",
+          "description": {
+            "name": "time: 3 hours 15 minutes",
+            "date": null,
+            "dateSource": "not_found",
+            "confidence": 0,
+            "details": null,
+            "temporalContext": {
+              "isReference": false,
+              "referenceType": "ambiguous",
+              "referencePattern": null,
+              "pod": null,
+              "category": "PRESENT",
+              "confidence": 0.5,
+              "context": "endovascular coiling of ACOM aneurysm by Dr. Michael Chen (Interventional Neuroradiology) at 09:00. Procedure time: 3 hours 15 minutes. Complete occlu"
+            },
+            "position": 3597
+          },
+          "details": null
+        },
+        {
+          "date": "03/22/1958",
+          "type": "procedure",
+          "description": {
+            "name": "S PERFORMED",
+            "date": null,
+            "dateSource": "not_found",
+            "confidence": 0,
+            "details": null,
+            "temporalContext": {
+              "isReference": false,
+              "referenceType": "ambiguous",
+              "referencePattern": null,
+              "pod": null,
+              "category": "DISCHARGE",
+              "confidence": 0.5,
+              "context": "inued (total 21-day course). Levetiracetam to continue for 7 days post-discharge then discontinue.\n\nPROCEDURES PERFORMED:\n\n1. External Ventricular Dra"
+            },
+            "position": 5267
+          },
+          "details": null
+        },
+        {
+          "date": "03/22/1958",
+          "type": "procedure",
+          "description": {
+            "name": "Clinic with Dr",
+            "date": null,
+            "dateSource": "not_found",
+            "confidence": 0,
+            "details": null,
+            "temporalContext": {
+              "isReference": false,
+              "referenceType": "ambiguous",
+              "referencePattern": null,
+              "pod": null,
+              "category": "FUTURE",
+              "confidence": 0.5,
+              "context": "es\n- Loss of consciousness\n- Fever >101°F\n- Severe nausea/vomiting\n\nFOLLOW-UP APPOINTMENTS:\n1. Neurosurgery Clinic with Dr. Johnson - 2 weeks (10/12/2"
+            },
+            "position": 7837
+          },
+          "details": null
+        },
+        {
+          "date": "03/22/1958",
+          "type": "complication",
+          "description": {
+            "name": "vasospasm",
+            "date": [],
+            "dates": [],
+            "details": null,
+            "confidence": 0,
+            "temporalContexts": [
+              {
+                "isReference": false,
+                "referenceType": "ambiguous",
+                "referencePattern": null,
+                "pod": null,
+                "category": "ACUTE",
+                "confidence": 0.5,
+                "context": "ent had successful treatment of ruptured ACOM aneurysm with complete occlusion. Despite symptomatic vasospasm on Day 6, patient recovered completely w"
+              }
+            ],
+            "originalNames": [
+              "vasospasm",
+              "vasospasm"
+            ],
+            "merged": true,
+            "mergeCount": 5
+          },
+          "details": null
+        },
+        {
+          "date": "03/22/1958",
+          "type": "complication",
+          "description": {
+            "name": "hemorrhage",
+            "date": [],
+            "dates": [],
+            "details": null,
+            "confidence": 0,
+            "temporalContexts": [
+              {
+                "isReference": false,
+                "referenceType": "ambiguous",
+                "referencePattern": null,
+                "pod": null,
+                "category": "PRESENT",
+                "confidence": 0.5,
+                "context": "ion and right-sided weakness (4/5 in right upper and lower extremities). Stat CT head showed no new hemorrhage or infarction. Diagnosed with symptomat"
+              }
+            ],
+            "originalNames": [
+              "hemorrhage",
+              "hemorrhage"
+            ],
+            "merged": true,
+            "mergeCount": 5
+          },
+          "details": null
+        },
+        {
+          "date": "03/22/1958",
+          "type": "complication",
+          "description": {
+            "name": "Seizures",
+            "onsetDate": null,
+            "dateSource": "not_found",
+            "confidence": 0,
+            "severity": {
+              "level": "high",
+              "resolved": false,
+              "confidence": 0.7
+            },
+            "temporalContext": {
+              "isReference": false,
+              "referenceType": "ambiguous",
+              "referencePattern": null,
+              "pod": null,
+              "category": "PRESENT",
+              "confidence": 0.5,
+              "context": "ouble vision\n- Weakness or numbness in arms or legs\n- Difficulty speaking or understanding speech\n- Seizures\n- Loss of consciousness\n- Fever >101°F\n- "
+            },
+            "position": 7731
+          },
+          "details": null
+        },
+        {
+          "date": "03/22/1958",
+          "type": "complication",
+          "description": {
+            "name": "hydrocephalus",
+            "date": [],
+            "dates": [],
+            "details": null,
+            "confidence": 0,
+            "temporalContexts": [
+              {
+                "isReference": false,
+                "referenceType": "ambiguous",
+                "referencePattern": null,
+                "pod": null,
+                "category": "PRESENT",
+                "confidence": 0.5,
+                "context": "nd diabetes management\n\nFOLLOW-UP IMAGING:\n1. CT Head - 3 months (12/28/2024) to assess for delayed hydrocephalus\n2. Cerebral Angiogram - 6 months (03"
+              }
+            ],
+            "originalNames": [
+              "hydrocephalus",
+              "hydrocephalus"
+            ],
+            "merged": true,
+            "mergeCount": 3
+          },
+          "details": null
+        },
+        {
+          "date": "03/22/1958",
+          "type": "complication",
+          "description": {
+            "name": "weakness",
+            "date": [],
+            "dates": [],
+            "details": null,
+            "confidence": 0,
+            "temporalContexts": [
+              {
+                "isReference": false,
+                "referenceType": "ambiguous",
+                "referencePattern": null,
+                "pod": null,
+                "category": "ACUTE",
+                "confidence": 0.5,
+                "context": ": MCA 160 cm/s (improving)\n\nOn Day 6 (09/21/2024), patient developed mild confusion and right-sided weakness (4/5 in right upper and lower extremities"
+              },
+              {
+                "isReference": false,
+                "referenceType": "ambiguous",
+                "referencePattern": null,
+                "pod": null,
+                "category": "ACUTE",
+                "confidence": 0.5,
+                "context": "signs and return to ED immediately if:\n- Sudden severe headache\n- Vision changes or double vision\n- Weakness or numbness in arms or legs\n- Difficulty "
+              }
+            ],
+            "originalNames": [
+              "weakness",
+              "Weakness"
+            ],
+            "merged": true,
+            "mergeCount": 2
+          },
+          "details": null
+        },
+        {
+          "date": "03/22/1958",
+          "type": "complication",
+          "description": {
+            "name": "Fever",
+            "onsetDate": null,
+            "dateSource": "not_found",
+            "confidence": 0,
+            "severity": {
+              "level": "high",
+              "resolved": false,
+              "confidence": 0.7
+            },
+            "temporalContext": {
+              "isReference": false,
+              "referenceType": "ambiguous",
+              "referencePattern": null,
+              "pod": null,
+              "category": "FUTURE",
+              "confidence": 0.5,
+              "context": " in arms or legs\n- Difficulty speaking or understanding speech\n- Seizures\n- Loss of consciousness\n- Fever >101°F\n- Severe nausea/vomiting\n\nFOLLOW-UP A"
+            },
+            "position": 7766
+          },
+          "details": null
+        },
+        {
+          "date": "03/22/1958",
+          "type": "complication",
+          "description": {
+            "name": "myocardial infarction",
+            "onsetDate": null,
+            "dateSource": "not_found",
+            "confidence": 0,
+            "severity": {
+              "level": "high",
+              "resolved": false,
+              "confidence": 0.7
+            },
+            "temporalContext": {
+              "isReference": false,
+              "referenceType": "ambiguous",
+              "referencePattern": null,
+              "pod": null,
+              "category": "PRESENT",
+              "confidence": 0.5,
+              "context": " alcohol use (1-2 beers per week)\n- No illicit drug use\n\nFAMILY HISTORY:\n- Father: Died age 72 from myocardial infarction\n- Mother: Died age 78 from s"
+            },
+            "position": 1556
+          },
+          "details": null
+        },
+        {
+          "date": "nimodipine 60",
+          "type": "seizure",
+          "description": "Patient admitted directly to Neuro ICU. Started on nimodipine 60mg PO q4h for vasospasm prophylaxis. External ventricular drain (EVD) placed at bedside by Dr. Johnson at 18:00 for hydrocephalus management. Opening pressure 28 cm H2O. Drain set to 15 cm H2O above tragus, draining clear CSF. Levetiracetam 500mg IV BID started for seizure prophylaxis. Blood pressure goal 140-160 systolic. Strict bed rest with head of bed at 30 degrees.",
+          "details": null
+        },
+        {
+          "date": "nimodipine 60",
+          "type": "vasospasm",
+          "description": "Patient admitted directly to Neuro ICU. Started on nimodipine 60mg PO q4h for vasospasm prophylaxis. External ventricular drain (EVD) placed at bedside by Dr. Johnson at 18:00 for hydrocephalus management. Opening pressure 28 cm H2O. Drain set to 15 cm H2O above tragus, draining clear CSF. Levetiracetam 500mg IV BID started for seizure prophylaxis. Blood pressure goal 140-160 systolic. Strict bed rest with head of bed at 30 degrees.",
+          "details": null
+        },
+        {
+          "date": "age 72",
+          "type": "stroke",
+          "description": "- Father: Died age 72 from myocardial infarction",
+          "details": null
+        },
+        {
+          "date": "age 78",
+          "type": "stroke",
+          "description": "- Mother: Died age 78 from stroke",
+          "details": null
+        },
+        {
+          "date": "Day 6",
+          "type": "hemorrhage",
+          "description": "Excellent. Patient had successful treatment of ruptured ACOM aneurysm with complete occlusion. Despite symptomatic vasospasm on Day 6, patient recovered completely without infarction. Discharged with mRS 0 (no symptoms) and KPS 100 (normal function). Risk of rebleeding is now <1% with complete aneurysm occlusion. Will require long-term follow-up to monitor for aneurysm recurrence and delayed complications.",
+          "details": null
+        },
+        {
+          "date": "Day 6",
+          "type": "hemorrhage",
+          "description": "Excellent. Patient had successful treatment of ruptured ACOM aneurysm with complete occlusion. Despite symptomatic vasospasm on Day 6, patient recovered completely without infarction. Discharged with mRS 0 (no symptoms) and KPS 100 (normal function). Risk of rebleeding is now <1% with complete aneurysm occlusion. Will require long-term follow-up to monitor for aneurysm recurrence and delayed complications.",
+          "details": null
+        },
+        {
+          "date": "2024-09-15",
+          "type": "admission",
+          "description": "Admitted with thick cisternal clot with intraventricular hemorrhage",
+          "details": null
+        },
+        {
+          "date": "09/27/2024",
+          "type": "imaging",
+          "description": "showed resolving SAH, no new hydrocephalus",
+          "details": null
+        },
+        {
+          "date": "2024-09-28",
+          "type": "discharge",
+          "description": "Discharged to home",
+          "details": "Functional status: KPS 100, mRS 0"
+        },
+        {
+          "date": null,
+          "type": "hemorrhage",
+          "description": "- Diffuse subarachnoid hemorrhage in basal cisterns, sylvian fissures, and interhemispheric fissure",
+          "details": null
+        },
+        {
+          "date": null,
+          "type": "infection",
+          "description": "- Fever >101°F",
+          "details": null
+        },
+        {
+          "date": null,
+          "type": "hydrocephalus",
+          "description": "- Mild hydrocephalus with temporal horn dilation",
+          "details": null
+        },
+        {
+          "date": null,
+          "type": "imaging",
+          "description": "(2024-09-15 15:00): - Diffuse subarachnoid hemorrhage in basal cisterns, sylvian fissures, and interhemispheric fissure - Fisher Grade 4 (thick cisternal clot with intraventricular hemorrhage) - Mild hydrocephalus with temporal horn dilation - No midline shift - No intraparenchymal hemorrhage CTA Head and Neck (2024-09-15 15:30): - 8mm saccular aneurysm of anterior communicating artery (ACOM) - Aneurysm neck: 4mm - Dome-to-neck ratio: 2:1 - No other aneurysms identified - Patent circle of Willis HOSPITAL COURSE: Day 1 (09/15/2024): Patient admitted directly to Neuro ICU",
+          "details": null
+        },
+        {
+          "date": null,
+          "type": "imaging",
+          "description": "showed no new hemorrhage or infarction",
+          "details": null
+        },
+        {
+          "date": null,
+          "type": "imaging",
+          "description": "- 3 months (12/28/2024) to assess for delayed hydrocephalus 2",
+          "details": null
+        }
+      ],
+      "summary": "Day 1 (09/15/2024): Patient admitted directly to Neuro ICU. Started on nimodipine 60mg PO q4h for vasospasm prophylaxis. External ventricular drain (EVD) placed at bedside by Dr. Johnson at 18:00 for hydrocephalus management. Opening pressure 28 cm H2O. Drain set to 15 cm H2O above tragus, draining clear CSF. Levetiracetam 500mg IV BID started for seizure prophylaxis. Blood pressure goal 140-160 systolic. Strict bed rest with head of bed at 30 degrees. Day 2 (09/16/2024): Patient underwent digital subtraction angiography (DSA) with endovascular coiling of ACOM aneurysm by Dr. Michael Chen (Interventional Neuroradiology) at 09:00. Procedure time: 3 hours 15 minutes. Complete occlusion achieved (Raymond-Roy Class 1). No procedural complications. Post-procedure exam: Neurologically intact, GCS 15. Continued on nimodipine and levetiracetam. EVD draining well, ICP 8-12 mmHg.",
+      "admissionSummary": "Date: 09/15/2024 Discharge Date: 09/28/2024 Attending: Dr. Sarah Johnson, MD Service: Neurosurgery CHIEF COMPLAINT:",
+      "icuCourse": null,
+      "floorCourse": null,
+      "dischargeSummary": null
+    },
+    "confidence": {
+      "demographics": 0.8,
+      "dates": 0.8,
+      "presentingSymptoms": 0.8,
+      "procedures": 0.8,
+      "complications": 0.8,
+      "medications": 0.8,
+      "imaging": 0.8,
+      "followUp": 0.8,
+      "pathology": 0.8
+    }
+  },
+  "checks": {
+    "Patient Name": true,
+    "MRN": true,
+    "Aneurysm Location": true,
+    "Aneurysm Size": true,
+    "Fisher Grade": true,
+    "EVD Procedure": true,
+    "Coiling Procedure": true,
+    "Vasospasm Complication": true,
+    "Nimodipine Medication": true,
+    "mRS Score": true
+  },
+  "passedChecks": 10,
+  "totalChecks": 10,
+  "success": false
+}

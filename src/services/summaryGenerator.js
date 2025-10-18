@@ -23,6 +23,7 @@ import { buildChronologicalTimeline } from './chronologicalContext.js';
 import { generateFromTemplate } from '../utils/templates.js';
 import { formatDate } from '../utils/dateUtils.js';
 import { orchestrateSummaryGeneration } from './summaryOrchestrator.js';
+import { generateClinicalTemplateSummary } from './clinicalTemplateLLM.js';
 
 // ========================================
 // TYPE DEFINITIONS
@@ -269,7 +270,7 @@ export const generateDischargeSummary = async (notes, options = {}) => {
           summary: orchestratorResult.summary,
           extractedData: orchestratorResult.extractedData,
           validation: orchestratorResult.validation,
-          qualityScore: orchestratorResult.qualityMetrics?.overall || 0,
+          qualityScore: orchestratorResult.qualityMetrics?.overall?.percentage || 0,
           qualityMetrics: orchestratorResult.qualityMetrics,
           intelligence: orchestratorResult.intelligence,
           warnings: [],
@@ -634,19 +635,22 @@ export const exportSummary = async (summary, format, options = {}) => {
   switch (format) {
     case 'text':
       return exportToText(summary, options);
-    
+
+    case 'clinical-template':
+      return await exportToClinicalTemplate(summary, options);
+
     case 'pdf':
       return exportToPDF(summary, filename, options);
-    
+
     case 'json':
       return exportToJSON(summary, includeMetadata);
-    
+
     case 'hl7':
       return exportToHL7(summary, options);
-    
+
     case 'fhir':
       return exportToFHIR(summary, options);
-    
+
     default:
       throw new Error(`Unsupported export format: ${format}`);
   }
@@ -665,6 +669,49 @@ const exportToText = (summary, options) => {
     sectionSeparator: '\n\n',
     headerStyle: options.headerStyle || 'uppercase'
   });
+};
+
+/**
+ * Export to clinical template format
+ *
+ * Generates institutional neurosurgery discharge summary template with
+ * LLM-enhanced narrative sections.
+ *
+ * @param {Object} summary - Summary result object
+ * @param {Object} options - Export options
+ * @returns {Promise<string>} Formatted clinical template
+ */
+const exportToClinicalTemplate = async (summary, options = {}) => {
+  try {
+    // Validate required data
+    if (!summary.extractedData) {
+      throw new Error('Cannot generate clinical template: missing extracted data');
+    }
+
+    // Get source notes if available
+    const sourceNotes = options.sourceNotes || '';
+
+    // Generate clinical template with LLM enhancement
+    const clinicalTemplate = await generateClinicalTemplateSummary(
+      summary.extractedData,
+      sourceNotes,
+      {
+        useFastModel: options.useFastModel || false,
+        enableCache: options.enableCache !== false,
+        timeout: options.timeout || 120000
+      }
+    );
+
+    return clinicalTemplate;
+
+  } catch (error) {
+    console.error('[Export] Clinical template generation failed:', error);
+
+    // Fallback: Generate template without LLM enhancement
+    console.log('[Export] Falling back to template-only generation');
+    const { generateClinicalTemplateFormat } = await import('../utils/clinicalTemplate.js');
+    return generateClinicalTemplateFormat(summary.extractedData, summary.summary || {});
+  }
 };
 
 /**

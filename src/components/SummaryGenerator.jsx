@@ -127,6 +127,36 @@ const SummaryGeneratorComponent = ({ extractedData, notes }) => {
   };
 
   /**
+   * Download as Clinical Template
+   */
+  const handleDownloadClinicalTemplate = async () => {
+    if (!summary) return;
+
+    try {
+      setLoading(true);
+
+      // Export to clinical template format
+      const clinicalTemplate = await exportSummary(summary, 'clinical-template', {
+        sourceNotes: notes
+      });
+
+      const blob = new Blob([clinicalTemplate], { type: 'text/plain' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `clinical-template-${Date.now()}.txt`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      setError('Failed to generate clinical template: ' + err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  /**
    * Enter edit mode
    */
   const handleEdit = () => {
@@ -338,6 +368,13 @@ const SummaryGeneratorComponent = ({ extractedData, notes }) => {
             >
               <Download className="w-4 h-4 mr-2" />
               Download Text
+            </button>
+            <button
+              onClick={handleDownloadClinicalTemplate}
+              className="btn"
+            >
+              <Download className="w-4 h-4 mr-2" />
+              Clinical Template
             </button>
             <button
               onClick={handleDownloadJSON}

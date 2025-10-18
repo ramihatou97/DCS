@@ -1,0 +1,630 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DCS Complete Setup - API Keys & Features</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            color: #fff;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 900px;
+            width: 100%;
+            background: #0f3460;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 30px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            font-size: 32px;
+            margin-bottom: 10px;
+        }
+        
+        .header p {
+            opacity: 0.9;
+            font-size: 14px;
+        }
+        
+        .content {
+            padding: 30px;
+        }
+        
+        .section {
+            background: #1a1a2e;
+            padding: 25px;
+            border-radius: 15px;
+            margin-bottom: 20px;
+            border: 1px solid #2d3561;
+        }
+        
+        .section h2 {
+            color: #67e8f9;
+            margin-bottom: 15px;
+            font-size: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .section p {
+            color: #9ca3af;
+            margin-bottom: 15px;
+            line-height: 1.6;
+        }
+        
+        .input-group {
+            margin-bottom: 20px;
+        }
+        
+        .input-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #a78bfa;
+            font-weight: 500;
+            font-size: 14px;
+        }
+        
+        .input-wrapper {
+            position: relative;
+        }
+        
+        .input-group input, .input-group select {
+            width: 100%;
+            padding: 14px;
+            background: #0f1729;
+            border: 2px solid #2d3561;
+            border-radius: 10px;
+            color: #fff;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            transition: all 0.3s ease;
+        }
+        
+        .input-group input:focus, .input-group select:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+        
+        .help-text {
+            font-size: 12px;
+            color: #64748b;
+            margin-top: 6px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        .help-text a {
+            color: #67e8f9;
+            text-decoration: none;
+        }
+        
+        .help-text a:hover {
+            text-decoration: underline;
+        }
+        
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 14px 28px;
+            font-size: 15px;
+            font-weight: 600;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin: 5px;
+        }
+        
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.4);
+        }
+        
+        button:active {
+            transform: translateY(0);
+        }
+        
+        button.secondary {
+            background: #2d3561;
+        }
+        
+        button.secondary:hover {
+            background: #3d4671;
+            box-shadow: 0 10px 25px rgba(45, 53, 97, 0.4);
+        }
+        
+        button.success {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        }
+        
+        button.success:hover {
+            box-shadow: 0 10px 25px rgba(16, 185, 129, 0.4);
+        }
+        
+        button.test {
+            padding: 10px 20px;
+            font-size: 13px;
+        }
+        
+        .button-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            justify-content: center;
+            margin-top: 15px;
+        }
+        
+        .status {
+            margin-top: 20px;
+            padding: 20px;
+            background: #0f1729;
+            border-radius: 12px;
+            border: 2px solid #2d3561;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            line-height: 1.8;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        
+        .status::-webkit-scrollbar {
+            width: 8px;
+        }
+        
+        .status::-webkit-scrollbar-track {
+            background: #1a1a2e;
+            border-radius: 10px;
+        }
+        
+        .status::-webkit-scrollbar-thumb {
+            background: #667eea;
+            border-radius: 10px;
+        }
+        
+        .success {
+            color: #4ade80;
+        }
+        
+        .error {
+            color: #f87171;
+        }
+        
+        .warning {
+            color: #fbbf24;
+        }
+        
+        .info {
+            color: #67e8f9;
+        }
+        
+        .badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: 600;
+            margin-left: 10px;
+        }
+        
+        .badge.secure {
+            background: #10b981;
+            color: white;
+        }
+        
+        .badge.insecure {
+            background: #f59e0b;
+            color: white;
+        }
+        
+        .note {
+            background: #fef3c7;
+            color: #92400e;
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 15px;
+            font-size: 13px;
+            border-left: 4px solid #f59e0b;
+        }
+        
+        .note strong {
+            color: #78350f;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🚀 DCS Complete Setup</h1>
+            <p>Configure API keys, enable advanced features, and select your AI model</p>
+        </div>
+        
+        <div class="content">
+            <!-- Backend Status -->
+            <div class="section">
+                <h2>🔍 Backend Status</h2>
+                <div id="backendStatus">
+                    <p style="color: #9ca3af;">Checking backend server...</p>
+                </div>
+            </div>
+            
+            <!-- API Keys Section -->
+            <div class="section">
+                <h2>🔑 Step 1: Configure API Keys <span class="badge secure">Secure</span></h2>
+                <p>Add your API keys here. They will be saved to localStorage for frontend use. For production, keys should be in backend/.env file.</p>
+                
+                <div class="note">
+                    <strong>🔒 Security Note:</strong> Backend server is recommended for production. It keeps API keys secure on the server. If backend is unavailable, frontend will use localStorage keys (development only).
+                </div>
+                
+                <div class="input-group">
+                    <label>🤖 Anthropic API Key (Claude 3.5 Sonnet)</label>
+                    <input type="password" id="anthropicKey" placeholder="sk-ant-api03-...">
+                    <div class="help-text">
+                        🔗 Get key: <a href="https://console.anthropic.com/settings/keys" target="_blank">console.anthropic.com/settings/keys</a>
+                    </div>
+                </div>
+                
+                <div class="input-group">
+                    <label>🧠 Google API Key (Gemini 1.5 Pro)</label>
+                    <input type="password" id="googleKey" placeholder="AIzaSy...">
+                    <div class="help-text">
+                        🔗 Get key: <a href="https://makersuite.google.com/app/apikey" target="_blank">makersuite.google.com/app/apikey</a>
+                    </div>
+                </div>
+                
+                <div class="input-group">
+                    <label>💬 OpenAI API Key (GPT-4o)</label>
+                    <input type="password" id="openaiKey" placeholder="sk-proj-...">
+                    <div class="help-text">
+                        🔗 Get key: <a href="https://platform.openai.com/api-keys" target="_blank">platform.openai.com/api-keys</a>
+                    </div>
+                </div>
+                
+                <div class="button-row">
+                    <button class="success" onclick="saveApiKeys()">💾 Save API Keys</button>
+                    <button class="test secondary" onclick="testAllKeys()">🧪 Test All Keys</button>
+                </div>
+            </div>
+            
+            <!-- Model Selection -->
+            <div class="section">
+                <h2>🤖 Step 2: Select Default AI Model</h2>
+                <div class="input-group">
+                    <label>Choose your preferred model</label>
+                    <select id="modelSelect" onchange="saveModel()">
+                        <option value="claude-sonnet-3.5">⭐ Claude 3.5 Sonnet (Recommended - Best Quality)</option>
+                        <option value="gemini-1.5-pro">🚀 Gemini 1.5 Pro (Fastest - 2M context)</option>
+                        <option value="gpt-4o">⚡ GPT-4o (Balanced - Fast & Accurate)</option>
+                        <option value="claude-opus-3">👑 Claude 3 Opus (Most Powerful)</option>
+                        <option value="gpt-4-turbo">💨 GPT-4 Turbo (Quick & Smart)</option>
+                        <option value="gemini-1.5-flash">💰 Gemini 1.5 Flash (Most Economical)</option>
+                        <option value="gpt-4o-mini">📦 GPT-4o Mini (Budget Friendly)</option>
+                        <option value="claude-haiku-3">⚡ Claude 3 Haiku (Lightning Fast)</option>
+                    </select>
+                    <div class="help-text">
+                        💡 Tip: Claude 3.5 Sonnet offers the best accuracy for medical text
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Features Section -->
+            <div class="section">
+                <h2>⚡ Step 3: Enable Advanced Features</h2>
+                <p>Unlock all Phase 0, Phase 1.5, and Phase 3 features for maximum quality and accuracy.</p>
+                
+                <div class="button-row">
+                    <button class="success" onclick="enableAllFeatures()">
+                        ⚡ Enable All Features (14/14)
+                    </button>
+                    <button class="secondary" onclick="checkStatus()">
+                        📊 Check Status
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Quick Actions -->
+            <div class="section">
+                <h2>🎯 Quick Actions</h2>
+                <div class="button-row">
+                    <button class="success" onclick="doCompleteSetup()">
+                        🚀 Complete Setup (All Steps)
+                    </button>
+                    <button onclick="window.location.href='http://localhost:5173'">
+                        🌐 Open DCS App
+                    </button>
+                    <button class="secondary" onclick="clearAllData()">
+                        🗑️ Clear All Data
+                    </button>
+                </div>
+            </div>
+            
+            <div id="status" class="status" style="display: none;"></div>
+        </div>
+    </div>
+    
+    <script>
+        const FEATURE_FLAGS_KEY = 'dcs_feature_flags';
+        
+        // Check backend status on load
+        async function checkBackendStatus() {
+            try {
+                const response = await fetch('http://localhost:3001/health');
+                const data = await response.json();
+                
+                const statusDiv = document.getElementById('backendStatus');
+                if (response.ok) {
+                    statusDiv.innerHTML = `
+                        <div class="success">✅ Backend server is running on http://localhost:3001</div>
+                        <div class="info" style="margin-top: 10px;">API Keys Configured:</div>
+                        <div style="margin-left: 20px; margin-top: 5px;">
+                            <div>${data.services.anthropic ? '✅' : '❌'} Anthropic (Claude)</div>
+                            <div>${data.services.openai ? '✅' : '❌'} OpenAI (GPT-4)</div>
+                            <div>${data.services.gemini ? '✅' : '❌'} Google (Gemini)</div>
+                        </div>
+                        <div class="info" style="margin-top: 10px;">🔒 Using secure backend proxy for API calls</div>
+                    `;
+                } else {
+                    throw new Error('Backend unhealthy');
+                }
+            } catch (error) {
+                const statusDiv = document.getElementById('backendStatus');
+                statusDiv.innerHTML = `
+                    <div class="warning">⚠️ Backend server is not running</div>
+                    <div class="info" style="margin-top: 10px;">Frontend will use localStorage API keys (development only)</div>
+                    <div class="info" style="margin-top: 5px;">To start backend: <code style="background: #0f1729; padding: 4px 8px; border-radius: 4px;">cd backend && npm start</code></div>
+                `;
+            }
+        }
+        
+        function showStatus(message, type = 'info') {
+            const statusDiv = document.getElementById('status');
+            statusDiv.style.display = 'block';
+            statusDiv.innerHTML = `<div class="${type}">${message}</div>`;
+        }
+        
+        function saveApiKeys() {
+            const anthropic = document.getElementById('anthropicKey').value.trim();
+            const google = document.getElementById('googleKey').value.trim();
+            const openai = document.getElementById('openaiKey').value.trim();
+            
+            let saved = [];
+            
+            if (anthropic) {
+                localStorage.setItem('anthropic_api_key', anthropic);
+                saved.push('Anthropic (Claude)');
+            }
+            if (google) {
+                localStorage.setItem('google_api_key', google);
+                saved.push('Google (Gemini)');
+            }
+            if (openai) {
+                localStorage.setItem('openai_api_key', openai);
+                saved.push('OpenAI (GPT-4)');
+            }
+            
+            if (saved.length > 0) {
+                showStatus(`✅ Saved API keys for: ${saved.join(', ')}<br><div class="warning" style="margin-top: 10px;">⚠️ These keys are stored in browser localStorage (development only). For production, add keys to backend/.env file.</div>`, 'success');
+            } else {
+                showStatus('⚠️ No API keys entered', 'warning');
+            }
+        }
+        
+        async function testAllKeys() {
+            showStatus('🧪 Testing API keys...', 'info');
+            
+            const anthropic = localStorage.getItem('anthropic_api_key');
+            const google = localStorage.getItem('google_api_key');
+            const openai = localStorage.getItem('openai_api_key');
+            
+            let results = [];
+            
+            // Test Anthropic
+            if (anthropic) {
+                try {
+                    const response = await fetch('https://api.anthropic.com/v1/messages', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'x-api-key': anthropic,
+                            'anthropic-version': '2023-06-01'
+                        },
+                        body: JSON.stringify({
+                            model: 'claude-3-5-sonnet-20241022',
+                            max_tokens: 10,
+                            messages: [{role: 'user', content: 'Hi'}]
+                        })
+                    });
+                    results.push(response.ok ? '✅ Anthropic: Working' : '❌ Anthropic: Invalid key');
+                } catch (e) {
+                    results.push('❌ Anthropic: Connection error');
+                }
+            }
+            
+            // Test Google
+            if (google) {
+                try {
+                    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro-latest:generateContent?key=${google}`, {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({
+                            contents: [{parts: [{text: 'Hi'}]}]
+                        })
+                    });
+                    results.push(response.ok ? '✅ Google: Working' : '❌ Google: Invalid key');
+                } catch (e) {
+                    results.push('❌ Google: Connection error');
+                }
+            }
+            
+            // Test OpenAI
+            if (openai) {
+                try {
+                    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${openai}`
+                        },
+                        body: JSON.stringify({
+                            model: 'gpt-4o',
+                            messages: [{role: 'user', content: 'Hi'}],
+                            max_tokens: 10
+                        })
+                    });
+                    results.push(response.ok ? '✅ OpenAI: Working' : '❌ OpenAI: Invalid key');
+                } catch (e) {
+                    results.push('❌ OpenAI: Connection error');
+                }
+            }
+            
+            if (results.length === 0) {
+                showStatus('⚠️ No API keys configured to test', 'warning');
+            } else {
+                showStatus(results.join('<br>'), results.some(r => r.includes('❌')) ? 'warning' : 'success');
+            }
+        }
+        
+        function enableAllFeatures() {
+            const features = {
+                "enhanced_demographics": true,
+                "enhanced_surgery_dates": true,
+                "attending_physician": true,
+                "discharge_medications": true,
+                "late_recovery_detection": true,
+                "enhanced_llm_prompts": true,
+                "extraction_validator": true,
+                "narrative_validator": true,
+                "six_dimension_metrics": true,
+                "post_generation_validator": true,
+                "clinical_reasoning_validator": true,
+                "section_completer": true,
+                "narrative_enhancer": true,
+                "edge_case_handler": true
+            };
+            
+            localStorage.setItem(FEATURE_FLAGS_KEY, JSON.stringify(features));
+            
+            showStatus(`
+                <div class="success">✅ All 14 features enabled!</div>
+                <div style="margin-top: 10px;">
+                    <strong>Phase 0 (5/5):</strong> Enhanced demographics, surgery dates, attending physician, discharge meds, late recovery detection<br>
+                    <strong>Phase 1.5 (3/3):</strong> Enhanced LLM prompts, extraction validator, narrative validator<br>
+                    <strong>Phase 3 (6/6):</strong> 6D metrics, post-gen validator, clinical reasoning, section completer, narrative enhancer, edge case handler
+                </div>
+            `, 'success');
+            
+            window.dispatchEvent(new CustomEvent('featureFlagsChanged', {
+                detail: { allEnabled: true }
+            }));
+        }
+        
+        function saveModel() {
+            const model = document.getElementById('modelSelect').value;
+            localStorage.setItem('selected_llm_model', model);
+            const modelName = document.getElementById('modelSelect').selectedOptions[0].text;
+            showStatus(`✅ Default model set to: ${modelName}`, 'success');
+        }
+        
+        function checkStatus() {
+            const anthropic = localStorage.getItem('anthropic_api_key');
+            const google = localStorage.getItem('google_api_key');
+            const openai = localStorage.getItem('openai_api_key');
+            const model = localStorage.getItem('selected_llm_model') || 'claude-sonnet-3.5';
+            const features = JSON.parse(localStorage.getItem(FEATURE_FLAGS_KEY) || '{}');
+            
+            const enabledCount = Object.values(features).filter(v => v).length;
+            const apiKeys = [
+                anthropic && '✅ Anthropic', 
+                google && '✅ Google', 
+                openai && '✅ OpenAI'
+            ].filter(Boolean).join(', ') || '❌ None';
+            
+            showStatus(`
+                <div class="info">📊 Current Configuration:</div>
+                <div style="margin-top: 10px;">
+                    <strong>API Keys (localStorage):</strong> ${apiKeys}<br>
+                    <strong>Selected Model:</strong> ${model}<br>
+                    <strong>Features Enabled:</strong> ${enabledCount}/14
+                </div>
+            `, 'info');
+        }
+        
+        function clearAllData() {
+            if (confirm('⚠️ This will clear all API keys, model selection, and feature flags. Continue?')) {
+                localStorage.removeItem('anthropic_api_key');
+                localStorage.removeItem('google_api_key');
+                localStorage.removeItem('openai_api_key');
+                localStorage.removeItem('selected_llm_model');
+                localStorage.removeItem(FEATURE_FLAGS_KEY);
+                
+                document.getElementById('anthropicKey').value = '';
+                document.getElementById('googleKey').value = '';
+                document.getElementById('openaiKey').value = '';
+                document.getElementById('modelSelect').selectedIndex = 0;
+                
+                showStatus('✅ All data cleared. You can now start fresh.', 'success');
+            }
+        }
+        
+        function doCompleteSetup() {
+            saveApiKeys();
+            setTimeout(() => {
+                enableAllFeatures();
+                setTimeout(() => {
+                    saveModel();
+                    setTimeout(() => {
+                        showStatus(`
+                            <div class="success">✅ Complete setup finished!</div>
+                            <div style="margin-top: 10px;">
+                                <strong>Next steps:</strong><br>
+                                1. Start backend: <code style="background: #0f1729; padding: 4px 8px; border-radius: 4px;">cd backend && npm start</code><br>
+                                2. Start frontend: <code style="background: #0f1729; padding: 4px 8px; border-radius: 4px;">npm run dev</code><br>
+                                3. Open app: <a href="http://localhost:5173" target="_blank">http://localhost:5173</a>
+                            </div>
+                        `, 'success');
+                    }, 500);
+                }, 500);
+            }, 500);
+        }
+        
+        // Load saved values on page load
+        window.onload = () => {
+            checkBackendStatus();
+            
+            const model = localStorage.getItem('selected_llm_model');
+            if (model) {
+                document.getElementById('modelSelect').value = model;
+            }
+            
+            // Show current status after 1 second
+            setTimeout(() => {
+                checkStatus();
+            }, 1000);
+        };
+    </script>
+</body>
+</html>

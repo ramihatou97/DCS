@@ -349,20 +349,31 @@ export async function orchestrateSummaryGeneration(notes, options = {}) {
     );
 
     try {
-      const fullSummaryText = Object.values(narrative || {})
-        .filter(v => typeof v === 'string')
-        .join('\n\n');
-
+      // FIX: Pass correct parameters to calculateQualityMetrics
+      // Signature: calculateQualityMetrics(extractedData, narrative, sourceNotes, metrics, options)
       orchestrationResult.qualityMetrics = calculateQualityMetrics(
-        orchestrationResult.extractedData,
-        validationResult,
-        fullSummaryText,
-        {
+        orchestrationResult.extractedData,                    // Param 1: extractedData
+        narrative,                                             // Param 2: narrative object (FIXED: was validationResult)
+        noteText,                                              // Param 3: source notes (FIXED: was fullSummaryText)
+        orchestrationResult.metadata.performanceMetrics,       // Param 4: performance metrics
+        {                                                      // Param 5: options
           extractionMethod: extraction.metadata?.extractionMethod,
           noteCount: Array.isArray(notes) ? notes.length : 1,
-          refinementIterations: refinementIteration
+          refinementIterations: refinementIteration,
+          pathologyType: orchestrationResult.extractedData?.pathology?.type,
+          strictMode: false,
+          strictValidation: true,
+          checkHallucinations: true,
+          checkCrossReferences: true,
+          checkReadability: true,
+          checkProfessionalism: true
         }
       );
+
+      console.log(`[Orchestrator] Quality metrics calculated: ${orchestrationResult.qualityMetrics.overall.percentage}% overall`);
+      console.log(`[Orchestrator] Completeness: ${(orchestrationResult.qualityMetrics.dimensions.completeness.score * 100).toFixed(1)}%`);
+      console.log(`[Orchestrator] Critical issues: ${orchestrationResult.qualityMetrics.summary.criticalIssues}`);
+
     } catch (error) {
       console.error('[Orchestrator] Quality metrics calculation error:', error);
       orchestrationResult.qualityMetrics = {
@@ -388,13 +399,14 @@ export async function orchestrateSummaryGeneration(notes, options = {}) {
     const orchestrationMetric = performanceMonitor.endTimer(orchestrationTimerId, {
       success: true,
       refinementIterations: refinementIteration,
-      qualityScore: orchestrationResult.qualityMetrics.overall
+      qualityScore: orchestrationResult.qualityMetrics.overall?.percentage || orchestrationResult.qualityMetrics.overall
     });
 
     orchestrationResult.metadata.performanceMetrics.overall = orchestrationMetric;
 
     console.log(`[Orchestrator] Summary generation complete in ${orchestrationResult.metadata.processingTime}ms`);
-    console.log(`[Orchestrator] Final quality: ${(orchestrationResult.qualityMetrics.overall * 100).toFixed(1)}%`);
+    const finalQualityScore = orchestrationResult.qualityMetrics.overall?.percentage || orchestrationResult.qualityMetrics.overall;
+    console.log(`[Orchestrator] Final quality: ${typeof finalQualityScore === 'number' ? finalQualityScore : 0}%`);
 
     // Log performance breakdown
     if (orchestrationMetric?.severity === 'warning' || orchestrationMetric?.severity === 'critical') {
@@ -505,7 +517,7 @@ async function shareOrchestrationInsights(result, context) {
     const insights = {
       type: 'ORCHESTRATION',
       pathology: context.pathology.primary,
-      qualityScore: result.qualityMetrics.overall,
+      qualityScore: result.qualityMetrics.overall?.percentage || result.qualityMetrics.overall || 0,
       refinementIterations: result.refinementIterations,
       validationErrors: result.validation.errors.total,
       processingTime: result.metadata.processingTime,

@@ -1,0 +1,59 @@
+
+DISCHARGE SUMMARY
+
+PATIENT DEMOGRAPHICS:
+Age/Gender: 62 year-old male
+Attending Physician: Dr. Johnson
+
+ADMISSION & DISCHARGE DATES:
+Admission Date: 2024-10-10
+Discharge Date: 2024-10-20
+Length of Stay: 10 days
+
+DIAGNOSIS:
+Primary: Aneurysmal Subarachnoid Hemorrhage (aSAH)
+Location: AComm aneurysm
+Hunt-Hess Grade: 3
+Fisher Grade: 3
+Aneurysm Size: 7mm
+
+PRESENTING SYMPTOMS:
+Patient presented with sudden severe headache, worst headache of life, nausea and vomiting, photophobia, neck stiffness, brief loss of consciousness. Initial GCS was 14.
+
+HOSPITAL COURSE:
+This 62-year-old male patient was admitted on 2024-10-10 following aSAH from a 7mm AComm aneurysm. The patient underwent evd placement and cerebral angiogram and coiling of acomm aneurysm and evd removal during the hospitalization.
+
+The clinical course was complicated by:
+1. Acute hydrocephalus (2024-10-11): Managed with EVD placement
+2. Vasospasm (2024-10-15): Managed with Induced hypertension (MAP 90-100), nimodipine
+
+Despite these complications, the patient showed progressive clinical improvement. By the time of discharge, the patient demonstrated good functional recovery with mRS 2 and KPS 80.
+
+PROCEDURES PERFORMED:
+1. EVD placement (2024-10-11)
+2. Cerebral angiogram and coiling of AComm aneurysm (2024-10-12) - Performed by Dr. Smith
+3. EVD removal (2024-10-18)
+
+DISCHARGE CONDITION:
+The patient is being discharged to home with family in stable neurological condition.
+
+DISCHARGE MEDICATIONS:
+1. Nimodipine 60mg PO q4h
+2. Keppra 500mg PO BID
+3. Tylenol 650mg PO q6h PRN
+4. Colace 100mg PO BID
+
+FOLLOW-UP CARE:
+- Neurosurgery clinic appointment in 2 weeks
+- Repeat angiogram in 6 months
+- CT head in 4 weeks
+
+DISCHARGE INSTRUCTIONS:
+- No driving until cleared by neurosurgery
+- Return to clinic immediately for severe headache, weakness, vision changes, or seizures
+- Continue all medications as prescribed
+- Follow activity restrictions as discussed
+
+FUNCTIONAL STATUS AT DISCHARGE:
+- Modified Rankin Scale (mRS): 2
+- Karnofsky Performance Status (KPS): 80

@@ -1,0 +1,535 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DCS Feature Enabler - Phase 1.5 & Phase 3</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            max-width: 800px;
+            width: 100%;
+            padding: 40px;
+        }
+        
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 2rem;
+        }
+        
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 1.1rem;
+        }
+        
+        .phase-section {
+            margin-bottom: 30px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            border: 2px solid #e9ecef;
+        }
+        
+        .phase-section.enabled {
+            background: #d4edda;
+            border-color: #28a745;
+        }
+        
+        .phase-title {
+            font-size: 1.2rem;
+            font-weight: bold;
+            margin-bottom: 15px;
+            color: #333;
+        }
+        
+        .feature-list {
+            list-style: none;
+        }
+        
+        .feature-item {
+            padding: 8px 0;
+            display: flex;
+            align-items: center;
+            font-size: 0.95rem;
+        }
+        
+        .feature-item .icon {
+            margin-right: 10px;
+            font-size: 1.2rem;
+        }
+        
+        .enabled .icon {
+            color: #28a745;
+        }
+        
+        .disabled .icon {
+            color: #dc3545;
+        }
+        
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 30px;
+        }
+        
+        button {
+            flex: 1;
+            padding: 15px 30px;
+            font-size: 1rem;
+            font-weight: bold;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .enable-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        
+        .enable-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.4);
+        }
+        
+        .disable-btn {
+            background: #6c757d;
+            color: white;
+        }
+        
+        .disable-btn:hover {
+            background: #5a6268;
+        }
+        
+        .reset-btn {
+            background: #dc3545;
+            color: white;
+        }
+        
+        .reset-btn:hover {
+            background: #c82333;
+        }
+        
+        .status-message {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+            font-weight: bold;
+            display: none;
+        }
+        
+        .status-message.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+            display: block;
+        }
+        
+        .status-message.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+            display: block;
+        }
+        
+        .stats {
+            margin-top: 30px;
+            padding: 20px;
+            background: #e9ecef;
+            border-radius: 10px;
+            text-align: center;
+        }
+        
+        .stats-title {
+            font-size: 1.1rem;
+            font-weight: bold;
+            margin-bottom: 15px;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            margin-top: 15px;
+        }
+        
+        .stat-card {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .stat-value {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #667eea;
+        }
+        
+        .stat-label {
+            font-size: 0.9rem;
+            color: #666;
+            margin-top: 5px;
+        }
+        
+        .benefits {
+            margin-top: 30px;
+            padding: 20px;
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            border-radius: 10px;
+        }
+        
+        .benefits-title {
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: #856404;
+        }
+        
+        .benefits-list {
+            list-style: none;
+            color: #856404;
+        }
+        
+        .benefits-list li {
+            padding: 5px 0;
+            padding-left: 20px;
+            position: relative;
+        }
+        
+        .benefits-list li:before {
+            content: "✨";
+            position: absolute;
+            left: 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚀 DCS Feature Enabler</h1>
+        <p class="subtitle">Enable Phase 1.5 & Phase 3 Advanced Features</p>
+        
+        <div id="phase0" class="phase-section">
+            <div class="phase-title">✅ Phase 0: Core Features (Always Enabled)</div>
+            <ul class="feature-list">
+                <li class="feature-item"><span class="icon">✅</span> Enhanced Demographics Extraction</li>
+                <li class="feature-item"><span class="icon">✅</span> Enhanced Surgery Date Detection</li>
+                <li class="feature-item"><span class="icon">✅</span> Attending Physician Extraction</li>
+                <li class="feature-item"><span class="icon">✅</span> Discharge Medications Parser</li>
+                <li class="feature-item"><span class="icon">✅</span> Late Recovery Detection</li>
+            </ul>
+        </div>
+        
+        <div id="phase15" class="phase-section">
+            <div class="phase-title">🔧 Phase 1.5: Enhancement Features</div>
+            <ul class="feature-list">
+                <li class="feature-item" data-flag="enhanced_llm_prompts">
+                    <span class="icon">❌</span> Enhanced LLM Prompts - Improved extraction accuracy
+                </li>
+                <li class="feature-item" data-flag="extraction_validator">
+                    <span class="icon">❌</span> Extraction Validator - Post-extraction validation
+                </li>
+                <li class="feature-item" data-flag="narrative_validator">
+                    <span class="icon">❌</span> Narrative Validator - Post-generation validation
+                </li>
+            </ul>
+        </div>
+        
+        <div id="phase3" class="phase-section">
+            <div class="phase-title">🎯 Phase 3: Quality Enhancement Features</div>
+            <ul class="feature-list">
+                <li class="feature-item" data-flag="six_dimension_metrics">
+                    <span class="icon">❌</span> 6-Dimension Metrics - Comprehensive quality assessment
+                </li>
+                <li class="feature-item" data-flag="post_generation_validator">
+                    <span class="icon">❌</span> Post-Generation Validator - Advanced validation framework
+                </li>
+                <li class="feature-item" data-flag="clinical_reasoning_validator">
+                    <span class="icon">❌</span> Clinical Reasoning Validator - Medical logic validation
+                </li>
+                <li class="feature-item" data-flag="section_completer">
+                    <span class="icon">❌</span> Section Completer - Automated section completion
+                </li>
+                <li class="feature-item" data-flag="narrative_enhancer">
+                    <span class="icon">❌</span> Narrative Enhancer - Improved narrative flow
+                </li>
+                <li class="feature-item" data-flag="edge_case_handler">
+                    <span class="icon">❌</span> Edge Case Handler - Robust error recovery
+                </li>
+            </ul>
+        </div>
+        
+        <div class="button-group">
+            <button class="enable-btn" onclick="enableAllFeatures()">
+                🚀 Enable Phase 1.5 & 3 Features
+            </button>
+            <button class="disable-btn" onclick="disableAllFeatures()">
+                🔒 Disable Advanced Features
+            </button>
+            <button class="reset-btn" onclick="resetToDefaults()">
+                🔄 Reset to Defaults
+            </button>
+        </div>
+        
+        <div id="status-message" class="status-message"></div>
+        
+        <div class="stats">
+            <div class="stats-title">📊 Feature Statistics</div>
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-value" id="total-enabled">5</div>
+                    <div class="stat-label">Total Enabled</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="phase15-count">0</div>
+                    <div class="stat-label">Phase 1.5</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="phase3-count">0</div>
+                    <div class="stat-label">Phase 3</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="benefits">
+            <div class="benefits-title">💡 Expected Benefits When Enabled:</div>
+            <ul class="benefits-list">
+                <li>Improved extraction accuracy with enhanced LLM prompts</li>
+                <li>Automatic validation of extracted data and generated narratives</li>
+                <li>Comprehensive 6-dimension quality metrics assessment</li>
+                <li>Clinical logic validation ensuring medical accuracy</li>
+                <li>Automated completion of missing narrative sections</li>
+                <li>Enhanced narrative flow with smart transitions</li>
+                <li>Robust handling of edge cases and errors</li>
+                <li>Overall quality improvement from 96% to 98%+</li>
+            </ul>
+        </div>
+    </div>
+    
+    <script>
+        const FEATURE_FLAGS_KEY = 'dcs_feature_flags';
+        
+        // Feature flag definitions matching the app
+        const FEATURE_FLAGS = {
+            // Phase 0
+            ENHANCED_DEMOGRAPHICS: 'enhanced_demographics',
+            ENHANCED_SURGERY_DATES: 'enhanced_surgery_dates',
+            ATTENDING_PHYSICIAN: 'attending_physician',
+            DISCHARGE_MEDICATIONS: 'discharge_medications',
+            LATE_RECOVERY_DETECTION: 'late_recovery_detection',
+            
+            // Phase 1.5
+            ENHANCED_LLM_PROMPTS: 'enhanced_llm_prompts',
+            EXTRACTION_VALIDATOR: 'extraction_validator',
+            NARRATIVE_VALIDATOR: 'narrative_validator',
+            
+            // Phase 3
+            SIX_DIMENSION_METRICS: 'six_dimension_metrics',
+            POST_GENERATION_VALIDATOR: 'post_generation_validator',
+            CLINICAL_REASONING_VALIDATOR: 'clinical_reasoning_validator',
+            SECTION_COMPLETER: 'section_completer',
+            NARRATIVE_ENHANCER: 'narrative_enhancer',
+            EDGE_CASE_HANDLER: 'edge_case_handler'
+        };
+        
+        // Default states
+        const DEFAULT_FLAGS = {
+            [FEATURE_FLAGS.ENHANCED_DEMOGRAPHICS]: true,
+            [FEATURE_FLAGS.ENHANCED_SURGERY_DATES]: true,
+            [FEATURE_FLAGS.ATTENDING_PHYSICIAN]: true,
+            [FEATURE_FLAGS.DISCHARGE_MEDICATIONS]: true,
+            [FEATURE_FLAGS.LATE_RECOVERY_DETECTION]: true,
+            [FEATURE_FLAGS.ENHANCED_LLM_PROMPTS]: false,
+            [FEATURE_FLAGS.EXTRACTION_VALIDATOR]: false,
+            [FEATURE_FLAGS.NARRATIVE_VALIDATOR]: false,
+            [FEATURE_FLAGS.SIX_DIMENSION_METRICS]: false,
+            [FEATURE_FLAGS.POST_GENERATION_VALIDATOR]: false,
+            [FEATURE_FLAGS.CLINICAL_REASONING_VALIDATOR]: false,
+            [FEATURE_FLAGS.SECTION_COMPLETER]: false,
+            [FEATURE_FLAGS.NARRATIVE_ENHANCER]: false,
+            [FEATURE_FLAGS.EDGE_CASE_HANDLER]: false
+        };
+        
+        function getFeatureFlags() {
+            try {
+                const stored = localStorage.getItem(FEATURE_FLAGS_KEY);
+                if (stored) {
+                    const flags = JSON.parse(stored);
+                    return { ...DEFAULT_FLAGS, ...flags };
+                }
+                return DEFAULT_FLAGS;
+            } catch (error) {
+                console.error('Error loading flags:', error);
+                return DEFAULT_FLAGS;
+            }
+        }
+        
+        function setFeatureFlags(flags) {
+            try {
+                localStorage.setItem(FEATURE_FLAGS_KEY, JSON.stringify(flags));
+                return true;
+            } catch (error) {
+                console.error('Error setting flags:', error);
+                return false;
+            }
+        }
+        
+        function updateUI() {
+            const flags = getFeatureFlags();
+            
+            // Update Phase 1.5 features
+            document.querySelectorAll('#phase15 .feature-item').forEach(item => {
+                const flagKey = item.dataset.flag;
+                const isEnabled = flags[flagKey];
+                const icon = item.querySelector('.icon');
+                icon.textContent = isEnabled ? '✅' : '❌';
+                icon.className = isEnabled ? 'icon enabled' : 'icon disabled';
+            });
+            
+            // Update Phase 3 features
+            document.querySelectorAll('#phase3 .feature-item').forEach(item => {
+                const flagKey = item.dataset.flag;
+                const isEnabled = flags[flagKey];
+                const icon = item.querySelector('.icon');
+                icon.textContent = isEnabled ? '✅' : '❌';
+                icon.className = isEnabled ? 'icon enabled' : 'icon disabled';
+            });
+            
+            // Update phase sections visual state
+            const phase15Enabled = [
+                FEATURE_FLAGS.ENHANCED_LLM_PROMPTS,
+                FEATURE_FLAGS.EXTRACTION_VALIDATOR,
+                FEATURE_FLAGS.NARRATIVE_VALIDATOR
+            ].every(flag => flags[flag]);
+            
+            const phase3Enabled = [
+                FEATURE_FLAGS.SIX_DIMENSION_METRICS,
+                FEATURE_FLAGS.POST_GENERATION_VALIDATOR,
+                FEATURE_FLAGS.CLINICAL_REASONING_VALIDATOR,
+                FEATURE_FLAGS.SECTION_COMPLETER,
+                FEATURE_FLAGS.NARRATIVE_ENHANCER,
+                FEATURE_FLAGS.EDGE_CASE_HANDLER
+            ].every(flag => flags[flag]);
+            
+            document.getElementById('phase15').className = phase15Enabled ? 'phase-section enabled' : 'phase-section';
+            document.getElementById('phase3').className = phase3Enabled ? 'phase-section enabled' : 'phase-section';
+            
+            // Update statistics
+            const phase15Count = [
+                FEATURE_FLAGS.ENHANCED_LLM_PROMPTS,
+                FEATURE_FLAGS.EXTRACTION_VALIDATOR,
+                FEATURE_FLAGS.NARRATIVE_VALIDATOR
+            ].filter(flag => flags[flag]).length;
+            
+            const phase3Count = [
+                FEATURE_FLAGS.SIX_DIMENSION_METRICS,
+                FEATURE_FLAGS.POST_GENERATION_VALIDATOR,
+                FEATURE_FLAGS.CLINICAL_REASONING_VALIDATOR,
+                FEATURE_FLAGS.SECTION_COMPLETER,
+                FEATURE_FLAGS.NARRATIVE_ENHANCER,
+                FEATURE_FLAGS.EDGE_CASE_HANDLER
+            ].filter(flag => flags[flag]).length;
+            
+            document.getElementById('phase15-count').textContent = phase15Count + '/3';
+            document.getElementById('phase3-count').textContent = phase3Count + '/6';
+            document.getElementById('total-enabled').textContent = 5 + phase15Count + phase3Count;
+        }
+        
+        function showMessage(message, isSuccess) {
+            const statusDiv = document.getElementById('status-message');
+            statusDiv.textContent = message;
+            statusDiv.className = isSuccess ? 'status-message success' : 'status-message error';
+            setTimeout(() => {
+                statusDiv.className = 'status-message';
+            }, 5000);
+        }
+        
+        function enableAllFeatures() {
+            const flags = getFeatureFlags();
+            
+            // Enable Phase 1.5
+            flags[FEATURE_FLAGS.ENHANCED_LLM_PROMPTS] = true;
+            flags[FEATURE_FLAGS.EXTRACTION_VALIDATOR] = true;
+            flags[FEATURE_FLAGS.NARRATIVE_VALIDATOR] = true;
+            
+            // Enable Phase 3
+            flags[FEATURE_FLAGS.SIX_DIMENSION_METRICS] = true;
+            flags[FEATURE_FLAGS.POST_GENERATION_VALIDATOR] = true;
+            flags[FEATURE_FLAGS.CLINICAL_REASONING_VALIDATOR] = true;
+            flags[FEATURE_FLAGS.SECTION_COMPLETER] = true;
+            flags[FEATURE_FLAGS.NARRATIVE_ENHANCER] = true;
+            flags[FEATURE_FLAGS.EDGE_CASE_HANDLER] = true;
+            
+            if (setFeatureFlags(flags)) {
+                updateUI();
+                showMessage('✅ Phase 1.5 & Phase 3 features successfully enabled! Please refresh the DCS app.', true);
+                
+                // Trigger custom event for any listening apps
+                window.dispatchEvent(new CustomEvent('featureFlagsChanged', {
+                    detail: { phase15: true, phase3: true }
+                }));
+            } else {
+                showMessage('❌ Error enabling features. Please try again.', false);
+            }
+        }
+        
+        function disableAllFeatures() {
+            const flags = getFeatureFlags();
+            
+            // Disable Phase 1.5
+            flags[FEATURE_FLAGS.ENHANCED_LLM_PROMPTS] = false;
+            flags[FEATURE_FLAGS.EXTRACTION_VALIDATOR] = false;
+            flags[FEATURE_FLAGS.NARRATIVE_VALIDATOR] = false;
+            
+            // Disable Phase 3
+            flags[FEATURE_FLAGS.SIX_DIMENSION_METRICS] = false;
+            flags[FEATURE_FLAGS.POST_GENERATION_VALIDATOR] = false;
+            flags[FEATURE_FLAGS.CLINICAL_REASONING_VALIDATOR] = false;
+            flags[FEATURE_FLAGS.SECTION_COMPLETER] = false;
+            flags[FEATURE_FLAGS.NARRATIVE_ENHANCER] = false;
+            flags[FEATURE_FLAGS.EDGE_CASE_HANDLER] = false;
+            
+            if (setFeatureFlags(flags)) {
+                updateUI();
+                showMessage('🔒 Advanced features disabled. Core features remain active.', true);
+            } else {
+                showMessage('❌ Error disabling features. Please try again.', false);
+            }
+        }
+        
+        function resetToDefaults() {
+            if (setFeatureFlags(DEFAULT_FLAGS)) {
+                updateUI();
+                showMessage('🔄 Reset to default configuration. Phase 0 enabled, Phase 1.5 & 3 disabled.', true);
+            } else {
+                showMessage('❌ Error resetting features. Please try again.', false);
+            }
+        }
+        
+        // Initialize UI on load
+        updateUI();
+    </script>
+</body>
+</html>
