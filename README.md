@@ -694,6 +694,8 @@ For more solutions, see [TROUBLESHOOTING.md](./TROUBLESHOOTING.md)
 | [DEPLOYMENT_READY.md](./DEPLOYMENT_READY.md) | Production readiness status & testing results |
 | [DEPLOYMENT_GUIDE.md](./DEPLOYMENT_GUIDE.md) | Comprehensive deployment guide for all platforms |
 | [SETUP.md](./SETUP.md) | Detailed setup instructions |
+| [ARCHITECTURE.md](./ARCHITECTURE.md) | System architecture & technical design |
+| [LLM_ROLES_AND_ARCHITECTURE.md](./LLM_ROLES_AND_ARCHITECTURE.md) | LLM as AI context-aware engine - pattern retraction, template generation, quality governance |
 | [SECURITY.md](./SECURITY.md) | Security architecture & best practices |
 | [TESTING_GUIDE.md](./TESTING_GUIDE.md) | Testing documentation |
 | [TROUBLESHOOTING.md](./TROUBLESHOOTING.md) | Common issues & solutions |
