@@ -691,6 +691,9 @@ For more solutions, see [TROUBLESHOOTING.md](./TROUBLESHOOTING.md)
 
 | Document | Description |
 |----------|-------------|
+| [LLM_ROLES_AND_ARCHITECTURE.md](./LLM_ROLES_AND_ARCHITECTURE.md) | **NEW** - Comprehensive LLM roles, interactions, and governance |
+| [ARCHITECTURE.md](./ARCHITECTURE.md) | Complete system architecture & design |
+| [ENHANCED_LLM_SYSTEM.md](./ENHANCED_LLM_SYSTEM.md) | LLM feature implementation details |
 | [DEPLOYMENT_READY.md](./DEPLOYMENT_READY.md) | Production readiness status & testing results |
 | [DEPLOYMENT_GUIDE.md](./DEPLOYMENT_GUIDE.md) | Comprehensive deployment guide for all platforms |
 | [SETUP.md](./SETUP.md) | Detailed setup instructions |
