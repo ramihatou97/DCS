@@ -39,9 +39,9 @@ export default function ModelSelector() {
   };
 
   const getModelStatus = (provider) => {
-    // Check if model is configured
-    const hasKey = localStorage.getItem(`${provider}_api_key`);
-    return hasKey ? '✅ Ready' : '⚠️ Configure API Key';
+    // API keys are now managed on backend - always show as ready if backend is available
+    // Backend availability is checked when making actual API calls
+    return '✅ Backend Managed';
   };
 
   const groupedModels = {
@@ -212,7 +212,7 @@ export default function ModelSelector() {
         </div>
       </div>
 
-      <style jsx>{`
+      <style>{`
         .model-selector-container {
           padding: 20px;
           background: white;

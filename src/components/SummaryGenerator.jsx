@@ -7,8 +7,10 @@
 
 import React, { useState, useEffect } from 'react';
 import { Download, Copy, FileText, CheckCircle, Loader, RefreshCw, Edit2, Save, X } from 'lucide-react';
-import { generateDischargeSummary, exportSummary, compareSummaries } from '../services/summaryGenerator.js';
+import { generateCompleteSummary, generateSummaryFromExtraction } from '../services/summaryAPI.js';
+import { generateNarrative } from '../services/narrativeAPI.js';
 import { formatNarrativeForExport } from '../services/narrativeEngine.js';
+import { exportSummary, compareSummaries } from '../services/summaryGenerator.js';
 import { trackSummaryCorrections } from '../services/ml/summaryCorrections.js';
 import { learnFromSummaryCorrections } from '../services/ml/learningEngine.js';
 
@@ -38,6 +40,23 @@ const SummaryGeneratorComponent = ({ extractedData, notes }) => {
     setError(null);
 
     try {
+      console.log('[SummaryGenerator] === STARTING GENERATION ===');
+      console.log('[SummaryGenerator] extractedData:', extractedData);
+      console.log('[SummaryGenerator] extractedData type:', typeof extractedData);
+      console.log('[SummaryGenerator] extractedData keys:', extractedData ? Object.keys(extractedData) : 'undefined');
+      console.log('[SummaryGenerator] notes:', notes);
+      console.log('[SummaryGenerator] notes type:', typeof notes);
+      console.log('[SummaryGenerator] ===========================');
+
+      // Defensive check
+      if (!extractedData) {
+        throw new Error('extractedData is required but was undefined or null');
+      }
+
+      if (typeof extractedData !== 'object') {
+        throw new Error(`extractedData must be an object, got ${typeof extractedData}`);
+      }
+
       // Extract note contents from note objects
       // notes is an array of objects: [{filename, content, source}, ...]
       // We need to extract just the content strings
@@ -45,21 +64,32 @@ const SummaryGeneratorComponent = ({ extractedData, notes }) => {
         ? notes.map(note => typeof note === 'string' ? note : note.content)
         : [typeof notes === 'string' ? notes : notes.content];
 
-      // Use the already-extracted and corrected data instead of re-extracting
-      // This avoids re-validation of uncorrected data
-      const result = await generateDischargeSummary(noteContents, {
-        validateData: false, // Skip validation - data already validated and corrected
+      console.log('[SummaryGenerator] Calling generateSummaryFromExtraction...');
+
+      // Use the backend API to generate summary from already-extracted and corrected data
+      // This calls the backend which handles narrative generation and summary assembly
+      const result = await generateSummaryFromExtraction(extractedData, {
         format: 'structured',
         style: 'formal',
-        extractedData // Pass the corrected extracted data
+        includeMetrics: true
       });
 
-      if (result.success) {
+      console.log('[SummaryGenerator] === GENERATION RESULT ===');
+      console.log('[SummaryGenerator] result:', result);
+      console.log('[SummaryGenerator] result keys:', result ? Object.keys(result) : 'undefined');
+      console.log('[SummaryGenerator] ===========================');
+
+      if (result) {
         setSummary(result);
       } else {
-        setError(result.errors[0]?.message || 'Failed to generate summary');
+        setError('Failed to generate summary');
       }
     } catch (err) {
+      console.error('[SummaryGenerator] === GENERATION ERROR ===');
+      console.error('[SummaryGenerator] Error:', err);
+      console.error('[SummaryGenerator] Error message:', err.message);
+      console.error('[SummaryGenerator] Error stack:', err.stack);
+      console.error('[SummaryGenerator] ===========================');
       setError(err.message);
     } finally {
       setLoading(false);

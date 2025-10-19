@@ -5,35 +5,52 @@ import path from 'path';
 // https://vitejs.dev/config/
 export default defineConfig({
   plugins: [react()],
+  
+  // Only use index.html as entry point, ignore test HTML files
+  root: './',
+  publicDir: 'public',
+  
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
       '@components': path.resolve(__dirname, './src/components'),
       '@services': path.resolve(__dirname, './src/services'),
-      '@config': path.resolve(__dirname, './src/config'),
       '@utils': path.resolve(__dirname, './src/utils'),
-      '@hooks': path.resolve(__dirname, './src/hooks'),
-      '@context': path.resolve(__dirname, './src/context')
-    }
+      '@context': path.resolve(__dirname, './src/context'),
+      '@config': path.resolve(__dirname, './src/config'),
+    },
   },
+
   server: {
     port: 5173,
-    open: true
+    proxy: {
+      '/api': {
+        target: 'http://localhost:3001',
+        changeOrigin: true,
+        secure: false,
+      },
+    },
   },
+  
+  // Exclude test files and backend from scanning
+  optimizeDeps: {
+    include: ['react', 'react-dom', 'lucide-react', 'date-fns', 'recharts', 'idb'],
+    entries: ['index.html'],
+  },
+
   build: {
     outDir: 'dist',
     sourcemap: true,
     rollupOptions: {
+      input: {
+        main: path.resolve(__dirname, 'index.html'),
+      },
       output: {
         manualChunks: {
           'react-vendor': ['react', 'react-dom'],
-          'llm-vendor': ['@anthropic-ai/sdk', 'openai', '@google/generative-ai'],
-          'ui-vendor': ['lucide-react', 'recharts']
-        }
-      }
-    }
+          'lucide': ['lucide-react'],
+        },
+      },
+    },
   },
-  optimizeDeps: {
-    include: ['react', 'react-dom', 'idb', 'jspdf', 'dompurify']
-  }
 });

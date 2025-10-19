@@ -413,7 +413,7 @@ async function testAPIEndpoints() {
       } else {
         // For POST endpoints, just check if backend server has them defined
         try {
-          const serverPath = join(__dirname, 'backend/server.js');
+          const serverPath = join(__dirname, 'backend/src/server.js');
           const content = readFileSync(serverPath, 'utf8');
           if (content.includes(endpoint.path)) {
             recordTest('API Endpoints', `${endpoint.method} ${endpoint.path}`, 'pass');

@@ -1,8 +1,25 @@
 # 🔒 Backend Proxy Setup - Complete Guide
 
-## ✅ What's Been Implemented
+## ⚠️ DEPRECATION NOTICE
 
-Your DCS app now has **automatic backend detection** with **secure API key handling**!
+**This document is outdated.** The localStorage fallback system described here has been removed for security reasons.
+
+**Current Architecture (as of 2025-10-18):**
+- ✅ All API keys MUST be in `backend/.env`
+- ✅ All LLM calls route through backend proxy
+- ❌ No client-side API key storage
+- ❌ No localStorage fallback
+
+**See updated documentation:**
+- `API_KEYS_QUICK_REF.md` - Quick reference guide
+- `LLM_CLEANUP_REPORT.md` - Security improvements
+- `LLM_CLEANUP_SUMMARY.md` - Quick summary
+
+---
+
+## ✅ What Was Implemented (Historical)
+
+The DCS app originally had **automatic backend detection** with **localStorage fallback**. **The fallback has been removed.**
 
 ### 🎯 Key Features
 

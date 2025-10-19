@@ -1,0 +1,64 @@
+CLINICAL NOTE - NEUROSURGERY
+
+Patient: John Doe (MRN: 12345678)
+DOB: 01/15/1965 (Age: 60)
+Admission Date: 10/15/2025
+Discharge Date: 10/18/2025
+
+CHIEF COMPLAINT:
+Severe headache and altered mental status
+
+HISTORY OF PRESENT ILLNESS:
+60-year-old male presented to ED with sudden onset severe headache, described as "worst headache of my life," associated with nausea, vomiting, and photophobia. Patient was found to have decreased level of consciousness (GCS 13).
+
+PAST MEDICAL HISTORY:
+- Hypertension
+- Type 2 Diabetes Mellitus
+- Hyperlipidemia
+
+MEDICATIONS ON ADMISSION:
+- Lisinopril 20mg daily
+- Metformin 1000mg BID
+- Atorvastatin 40mg daily
+
+IMAGING:
+CT Head (10/15/2025): Diffuse subarachnoid hemorrhage, Fisher Grade 3, with blood in basal cisterns and sylvian fissures. No hydrocephalus.
+
+CTA Head/Neck (10/15/2025): 7mm anterior communicating artery aneurysm.
+
+PROCEDURES:
+10/16/2025 - Cerebral angiography with coil embolization of AComm aneurysm by Dr. Smith. Procedure completed successfully with complete occlusion of aneurysm (Raymond-Roy Class 1).
+
+HOSPITAL COURSE:
+Patient admitted to Neuro ICU. Started on nimodipine 60mg q4h for vasospasm prophylaxis. Serial neurological exams showed improvement. GCS improved to 15 by POD#1. No evidence of vasospasm on TCD monitoring. Patient remained neurologically stable throughout admission.
+
+NEUROLOGICAL EXAM ON DISCHARGE:
+- Alert and oriented x3
+- CN II-XII intact
+- Motor: 5/5 all extremities
+- Sensory: intact to light touch
+- Gait: steady, no ataxia
+
+COMPLICATIONS:
+None
+
+DISCHARGE MEDICATIONS:
+- Nimodipine 60mg PO q4h x 21 days
+- Levetiracetam 500mg PO BID x 3 months
+- Lisinopril 20mg daily
+- Metformin 1000mg BID
+- Atorvastatin 40mg daily
+
+DISCHARGE DISPOSITION:
+Home with family
+
+FOLLOW-UP:
+- Neurosurgery clinic in 2 weeks
+- Repeat CTA in 6 months
+
+DIAGNOSIS:
+1. Subarachnoid hemorrhage, Fisher Grade 3
+2. Ruptured anterior communicating artery aneurysm, status post coil embolization
+3. Hypertension
+4. Type 2 Diabetes Mellitus
+

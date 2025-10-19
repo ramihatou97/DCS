@@ -45,18 +45,18 @@ const DEFAULT_FLAGS = {
   [FEATURE_FLAGS.DISCHARGE_MEDICATIONS]: true,
   [FEATURE_FLAGS.LATE_RECOVERY_DETECTION]: true,
 
-  // Phase 1.5: Disabled by default (enhancement)
-  [FEATURE_FLAGS.ENHANCED_LLM_PROMPTS]: false,
-  [FEATURE_FLAGS.EXTRACTION_VALIDATOR]: false,
-  [FEATURE_FLAGS.NARRATIVE_VALIDATOR]: false,
+  // Phase 1.5: ENABLED (enhancement) - Task 1
+  [FEATURE_FLAGS.ENHANCED_LLM_PROMPTS]: true,
+  [FEATURE_FLAGS.EXTRACTION_VALIDATOR]: true,
+  [FEATURE_FLAGS.NARRATIVE_VALIDATOR]: true,
 
-  // Phase 3: Disabled by default (quality enhancement)
-  [FEATURE_FLAGS.SIX_DIMENSION_METRICS]: false,
-  [FEATURE_FLAGS.POST_GENERATION_VALIDATOR]: false,
-  [FEATURE_FLAGS.CLINICAL_REASONING_VALIDATOR]: false,
-  [FEATURE_FLAGS.SECTION_COMPLETER]: false,
-  [FEATURE_FLAGS.NARRATIVE_ENHANCER]: false,
-  [FEATURE_FLAGS.EDGE_CASE_HANDLER]: false
+  // Phase 3: ENABLED (quality enhancement) - Task 2
+  [FEATURE_FLAGS.SIX_DIMENSION_METRICS]: true,
+  [FEATURE_FLAGS.POST_GENERATION_VALIDATOR]: true,
+  [FEATURE_FLAGS.CLINICAL_REASONING_VALIDATOR]: true,
+  [FEATURE_FLAGS.SECTION_COMPLETER]: true,
+  [FEATURE_FLAGS.NARRATIVE_ENHANCER]: true,
+  [FEATURE_FLAGS.EDGE_CASE_HANDLER]: true
 };
 
 /**
@@ -109,7 +109,12 @@ export const setFeatureFlag = (flag, enabled) => {
  */
 export const isFeatureEnabled = (flag) => {
   const flags = getFeatureFlags();
-  return flags[flag] === true;
+  const enabled = flags[flag] === true;
+
+  // Task 3: Log feature flag checks for debugging
+  console.log(`[Feature Flag Check] ${flag}: ${enabled ? '✅ ENABLED' : '❌ DISABLED'}`);
+
+  return enabled;
 };
 
 /**
@@ -248,13 +253,42 @@ export const getFeatureFlagStats = () => {
   return stats;
 };
 
-// Log feature flag status on module load
-console.log('[Feature Flags] Module loaded');
+// Log feature flag status on module load - Task 3: Enhanced startup logging
+console.log('═══════════════════════════════════════════════════════════');
+console.log('🚩 FEATURE FLAGS SYSTEM INITIALIZED');
+console.log('═══════════════════════════════════════════════════════════');
+
 const stats = getFeatureFlagStats();
-console.log(`[Feature Flags] Status: ${stats.enabled}/${stats.total} enabled`);
-console.log(`[Feature Flags] Phase 0: ${stats.phase0.enabled}/${stats.phase0.total} enabled`);
-console.log(`[Feature Flags] Phase 1.5: ${stats.phase1_5.enabled}/${stats.phase1_5.total} enabled`);
-console.log(`[Feature Flags] Phase 3: ${stats.phase3.enabled}/${stats.phase3.total} enabled`);
+const currentFlags = getFeatureFlags();
+
+console.log(`📊 Overall Status: ${stats.enabled}/${stats.total} features enabled`);
+console.log('');
+
+// Phase 0 Status
+console.log(`📦 Phase 0 (Critical Fixes): ${stats.phase0.enabled}/${stats.phase0.total} enabled`);
+console.log(`   ${currentFlags[FEATURE_FLAGS.ENHANCED_DEMOGRAPHICS] ? '✅' : '❌'} Enhanced Demographics`);
+console.log(`   ${currentFlags[FEATURE_FLAGS.ENHANCED_SURGERY_DATES] ? '✅' : '❌'} Enhanced Surgery Dates`);
+console.log(`   ${currentFlags[FEATURE_FLAGS.ATTENDING_PHYSICIAN] ? '✅' : '❌'} Attending Physician`);
+console.log(`   ${currentFlags[FEATURE_FLAGS.DISCHARGE_MEDICATIONS] ? '✅' : '❌'} Discharge Medications`);
+console.log(`   ${currentFlags[FEATURE_FLAGS.LATE_RECOVERY_DETECTION] ? '✅' : '❌'} Late Recovery Detection`);
+console.log('');
+
+// Phase 1.5 Status
+console.log(`🔧 Phase 1.5 (Enhancement): ${stats.phase1_5.enabled}/${stats.phase1_5.total} enabled`);
+console.log(`   ${currentFlags[FEATURE_FLAGS.ENHANCED_LLM_PROMPTS] ? '✅' : '❌'} Enhanced LLM Prompts`);
+console.log(`   ${currentFlags[FEATURE_FLAGS.EXTRACTION_VALIDATOR] ? '✅' : '❌'} Extraction Validator`);
+console.log(`   ${currentFlags[FEATURE_FLAGS.NARRATIVE_VALIDATOR] ? '✅' : '❌'} Narrative Validator`);
+console.log('');
+
+// Phase 3 Status
+console.log(`⭐ Phase 3 (Quality Enhancement): ${stats.phase3.enabled}/${stats.phase3.total} enabled`);
+console.log(`   ${currentFlags[FEATURE_FLAGS.SIX_DIMENSION_METRICS] ? '✅' : '❌'} Six-Dimension Metrics`);
+console.log(`   ${currentFlags[FEATURE_FLAGS.POST_GENERATION_VALIDATOR] ? '✅' : '❌'} Post-Generation Validator`);
+console.log(`   ${currentFlags[FEATURE_FLAGS.CLINICAL_REASONING_VALIDATOR] ? '✅' : '❌'} Clinical Reasoning Validator`);
+console.log(`   ${currentFlags[FEATURE_FLAGS.SECTION_COMPLETER] ? '✅' : '❌'} Section Completer`);
+console.log(`   ${currentFlags[FEATURE_FLAGS.NARRATIVE_ENHANCER] ? '✅' : '❌'} Narrative Enhancer`);
+console.log(`   ${currentFlags[FEATURE_FLAGS.EDGE_CASE_HANDLER] ? '✅' : '❌'} Edge Case Handler`);
+console.log('═══════════════════════════════════════════════════════════');
 
 export default {
   FEATURE_FLAGS,

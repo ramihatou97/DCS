@@ -4,10 +4,11 @@
 
 Successfully implemented a comprehensive multi-provider LLM system with:
 - ✅ Model selection UI (Claude Sonnet 3.5, GPT-4o, Gemini 1.5 Pro)
-- ✅ Automatic fallback if provider fails
+- ✅ Automatic fallback between LLM providers if one fails
 - ✅ Cost tracking for every API call
 - ✅ Performance comparison dashboard
 - ✅ All LLM calls updated to use new system
+- ✅ Secure backend-only architecture (API keys never exposed to browser)
 
 ---
 
@@ -33,7 +34,7 @@ Added 8 premium models with full specifications:
 - User-selectable models
 - Recommended models marked with ⭐
 - Detailed specifications (context window, cost, speed, quality)
-- Automatic model storage in localStorage
+- Model selection persisted in localStorage
 
 ### 2. Cost Tracking System
 **File:** `src/services/llmService.js`
@@ -58,10 +59,12 @@ getPerformanceMetrics()  // Get performance stats
 resetCostTracking()      // Clear all tracking
 ```
 
-### 3. Automatic Fallback System
+### 3. Automatic Fallback System (Between LLM Providers)
 **File:** `src/services/llmService.js`
 
 **Function:** `callLLMWithFallback(prompt, options)`
+
+**Important:** This fallback is between different LLM providers (Claude → GPT-4 → Gemini), NOT between storage methods. All API calls route through the backend.
 
 **Fallback Order:**
 1. **Primary:** User-selected model (e.g., Claude Sonnet 3.5)
@@ -70,10 +73,11 @@ resetCostTracking()      // Clear all tracking
 4. **Fallback 3:** Fast/cheap models (Haiku, GPT-4o Mini, Flash)
 
 **Behavior:**
-- Automatically tries next model if primary fails
+- Automatically tries next LLM provider if primary fails
 - Logs each attempt with clear indicators: 🎯 Primary, 🔄 Fallback
 - Records failure reasons for debugging
-- Only fails if ALL models fail
+- Only fails if ALL providers fail
+- All calls route through secure backend proxy
 
 **Example console output:**
 ```
