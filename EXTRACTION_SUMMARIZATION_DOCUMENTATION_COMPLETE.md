@@ -241,7 +241,7 @@ For specific questions about any algorithm or function:
 
 ---
 
-**Documentation Author**: GitHub Copilot  
+**Documentation Author**: DCS Development Team  
 **Project**: Discharge Summary Generator (DCS)  
 **Repository**: ramihatou97/DCS  
 **Completion Date**: October 19, 2025
