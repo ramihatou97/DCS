@@ -692,6 +692,8 @@ For more solutions, see [TROUBLESHOOTING.md](./TROUBLESHOOTING.md)
 | Document | Description |
 |----------|-------------|
 | [LLM_ROLES_AND_ARCHITECTURE.md](./LLM_ROLES_AND_ARCHITECTURE.md) | **NEW** - Comprehensive LLM roles, interactions, and governance |
+| [LLM_QUICK_REFERENCE.md](./LLM_QUICK_REFERENCE.md) | **NEW** - Quick reference guide for LLM usage |
+| [LLM_ENHANCEMENT_RECOMMENDATIONS.md](./LLM_ENHANCEMENT_RECOMMENDATIONS.md) | **NEW** - Expert recommendations for LLM enhancement |
 | [ARCHITECTURE.md](./ARCHITECTURE.md) | Complete system architecture & design |
 | [ENHANCED_LLM_SYSTEM.md](./ENHANCED_LLM_SYSTEM.md) | LLM feature implementation details |
 | [DEPLOYMENT_READY.md](./DEPLOYMENT_READY.md) | Production readiness status & testing results |
