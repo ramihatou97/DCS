@@ -14,7 +14,7 @@ import LearningDashboard from './components/LearningDashboard.jsx';
 import SummaryImporter from './components/SummaryImporter.jsx';
 
 // Import services
-import { extractMedicalEntities } from './services/extraction.js';
+import { extractMedicalEntities } from './services/extractionAPI.js';
 import { validateExtraction, getValidationSummary } from './services/validation.js';
 import { mergeExtractionResults } from './services/dataMerger.js';
 import { buildTimeline } from './services/clinicalEvolution.js';
@@ -53,7 +53,8 @@ function App() {
       // Extract data from notes
       const noteContents = notes.map(n => n.content);
       const extractionResult = await extractMedicalEntities(noteContents, {
-        includeConfidence: true
+        includeConfidence: true,
+        usePatterns: true
       });
 
       console.log('Extraction result:', extractionResult);

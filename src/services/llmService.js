@@ -1,30 +1,44 @@
 /**
  * LLM Service - Enhanced Multi-Provider Architecture
- * 
+ *
  * Unified interface for multiple LLM providers (OpenAI, Anthropic, Google Gemini)
- * 
+ *
  * Features:
  * - ✅ Model selection UI (Claude Sonnet 3.5, GPT-4o, Gemini 1.5 Pro)
  * - ✅ Cost tracking per API call
  * - ✅ Performance comparison dashboard
  * - ✅ Automatic fallback if provider fails
  * - ✅ Error handling and retry logic
- * 
+ *
  * Provider Priority (based on medical text quality):
  * 1. Claude Sonnet 3.5 - Best for structured extraction and natural language
  * 2. GPT-4o - Excellent medical knowledge and reasoning
  * 3. Gemini 1.5 Pro - Good performance, most cost-effective
- * 
- * CORS Proxy Support:
- * - Set USE_PROXY = true to use backend proxy server (solves CORS issues)
- * - Proxy server must be running on http://localhost:3001
+ *
+ * Security Architecture:
+ * - ✅ Backend proxy REQUIRED - all LLM calls route through backend server
+ * - ✅ API keys stored securely in backend .env file (never in browser)
+ * - ✅ No client-side API key fallback (removed for security)
+ * - ⚠️ Backend server must be running on http://localhost:3001
  */
 
-import { getApiKey, hasApiKey, API_PROVIDERS } from '../utils/apiKeys.js';
 import { getPreferences, TASK_PRIORITIES } from '../utils/llmPreferences.js';
 import knowledgeBase from './knowledge/knowledgeBase.js';
 import contextProvider from './context/contextProvider.js';
 import { getCachedLLMResponse, cacheLLMResponse } from '../utils/performanceCache.js';
+
+// ============================================================================
+// API PROVIDERS
+// ============================================================================
+
+/**
+ * Supported API providers
+ */
+export const API_PROVIDERS = {
+  OPENAI: 'openai',
+  ANTHROPIC: 'anthropic',
+  GEMINI: 'gemini'
+};
 
 // ============================================================================
 // COST TRACKING SYSTEM
@@ -479,13 +493,6 @@ export const isLLMAvailable = () => {
 };
 
 /**
- * Get available providers (have API keys)
- */
-export const getAvailableProviders = () => {
-  return Object.values(API_PROVIDERS).filter(provider => hasApiKey(provider));
-};
-
-/**
  * Timeout wrapper for promises
  */
 function withTimeout(promise, timeoutMs = 120000, operation = 'Operation') {
@@ -713,53 +720,9 @@ const callAnthropicAPI = async (model, prompt, systemPrompt, options) => {
     
     return content;
   }
-  
-  // FALLBACK: Use client-side API key (INSECURE - development only)
-  console.warn('[Anthropic] ⚠️ Using client-side API key - NOT SECURE for production!');
-  
-  const apiKey = localStorage.getItem('anthropic_api_key');
-  if (!apiKey) {
-    throw new Error('Anthropic API key not configured. Add it in Settings or start backend server.');
-  }
-  
-  const body = {
-    model: model.model,
-    max_tokens: options.maxTokens,
-    temperature: options.temperature,
-    system: systemPrompt,
-    messages: [{ role: 'user', content: prompt }]
-  };
 
-  const response = await fetch('https://api.anthropic.com/v1/messages', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'x-api-key': apiKey,
-      'anthropic-version': '2023-06-01'
-    },
-    body: JSON.stringify(body)
-  });
-
-  if (!response.ok) {
-    const error = await response.json().catch(() => ({ error: { message: response.statusText } }));
-    throw new Error(`Anthropic API error: ${error.error?.message || response.statusText}`);
-  }
-
-  const data = await response.json();
-  const content = data.content[0]?.text || '';
-  
-  // Parse JSON if responseFormat is 'json'
-  if (options.responseFormat === 'json') {
-    try {
-      return JSON.parse(content);
-    } catch (error) {
-      console.error('[Anthropic] Failed to parse JSON response:', error);
-      console.error('[Anthropic] Raw response:', content.substring(0, 500));
-      throw new Error('Anthropic returned invalid JSON. Please try again.');
-    }
-  }
-  
-  return content;
+  // Backend is required - no client-side fallback for security
+  throw new Error('Backend server is not available. Please start the backend server to use LLM features.');
 };
 
 /**
@@ -804,50 +767,9 @@ const callOpenAIAPI = async (model, prompt, systemPrompt, options) => {
     const content = data.choices[0]?.message?.content;
     return options.responseFormat === 'json' ? JSON.parse(content) : content;
   }
-  
-  // FALLBACK: Use client-side API key (INSECURE - development only)
-  console.warn('[OpenAI] ⚠️ Using client-side API key - NOT SECURE for production!');
-  
-  const apiKey = localStorage.getItem('openai_api_key');
-  if (!apiKey) {
-    throw new Error('OpenAI API key not configured. Add it in Settings or start backend server.');
-  }
-  
-  const messages = [
-    { role: 'system', content: systemPrompt },
-    { role: 'user', content: prompt }
-  ];
 
-  const body = {
-    model: model.model,
-    messages,
-    max_tokens: options.maxTokens,
-    temperature: options.temperature
-  };
-
-  if (options.responseFormat === 'json') {
-    body.response_format = { type: 'json_object' };
-    messages[0].content += '\n\nRespond with valid JSON only.';
-  }
-
-  const response = await fetch('https://api.openai.com/v1/chat/completions', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${apiKey}`
-    },
-    body: JSON.stringify(body)
-  });
-
-  if (!response.ok) {
-    const error = await response.json().catch(() => ({ error: { message: response.statusText } }));
-    throw new Error(`OpenAI API error: ${error.error?.message || response.statusText}`);
-  }
-
-  const data = await response.json();
-  const content = data.choices[0]?.message?.content;
-
-  return options.responseFormat === 'json' ? JSON.parse(content) : content;
+  // Backend is required - no client-side fallback for security
+  throw new Error('Backend server is not available. Please start the backend server to use LLM features.');
 };
 
 /**
@@ -898,57 +820,9 @@ const callGeminiAPI = async (model, prompt, systemPrompt, options) => {
     
     return content;
   }
-  
-  // FALLBACK: Use client-side API key (INSECURE - development only)
-  console.warn('[Gemini] ⚠️ Using client-side API key - NOT SECURE for production!');
-  
-  const apiKey = localStorage.getItem('google_api_key');
-  if (!apiKey) {
-    throw new Error('Google API key not configured. Add it in Settings or start backend server.');
-  }
-  
-  const body = {
-    contents: [{
-      role: 'user',
-      parts: [{ text: `${systemPrompt}\n\n${prompt}` }]
-    }],
-    generationConfig: {
-      maxOutputTokens: options.maxTokens,
-      temperature: options.temperature
-    }
-  };
 
-  const response = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/${model.model}:generateContent?key=${apiKey}`,
-    {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(body)
-    }
-  );
-
-  if (!response.ok) {
-    const error = await response.json().catch(() => ({ error: { message: response.statusText } }));
-    throw new Error(`Gemini API error: ${error.error?.message || response.statusText}`);
-  }
-
-  const data = await response.json();
-  const content = data.candidates[0]?.content?.parts[0]?.text || '';
-  
-  // Parse JSON if responseFormat is 'json'
-  if (options.responseFormat === 'json') {
-    try {
-      return JSON.parse(content);
-    } catch (error) {
-      console.error('[Gemini] Failed to parse JSON response:', error);
-      console.error('[Gemini] Raw response:', content.substring(0, 500));
-      throw new Error('Gemini returned invalid JSON. Please try again.');
-    }
-  }
-  
-  return content;
+  // Backend is required - no client-side fallback for security
+  throw new Error('Backend server is not available. Please start the backend server to use LLM features.');
 };
 
 // ============================================================================
@@ -2110,7 +1984,6 @@ export default {
   testApiKey,
   isLLMAvailable,
   getActiveLLMProvider,
-  getAvailableProviders,
   // New exports
   PREMIUM_MODELS,
   getSelectedModel,

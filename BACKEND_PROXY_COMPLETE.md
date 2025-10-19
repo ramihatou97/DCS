@@ -1,12 +1,29 @@
 # ✅ COMPLETE: Backend Proxy + Automatic Detection System
 
-## 🎯 Mission Accomplished!
+## ⚠️ DEPRECATION NOTICE
 
-All three requested features have been **fully implemented without file duplication**:
+**This document is outdated.** The localStorage fallback system described here has been removed for security reasons.
+
+**Current Architecture (as of 2025-10-18):**
+- ✅ All API keys MUST be in `backend/.env`
+- ✅ All LLM calls route through backend proxy
+- ❌ No client-side API key storage
+- ❌ No localStorage fallback
+
+**See updated documentation:**
+- `API_KEYS_QUICK_REF.md` - Quick reference guide
+- `LLM_CLEANUP_REPORT.md` - Security improvements
+- `LLM_CLEANUP_SUMMARY.md` - Quick summary
+
+---
+
+## 🎯 Mission Accomplished (Historical)!
+
+Originally implemented with localStorage fallback. **The fallback has been removed for security.**
 
 1. ✅ **Complete backend proxy implementation**
-2. ✅ **Automatic detection (use backend if available, fallback to frontend)**
-3. ✅ **Setup script that configures everything**
+2. ❌ **Automatic fallback removed** (was: use backend if available, fallback to frontend)
+3. ✅ **Backend-only architecture** (secure)
 
 ---
 

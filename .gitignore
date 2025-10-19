@@ -64,3 +64,10 @@ test-results/
 
 # OS specific
 Thumbs.db
+.env.local
+.env.*.local
+dist/
+node_modules/
+
+# Machine Learning - Learned Patterns
+backend/data/learned_patterns.json

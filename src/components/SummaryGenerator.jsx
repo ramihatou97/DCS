@@ -7,8 +7,8 @@
 
 import React, { useState, useEffect } from 'react';
 import { Download, Copy, FileText, CheckCircle, Loader, RefreshCw, Edit2, Save, X } from 'lucide-react';
-import { generateDischargeSummary, exportSummary, compareSummaries } from '../services/summaryGenerator.js';
-import { formatNarrativeForExport } from '../services/narrativeEngine.js';
+import { generateCompleteSummary, generateSummaryFromExtraction } from '../services/summaryAPI.js';
+import { generateNarrative } from '../services/narrativeAPI.js';
 import { trackSummaryCorrections } from '../services/ml/summaryCorrections.js';
 import { learnFromSummaryCorrections } from '../services/ml/learningEngine.js';
 

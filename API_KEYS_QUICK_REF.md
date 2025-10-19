@@ -2,40 +2,27 @@
 
 ## ⚡ TL;DR
 
-Your API keys can go in **TWO PLACES**:
+Your API keys **MUST** be in the **Backend `.env` file** (Secure - Production Ready) ✅
 
-1. **Backend `.env` file** (Secure - Production) ✅ **RECOMMENDED**
-2. **Frontend localStorage** (Insecure - Development only) ⚠️
-
-The system **automatically chooses** the secure option when available!
+**Security Update:** Client-side API key storage has been removed for security. All LLM calls now route through the backend server.
 
 ---
 
 ## 📍 Where Are Your API Keys?
 
-### Option 1: Backend (Already Configured ✅)
+### Backend `.env` File (Required ✅)
 
 **File:** `/Users/ramihatoum/Desktop/app/DCS/backend/.env`
 
 ```properties
-ANTHROPIC_API_KEY=sk-ant-api03-nyg_WA3W2qm0...  ✅
-OPENAI_API_KEY=sk-proj-Fdv_nrreqIiZ12...        ✅
-GEMINI_API_KEY=AIzaSyAslxdX-d800XAdr...         ✅
+ANTHROPIC_API_KEY=your_anthropic_api_key_here
+OPENAI_API_KEY=your_openai_api_key_here
+GOOGLE_API_KEY=your_google_api_key_here
 ```
 
-**Security:** 🔒 Secure (keys on server only)
+**Security:** 🔒 Secure (keys on server only, never exposed to browser)
 
-### Option 2: Frontend (Fallback Only)
-
-**Location:** Browser localStorage
-
-**Set via:**
-```bash
-# Open: enable_features_now.html
-# Enter keys → Click "Save API Keys"
-```
-
-**Security:** ⚠️ Insecure (keys visible in browser)
+**Note:** The `.env.example` file contains placeholders. Copy it to `.env` and add your real keys.
 
 ---
 
@@ -58,22 +45,7 @@ npm run dev
 
 ## 🔍 How to Check Backend Status
 
-### Method 1: Setup Tool
-```bash
-open enable_features_now.html
-```
-
-**You'll see:**
-```
-✅ Backend server is running on http://localhost:3001
-API Keys Configured:
-  ✅ Anthropic (Claude)
-  ✅ OpenAI (GPT-4)
-  ✅ Google (Gemini)
-🔒 Using secure backend proxy for API calls
-```
-
-### Method 2: Terminal
+### Method 1: Terminal
 ```bash
 curl http://localhost:3001/health
 ```
@@ -90,7 +62,7 @@ curl http://localhost:3001/health
 }
 ```
 
-### Method 3: Browser Console
+### Method 2: Browser Console
 ```javascript
 // Paste in console while app is running:
 fetch('http://localhost:3001/health')
@@ -102,58 +74,37 @@ fetch('http://localhost:3001/health')
 
 ---
 
-## 🎯 Where to Add/Update API Keys
+## 🎯 How to Add/Update API Keys
 
-### Production (Recommended): Backend `.env` File
+### Backend `.env` File (Required)
 
 ```bash
-# Edit backend/.env
+# Step 1: Copy the example file (if you haven't already)
+cp backend/.env.example backend/.env
+
+# Step 2: Edit backend/.env
 nano backend/.env
 
-# Add or update:
+# Step 3: Add your real API keys:
 ANTHROPIC_API_KEY=sk-ant-YOUR-NEW-KEY-HERE
 OPENAI_API_KEY=sk-proj-YOUR-NEW-KEY-HERE
-GEMINI_API_KEY=AIza-YOUR-NEW-KEY-HERE
+GOOGLE_API_KEY=AIza-YOUR-NEW-KEY-HERE
 
-# Restart backend
+# Step 4: Restart backend
 pkill -f "node server.js"
 cd backend && npm start
 ```
 
-### Development (Quick Testing): Setup Tool
-
-```bash
-# Open setup tool
-open enable_features_now.html
-
-# Steps:
-1. Enter API keys in the input fields
-2. Click "💾 Save API Keys"
-3. Click "🧪 Test All Keys" to verify
-4. Refresh your app
-```
-
-### Development (Console): Direct localStorage
-
-```javascript
-// Open browser console (Cmd+Option+J)
-
-// Set keys:
-localStorage.setItem('anthropic_api_key', 'sk-ant-YOUR-KEY');
-localStorage.setItem('openai_api_key', 'sk-proj-YOUR-KEY');
-localStorage.setItem('google_api_key', 'AIza-YOUR-KEY');
-
-// Verify:
-console.log('Anthropic:', localStorage.getItem('anthropic_api_key'));
-console.log('OpenAI:', localStorage.getItem('openai_api_key'));
-console.log('Google:', localStorage.getItem('google_api_key'));
-```
+**Get API Keys:**
+- **Anthropic (Claude):** https://console.anthropic.com/settings/keys
+- **OpenAI (GPT-4):** https://platform.openai.com/api-keys
+- **Google (Gemini):** https://makersuite.google.com/app/apikey
 
 ---
 
-## 🔐 Security Status
+## 🔐 Security Architecture
 
-### With Backend Running ✅
+### Secure Backend-Only Design ✅
 
 ```
 Frontend → Backend Proxy → LLM API
@@ -166,31 +117,34 @@ Frontend → Backend Proxy → LLM API
 [Anthropic] 🔒 Using backend proxy (secure)
 ```
 
-### Without Backend Running ⚠️
+### Without Backend Running ❌
 
 ```
-Frontend → LLM API directly
-   ↑ (Keys here, visible in browser)
+Frontend → ❌ ERROR
 ```
 
 **Console shows:**
 ```
-[Backend] ❌ Unavailable - Using client-side keys
-[Anthropic] ⚠️ Using client-side API key - NOT SECURE for production!
+[Backend] ❌ Unavailable
+Error: Backend server is not available. Please start the backend server to use LLM features.
 ```
+
+**Note:** The application requires the backend server to be running. There is no client-side fallback for security reasons.
 
 ---
 
 ## 🧪 Quick Tests
 
-### Test 1: Check Current API Key Location
+### Test 1: Check Backend Health
 
 ```bash
 # In browser console:
 fetch('http://localhost:3001/health')
   .then(r => r.json())
   .then(d => console.log(
-    d.services.anthropic ? '🔒 Backend has keys' : '⚠️ Using localStorage'
+    d.services.anthropic ? '🔒 Backend has Anthropic key' : '❌ No Anthropic key',
+    d.services.openai ? '🔒 Backend has OpenAI key' : '❌ No OpenAI key',
+    d.services.gemini ? '🔒 Backend has Gemini key' : '❌ No Gemini key'
   ))
 ```
 
@@ -205,50 +159,38 @@ fetch('http://localhost:3001/health')
    ✅ "[Anthropic] 🔒 Using backend proxy (secure)"
 ```
 
-### Test 3: Test API Keys
-
-```bash
-# Open: enable_features_now.html
-# Click: "🧪 Test All Keys"
-
-# Should show:
-# ✅ Anthropic: Working
-# ✅ Google: Working
-# ✅ OpenAI: Working
-```
-
 ---
 
 ## 🎯 Common Questions
 
-### Q: Where should I put my API keys for production?
+### Q: Where should I put my API keys?
 
-**A:** Backend `.env` file (already configured!)
+**A:** Backend `.env` file only. Client-side storage has been removed for security.
 
-### Q: Where should I put my API keys for development?
+### Q: What if I don't have a `.env` file?
 
-**A:** Either backend `.env` OR localStorage via `enable_features_now.html`
+**A:** Copy `backend/.env.example` to `backend/.env` and add your real API keys.
 
-### Q: Can I use both?
-
-**A:** Yes! Backend takes priority, localStorage is fallback.
-
-### Q: How do I know which is being used?
+### Q: How do I know if my keys are working?
 
 **A:** Check console logs:
-- `🔒 Using backend proxy` = Backend (secure)
-- `⚠️ Using client-side API key` = localStorage (insecure)
+- `🔒 Using backend proxy` = Backend is working (secure)
+- Check `/health` endpoint: `curl http://localhost:3001/health`
 
 ### Q: Do I need to configure anything?
 
-**A:** No! Backend already has your keys. Just start it:
+**A:** Just add your API keys to `backend/.env` and start the backend:
 ```bash
 cd backend && npm start
 ```
 
-### Q: What if backend crashes during use?
+### Q: What if the backend is not running?
 
-**A:** App automatically falls back to localStorage keys (if configured)
+**A:** The application will show an error message. You must start the backend to use LLM features.
+
+### Q: Can I use the app without API keys?
+
+**A:** Pattern-based extraction works without API keys (~70% accuracy), but LLM features require at least one API key configured in the backend.
 
 ---
 
@@ -275,9 +217,12 @@ cd backend && npm start
                   YES         NO
                   /            \
                  ▼              ▼
-        🔒 Secure mode    ⚠️ Development mode
-        Uses .env keys    Uses localStorage keys
+        🔒 App works      ❌ App shows error
+        Secure mode       "Backend required"
                 │                   │
+                │                   │
+                │                   ▼
+                │           Start backend to proceed
                 │                   │
                 └───────┬───────────┘
                         │
@@ -292,42 +237,25 @@ cd backend && npm start
                 Generate Summary
                         │
                         ▼
-            Check console for security mode
+            Check console: "🔒 Using backend proxy"
 ```
 
 ---
 
-## 🎨 Setup Tool (enable_features_now.html)
+## 🎨 Feature Management
 
-### What it does:
+### Model Selection
 
-- ✅ **Shows backend status** (running/not running)
-- ✅ **Displays which API keys are configured** (backend)
-- ✅ **Allows adding localStorage keys** (fallback)
-- ✅ **Tests API keys** (all providers)
-- ✅ **Selects AI model** (Claude, GPT, Gemini)
-- ✅ **Enables all features** (14/14 features)
-- ✅ **One-click complete setup**
+The app supports multiple LLM providers:
+- **Claude Sonnet 3.5** (Anthropic) - Best for structured extraction
+- **GPT-4o** (OpenAI) - Excellent medical knowledge
+- **Gemini 1.5 Pro** (Google) - Cost-effective
 
-### How to use:
+Select your preferred model in the Settings page of the application.
 
-```bash
-# Open the tool
-open enable_features_now.html
+### Feature Flags
 
-# It automatically shows:
-# - Backend status
-# - API keys configured
-# - Current model selection
-# - Feature flags status
-
-# Use buttons to:
-# - Save API keys (if backend not available)
-# - Test API keys
-# - Select model
-# - Enable features
-# - Complete setup (all at once)
-```
+All features are enabled by default. You can manage feature flags through the application's Settings interface.
 
 ---
 
@@ -346,12 +274,6 @@ lsof -ti:3001 && echo "✅ Running" || echo "❌ Not running"
 ### Check API keys in backend
 ```bash
 cd backend && grep -E "API_KEY" .env
-```
-
-### Clear localStorage keys
-```bash
-# In browser console:
-localStorage.clear()
 ```
 
 ### Restart everything
@@ -408,4 +330,6 @@ cd backend && grep "API_KEY=" .env | head -3
 
 ---
 
-**🎯 Remember:** Backend `.env` is already configured with your keys! Just start it and you're secure! 🔒✨
+**🎯 Remember:** All API keys must be in `backend/.env`. The backend server is required for LLM features. Start it with `cd backend && npm start` 🔒✨
+
+**🔒 Security:** Client-side API key storage has been removed. All LLM calls route through the secure backend proxy.
