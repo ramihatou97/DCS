@@ -689,8 +689,19 @@ For more solutions, see [TROUBLESHOOTING.md](./TROUBLESHOOTING.md)
 
 ## 📚 Additional Documentation
 
+### LLM Documentation Suite
 | Document | Description |
 |----------|-------------|
+| [LLM_ROLES_AND_ARCHITECTURE.md](./LLM_ROLES_AND_ARCHITECTURE.md) | **NEW** - Comprehensive LLM roles, interactions, and governance (59KB) |
+| [LLM_QUICK_REFERENCE.md](./LLM_QUICK_REFERENCE.md) | **NEW** - Quick reference guide for LLM usage (8KB) |
+| [LLM_ENHANCEMENT_RECOMMENDATIONS.md](./LLM_ENHANCEMENT_RECOMMENDATIONS.md) | **NEW** - Expert recommendations for LLM enhancement (40KB) |
+| [LLM_TECHNICAL_DEEP_DIVE.md](./LLM_TECHNICAL_DEEP_DIVE.md) | **NEW** - Detailed algorithms and code implementations (621 lines) |
+
+### System Documentation
+| Document | Description |
+|----------|-------------|
+| [ARCHITECTURE.md](./ARCHITECTURE.md) | Complete system architecture & design |
+| [ENHANCED_LLM_SYSTEM.md](./ENHANCED_LLM_SYSTEM.md) | LLM feature implementation details |
 | [DEPLOYMENT_READY.md](./DEPLOYMENT_READY.md) | Production readiness status & testing results |
 | [DEPLOYMENT_GUIDE.md](./DEPLOYMENT_GUIDE.md) | Comprehensive deployment guide for all platforms |
 | [SETUP.md](./SETUP.md) | Detailed setup instructions |
