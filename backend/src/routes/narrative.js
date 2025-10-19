@@ -18,9 +18,24 @@ const { generateNarrative, generateSummaryWithLLM } = require('../services/narra
  */
 router.post('/', async (req, res, next) => {
   try {
+    console.log('[Narrative Route] === REQUEST RECEIVED ===');
+    console.log('[Narrative Route] req.body:', req.body);
+    console.log('[Narrative Route] req.body keys:', Object.keys(req.body));
+    console.log('[Narrative Route] ===========================');
+
     const { extracted, section, options = {} } = req.body;
 
+    console.log('[Narrative Route] === DESTRUCTURED VALUES ===');
+    console.log('[Narrative Route] extracted:', extracted);
+    console.log('[Narrative Route] extracted type:', typeof extracted);
+    console.log('[Narrative Route] extracted keys:', extracted ? Object.keys(extracted) : 'undefined');
+    console.log('[Narrative Route] section:', section);
+    console.log('[Narrative Route] options:', options);
+    console.log('[Narrative Route] ===========================');
+
     if (!extracted) {
+      console.error('[Narrative Route] ERROR: extracted is missing!');
+      console.error('[Narrative Route] Request body was:', JSON.stringify(req.body, null, 2));
       return res.status(400).json({
         error: 'Missing required field: extracted',
         message: 'Extracted medical data is required for narrative generation'
@@ -28,15 +43,22 @@ router.post('/', async (req, res, next) => {
     }
 
     const startTime = Date.now();
-    
+
     let result;
     if (options.useLLM) {
+      console.log('[Narrative Route] Using LLM generation...');
       result = await generateSummaryWithLLM(extracted, options);
     } else {
+      console.log('[Narrative Route] Using template generation...');
       result = await generateNarrative(extracted, section, options);
     }
-    
+
     const processingTime = Date.now() - startTime;
+
+    console.log('[Narrative Route] === RESPONSE ===');
+    console.log('[Narrative Route] result keys:', result ? Object.keys(result) : 'undefined');
+    console.log('[Narrative Route] Processing time:', processingTime, 'ms');
+    console.log('[Narrative Route] ====================');
 
     res.json({
       success: true,
@@ -49,6 +71,11 @@ router.post('/', async (req, res, next) => {
     });
 
   } catch (error) {
+    console.error('[Narrative Route] === ERROR ===');
+    console.error('[Narrative Route] Error:', error);
+    console.error('[Narrative Route] Error message:', error.message);
+    console.error('[Narrative Route] Error stack:', error.stack);
+    console.error('[Narrative Route] ===================');
     next(error);
   }
 });

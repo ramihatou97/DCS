@@ -57,7 +57,13 @@ function App() {
         usePatterns: true
       });
 
-      console.log('Extraction result:', extractionResult);
+      console.log('=== EXTRACTION RESULT ===');
+      console.log('Full result:', extractionResult);
+      console.log('Result keys:', Object.keys(extractionResult));
+      console.log('Extracted data:', extractionResult.extracted);
+      console.log('Extracted keys:', extractionResult.extracted ? Object.keys(extractionResult.extracted) : 'undefined');
+      console.log('Dates object:', extractionResult.extracted?.dates);
+      console.log('========================');
 
       // extractMedicalEntities returns { extracted, confidence, pathologyTypes, metadata, clinicalIntelligence, qualityMetrics }
       // We need to pass just the 'extracted' part to validation and components
@@ -85,10 +91,14 @@ function App() {
 
       // Build clinical timeline if surgery date is available
       let timeline = null;
-      if (finalExtracted.dates?.surgery) {
-        console.log('Building clinical timeline...');
+      const surgeryDate = finalExtracted?.dates?.surgeryDate || 
+                          finalExtracted?.dates?.surgery ||
+                          (finalExtracted?.dates?.surgeryDates?.[0]);
+      
+      if (surgeryDate) {
+        console.log('Building clinical timeline with surgery date:', surgeryDate);
         try {
-          timeline = buildTimeline(noteContents, finalExtracted.dates.surgery, {
+          timeline = buildTimeline(noteContents, surgeryDate, {
             includePOD: true,
             deduplicateSameDay: true,
             sortChronologically: true
@@ -98,6 +108,8 @@ function App() {
           console.error('Timeline generation failed:', timelineError);
           // Non-critical, continue without timeline
         }
+      } else {
+        console.log('No surgery date available for timeline generation');
       }
 
       // Validate extracted data

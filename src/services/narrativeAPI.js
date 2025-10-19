@@ -24,18 +24,39 @@ import { narrativeAPI } from './apiClient.js';
  * @returns {Promise<Object>} Generated narrative sections
  */
 export async function generateNarrative(extractedData, options = {}) {
-  console.log('[Narrative Service] Calling backend API...');
+  console.log('[Narrative Service] === CALLING BACKEND API ===');
+  console.log('[Narrative Service] extractedData:', extractedData);
+  console.log('[Narrative Service] extractedData type:', typeof extractedData);
   console.log('[Narrative Service] Extracted data fields:', Object.keys(extractedData || {}));
-  
+  console.log('[Narrative Service] options:', options);
+  console.log('[Narrative Service] ===========================');
+
+  // Defensive check
+  if (!extractedData) {
+    throw new Error('extractedData is required but was undefined or null');
+  }
+
+  if (typeof extractedData !== 'object') {
+    throw new Error(`extractedData must be an object, got ${typeof extractedData}`);
+  }
+
   try {
     const result = await narrativeAPI.generate(extractedData, options);
-    
+
+    console.log('[Narrative Service] === NARRATIVE RESULT ===');
+    console.log('[Narrative Service] result:', result);
+    console.log('[Narrative Service] result keys:', result ? Object.keys(result) : 'undefined');
     console.log('[Narrative Service] Narrative generated successfully');
     console.log(`[Narrative Service] Sections generated: ${Object.keys(result.narrative || {}).length}`);
-    
+    console.log('[Narrative Service] ===========================');
+
     return result;
   } catch (error) {
-    console.error('[Narrative Service] API Error:', error);
+    console.error('[Narrative Service] === API ERROR ===');
+    console.error('[Narrative Service] Error:', error);
+    console.error('[Narrative Service] Error message:', error.message);
+    console.error('[Narrative Service] Error stack:', error.stack);
+    console.error('[Narrative Service] ====================');
     throw new Error(`Failed to generate narrative: ${error.message}`);
   }
 }

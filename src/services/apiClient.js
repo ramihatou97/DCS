@@ -88,9 +88,16 @@ export const narrativeAPI = {
    */
   generate: async (extractedData, options = {}) => {
     console.log('[API Client] Calling /api/narrative...');
+    console.log('[API Client] === NARRATIVE REQUEST ===');
+    console.log('[API Client] extractedData:', extractedData);
+    console.log('[API Client] extractedData keys:', extractedData ? Object.keys(extractedData) : 'undefined');
+    console.log('[API Client] options:', options);
+    console.log('[API Client] ===========================');
+
+    // Backend expects 'extracted' not 'extractedData'
     return apiFetch('/narrative', {
       method: 'POST',
-      body: JSON.stringify({ extractedData, options }),
+      body: JSON.stringify({ extracted: extractedData, options }),
     });
   },
 };

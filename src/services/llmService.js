@@ -663,7 +663,7 @@ const checkBackendAvailable = async () => {
   }
   
   try {
-    const response = await fetch('http://localhost:3001/health', {
+    const response = await fetch('http://localhost:3001/api/health', {
       method: 'GET',
       signal: AbortSignal.timeout(2000) // 2 second timeout
     });

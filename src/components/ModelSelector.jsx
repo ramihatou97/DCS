@@ -212,7 +212,7 @@ export default function ModelSelector() {
         </div>
       </div>
 
-      <style jsx>{`
+      <style>{`
         .model-selector-container {
           padding: 20px;
           background: white;

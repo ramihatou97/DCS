@@ -8,6 +8,7 @@
 import React, { useState, useEffect } from 'react';
 import { Key, Server, CheckCircle, XCircle, AlertCircle, Shield, ExternalLink, Terminal, FileCode } from 'lucide-react';
 import ModelSelector from './ModelSelector';
+import FeatureFlagsPanel from './FeatureFlagsPanel';
 
 const Settings = () => {
   const [backendStatus, setBackendStatus] = useState({
@@ -58,7 +59,7 @@ const Settings = () => {
     setBackendStatus(prev => ({ ...prev, loading: true, error: null }));
 
     try {
-      const response = await fetch('http://localhost:3001/health');
+      const response = await fetch('http://localhost:3001/api/health');
 
       if (!response.ok) {
         throw new Error('Backend server not responding');
@@ -350,6 +351,11 @@ const Settings = () => {
           <li><strong>With Gemini:</strong> 80-90% accuracy - Most cost-effective</li>
           <li><strong>Cost:</strong> ~$0.01-0.05 per discharge summary</li>
         </ul>
+      </div>
+
+      {/* Task 4: Feature Flags Panel */}
+      <div className="mt-8">
+        <FeatureFlagsPanel />
       </div>
     </div>
   );

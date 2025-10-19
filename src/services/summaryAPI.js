@@ -7,7 +7,7 @@
  * @module summary-api-wrapper
  */
 
-import { summaryAPI } from './apiClient.js';
+import { summaryAPI, narrativeAPI } from './apiClient.js';
 
 /**
  * Generate complete discharge summary
@@ -50,20 +50,43 @@ export async function generateCompleteSummary(notes, options = {}) {
  * Useful when extraction was done separately
  */
 export async function generateSummaryFromExtraction(extractedData, options = {}) {
-  console.log('[Summary Service] Generating summary from extracted data...');
-  
+  console.log('[Summary Service] === GENERATING SUMMARY FROM EXTRACTION ===');
+  console.log('[Summary Service] extractedData:', extractedData);
+  console.log('[Summary Service] extractedData type:', typeof extractedData);
+  console.log('[Summary Service] extractedData keys:', extractedData ? Object.keys(extractedData) : 'undefined');
+  console.log('[Summary Service] options:', options);
+
+  // Defensive check
+  if (!extractedData) {
+    throw new Error('extractedData is required but was undefined or null');
+  }
+
+  if (typeof extractedData !== 'object') {
+    throw new Error(`extractedData must be an object, got ${typeof extractedData}`);
+  }
+
   try {
     // For now, use the narrative API since it takes extracted data
     // In future, backend could have a dedicated endpoint for this
+    console.log('[Summary Service] Calling narrativeAPI.generate...');
     const narrativeResult = await narrativeAPI.generate(extractedData, options);
-    
+
+    console.log('[Summary Service] === NARRATIVE RESULT ===');
+    console.log('[Summary Service] narrativeResult:', narrativeResult);
+    console.log('[Summary Service] narrativeResult keys:', narrativeResult ? Object.keys(narrativeResult) : 'undefined');
+    console.log('[Summary Service] ===========================');
+
     return {
       summary: narrativeResult.narrative,
       metadata: narrativeResult.metadata,
       qualityMetrics: narrativeResult.qualityMetrics || {},
     };
   } catch (error) {
-    console.error('[Summary Service] API Error:', error);
+    console.error('[Summary Service] === API ERROR ===');
+    console.error('[Summary Service] Error:', error);
+    console.error('[Summary Service] Error message:', error.message);
+    console.error('[Summary Service] Error stack:', error.stack);
+    console.error('[Summary Service] ====================');
     throw new Error(`Failed to generate summary from extraction: ${error.message}`);
   }
 }
