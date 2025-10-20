@@ -691,6 +691,8 @@ For more solutions, see [TROUBLESHOOTING.md](./TROUBLESHOOTING.md)
 
 | Document | Description |
 |----------|-------------|
+| [DISCHARGE_SUMMARY_GENERATION_GUIDE.md](./DISCHARGE_SUMMARY_GENERATION_GUIDE.md) | ⭐ **NEW** Comprehensive guide to generating impeccable discharge summaries |
+| [NARRATIVE_QUALITY_ENHANCEMENT_PLAN.md](./NARRATIVE_QUALITY_ENHANCEMENT_PLAN.md) | ⭐ **NEW** Actionable enhancement roadmap for narrative quality |
 | [DEPLOYMENT_READY.md](./DEPLOYMENT_READY.md) | Production readiness status & testing results |
 | [DEPLOYMENT_GUIDE.md](./DEPLOYMENT_GUIDE.md) | Comprehensive deployment guide for all platforms |
 | [SETUP.md](./SETUP.md) | Detailed setup instructions |
